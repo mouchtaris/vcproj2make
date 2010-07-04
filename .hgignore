@@ -1,0 +1,10 @@
+glob:vcproj2make/platform.txt
+glob:vcproj2make/vcproj2make.unp
+glob:vcproj2make/MessageRouterServerPort.txt
+glob:vcproj2make/vcproj2make.txt
+glob:vcproj2make/DebugServerPort.txt
+glob:vcproj2make/dallocstats.txt
+glob:vcproj2make/vcproj2make.idc
+glob:vcproj2make/OptimizerOutput.txt
+glob:vcproj2make/vcproj2make.dbc
+glob:vcproj2make/derror.txt

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="vcproj2make.dproj" version="alpha">
+    <ProjectProperties>
+        <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
+        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
+        <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
+        <symbolic>22 serialization::archive 4 0 0 1 0 145 22 serialization::archive 4 0 0 109 ../../Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/sparrow_port/vcproj2make/vcproj2make.dproj</symbolic>
+        <startup>22 serialization::archive 4 0 0 1 0 50 22 serialization::archive 4 0 0 15 vcproj2make.dsc</startup>
+        <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
+        <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
+        <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</icode>
+        <hostd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </hostd>
+        <host>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </host>
+        <funcfile>22 serialization::archive 4 0 0 1 0 130 22 serialization::archive 4 0 0 95 ..\..\..\..\thesis_new\deltaide\Tools\Delta\DeltaExtraLibraries\XMLParser\XMLParserLibFuncs.txt</funcfile>
+        <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
+        <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+        <argsd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </argsd>
+        <args>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </args>
+    </ProjectProperties>
+    <Child type="Script">vcproj2make.dsc</Child>
+</Project>
