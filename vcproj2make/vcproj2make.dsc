@@ -89,6 +89,11 @@ function dobj_contains_any_key(dobj, keys) {
 function dobj_contains_any_key_from(dobj, dobj_other) {
 	return ::dobj_contains_any_key(dobj, std::tabindices(dobj_other));
 }
+//
+function dobj_checked_set(dobj, validKeys, key, val) {
+	assert( ::dobj_contains(validKeys, key) );
+	return ::dobj_set(dobj, key, val);
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -197,7 +202,7 @@ function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) 
 //////////////////////////////
 // *** Class class - hand made
 //     -----------------------
-//     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields )
+//     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields, className )
 //     <^> Public methods
 //         - createInstance( ... )
 //               stateInitialiser is called with arguments: the new object's state, a delta object
@@ -225,12 +230,15 @@ function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) 
 //               returns this class' prototype for inspection and possible alteration.
 //         - stateFields
 //               returns a delta object with this class' state fields (not in their private-field-name form)
+//         - get/setClassName
+//               gets/sets this class' name
 //     <^> state fields
 //         - stateInitialiser
 //         - prototype
 //         - mixInRequirements
 //         - stateFields
 //         - mixInRegistry
+//         - className
 function Class {
 	if (std::isundefined(static Class_prototype))
 		Class_prototype = [
@@ -303,11 +311,19 @@ function Class {
 			},
 			method stateFields {
 				return std::tabcopy(::dobj_get(self, #stateFields));
+			},
+			method getClassName {
+				local result = ::dobj_get(self, #className);
+				assert( ::isdeltastring(result) );
+				return result;
+			},
+			method setClassName(className) {
+				return ::dobj_checked_set(self, self.stateFields(), #className, className);
 			}
 		];
 	if (std::isundefined(static Class_stateFields))
-		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry];
-	function Class_stateInitialiser(newClassInstance, validStateFieldsNames, stateInitialiser, prototype, mixInRequirements, stateFields) {
+		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry, #className];
+	function Class_stateInitialiser(newClassInstance, validStateFieldsNames, stateInitialiser, prototype, mixInRequirements, stateFields, className) {
 		assert( std::iscallable(stateInitialiser) );
 		assert( ::isdeltaobject(prototype) );
 		assert( ::isdeltaobject(mixInRequirements) );
@@ -320,13 +336,25 @@ function Class {
 				{ #prototype        : prototype         },
 				{ #mixInRequirements: mixInRequirements },
 				{ #stateFields      : stateFields       },
-				{ #mixInRegistry    : std::list_new()   }
+				{ #mixInRegistry    : std::list_new()   },
+				{ #className        : className         }
 			]
 		);
-	};
+		// Add custom delta-object overloadings
+		// TODO check bug
+		// work around
+//		tostring_method = (method {
+//			return "class " + self.getclassname();
+//		});
+//		newclassinstance."tostring()" = std::tabmethodonme(newclassinstance, tostring_method);
+		// original
+		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, method {
+			return "Class " + self.getClassName();
+		});
+	}
 	if (std::isundefined(static Class_state)) {
 		Class_state = [];
-		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields);
+		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields, #Class);
 		std::delegate(Class_state, Class_prototype);
 		// mix-in object
 		::mixinObject(Class_state, Class_stateFields, Class_prototype);
@@ -355,12 +383,14 @@ Point_class = Class().createInstance(
 	// mixin requirements
 	[],
 	// state fields
-	[#x, #y]
+	[#x, #y],
+	// Class Name
+	#Point
 );
 
 point = Point_class.createInstance(12, 45);
 
 point.show();
-point_classes = point.getClasses();
-::println(point_classes);
+::println(point.getClasses());
+
 
