@@ -19,7 +19,9 @@ function printlns(...) {
 			}
 	);
 }
-function printsec(...) { std::print(pref, ..., ::nl); }
+// work around linux compiler crash 
+//function printsec(...) { std::print(pref, ..., ::nl); }
+function printsec(...) { local nl = ::nl; std::print(pref, ..., nl); }
 function platform {
 	local result = nil;
 	if (local platform = std::libfuncget("std::platform"))
@@ -49,6 +51,7 @@ function loadlibs {
 //
 function isdeltastring(val) { return std::typeof(val) == "String"; }
 function isdeltaobject(val) { return std::typeof(val) == "Object"; }
+function isdeltanumber(val) { return std::typeof(val) == "Number"; }
 //
 // "private field"
 function pfield(field_name) {
@@ -63,6 +66,29 @@ function dobj_get(dobj, fname) {
 function dobj_set(dobj, fname, val) {
 	return std::tabset(dobj, ::pfield(fname), val);
 }
+//
+function dobj_contains(dobj, val) {
+	local contains = false;
+	local ite = std::tableiter_new();
+	for (std::tableiter_setbegin(ite, dobj); not contains and not std::tableiter_checkend(ite, dobj); std::tableiter_fwd(ite))
+		contains = std::tableiter_getval(ite) == val;
+	return contains;
+}
+function dobj_contains_key(dobj, key) {
+	return dobj[key] != nil;
+}
+function dobj_contains_any(dobj, dobj_other) {
+	foreach (val, dobj_other)
+		if (::dobj_contains(dobj, val))
+			return true;
+	return false;
+}
+function dobj_contains_any_key(dobj, keys) {
+	return ::dobj_contains_any(std::tabindices(dobj), keys);
+}
+function dobj_contains_any_key_from(dobj, dobj_other) {
+	return ::dobj_contains_any_key(dobj, std::tabindices(dobj_other));
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -73,58 +99,244 @@ function mixin_state(state, mixin) {
 		else
 			std::tabset(state, index, std::tabget(mixin, index));
 }
+function stateFieldsClash(fields1, fields2) {
+	return ::dobj_contains_any(fields1, fields2);
+}
+function prototypesClash(proto1, proto2) {
+	return ::dobj_contains_any_key_from(proto1, proto2);
+}
+function mixinRequirementsFulfilled(prototype, requirements) {
+	local requirementsFulfilled = true;
+	local ite = std::tableiter_new();
+	for (std::tableiter_setbegin(ite, requirements); requirementsFulfilled and not std::tableiter_checkend(ite, requirements); std::tableiter_fwd(ite))
+		requirementsFulfilled = ::dobj_contains_key(prototype, std::tableiter_getval(ite));
+	return requirementsFulfilled;
+}
+function mixin(newInstanceState, mixin_instance, mixin_prototype) {
+	::mixin_state(newInstanceState, mixin_instance);
+	std::delegate(newInstanceState, mixin_prototype);
+}
+// Class class utility (static) methods
+function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fieldsNames, fieldsValues) {
+	local number_of_fields = std::tablength(validFieldsNames);
+	assert( std::tablength(fieldsNames) == number_of_fields );
+	assert( std::tablength(fieldsValues) == number_of_fields);
+	for (local i = 0; i < number_of_fields; ++i) {
+		local fieldName = fieldsNames[i];
+		assert( ::dobj_contains(validFieldsNames, fieldName) );
+		::dobj_set(newObjectInstance, fieldName, fieldsValues[i]);
+	}
+}
+function Class_isa(obj, a_class) {
+	return ::dobj_contains(obj.getClasses(), a_class);
+}
+// Object-class-elements
+// for use in Class-class implementation (since it cannot use the Object class as a complete class)
+// *** Object mixin
+//     -----------------------
+//     <^> createInstance( )
+//     <^> Public methods
+//         - getClasses()
+//           returns a delta object containing references to all the classes
+//           mixed-in into this object.
+//     <^> state fields
+//         - classes : std::list
+function Object_stateFields {
+	return [ #classes ];
+}
+function Object_stateInitialiser {
+	if (std::isundefined(static stateInitialiser))
+		stateInitialiser = (function (newObjectInstance) {
+			assert( ::isdeltaobject(newObjectInstance) );
+			Class_checkedStateInitialisation(
+				newObjectInstance,
+				Object_stateFields(),
+				[ #classes        ],
+				[ std::list_new() ]
+			);
+		});
+	return stateInitialiser;
+}
+function Object_prototype {
+	if (std::isundefined(prototype))
+		prototype = [
+			method getClasses {
+				local classes = ::dobj_get(self, #classes);
+				local result = [];
+				local i = 0;
+				foreach (class, classes)
+					result[i++] = class;
+				return result;
+			}
+		];
+	return prototype;
+}
+function Object_mixinRequirements {
+	return [];
+}
+//////////////////////////////
 // *** Class class - hand made
 //     -----------------------
+//     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields )
 //     <^> Public methods
-//         - createInstance( stateInitialiser, prototype )
+//         - createInstance( ... )
 //               stateInitialiser is called with arguments: the new object's state
-//               and whatever other arguments are passed to the NEW class' createInstance().
+//               and whatever other arguments are passed to createInstance().
+//         - mixInRequirements
+//               returns a delta object which contains strings that denote public methods
+//               which should exist in an object that is trying to mix in this class.
+//               If there are no mix-in requiremens this method may return [] or nil.
+//         - fulfillsRequirements(a_mixin)
+//               This method returns true if its prototype implements fully the requirements
+//               set by the provided mixin.
+//         - stateFieldsClash(a_mixin)
+//               Checks if this class' state fields (non-private-name-form) clash with the given
+//               mixin's.
+//         - prototypesClash(another_class)
+//               Checks if this class' prototype and the given prototype have some common
+//               members (public API methods).
+//         - mixIn(anotherClass)
+//               registers a class to be mixed in when a new object of this calss is
+//               created. If the "anotherClass" cannot be mixed-in this one (due to
+//               common state entries or not fulfilling requirements) nil is returned.
+//               Otherwise, a "true" evaluating value is returned.
+//         - getPrototype
+//               returns this class' prototype for inspection and possible alteration.
+//         - stateFields
+//               returns a delta object with this class' state fields (not in their private-field-name form)
 //     <^> state fields
 //         - stateInitialiser
 //         - prototype
+//         - mixInRequirements
+//         - stateFields
+//         - mixInRegistry
 function Class {
 	if (std::isundefined(static Class_prototype))
 		Class_prototype = [
 			// Public API
 			method createInstance(...) {
+				// Get the ingredients
 				local stateInitialiser = ::dobj_get(self, #stateInitialiser);
-				local prototype        = ::dobj_get(self, #prototype);
+				local prototype        = self.getPrototype();
 				assert(std::iscallable(stateInitialiser));
 				assert(::isdeltaobject(prototype));
+				
+				// New state
 				newInstanceState = [];
+				// Link to prototype
 				std::delegate(newInstanceState, prototype);
+				// initialise
 				stateInitialiser(newInstanceState, ...);
+				// new instance is initialised and linked to its original class,
+				// so the class' API can be used after this point.
+				////
+				// manually mix-in the object class (by default)
+				assert( not ::stateFieldsClash( Object_stateFields(), self.stateFields() ) );
+				assert( not ::prototypesClash( Object_prototype(), prototype ) );
+				assert(     ::mixinRequirementsFulfilled(prototype, Object_mixinRequirements()) );
+				objectInstance = [];
+				Object_stateInitialiser()(objectInstance);
+				std::delegate(objectInstance, Object_prototype());
+				::mixin(newInstanceState, objectInstance, Object_prototype());
+				// no need to register the "object" class in the classes list. (we also cannot do it)
+				// perform mixins
+				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry)) {
+					local mixin = mixin_pair.class;
+					local createInstanceArguments = mixin_pair.args;
+					local mixin_instance = mixin.createInstance(|createInstanceArguments|);
+					assert( not ::stateFieldsClash( mixin.stateFields(), prototype.stateFields() ) );
+					assert( not ::prototypesClash( mixin.getPrototype(), prototype.getPrototype() ) );
+					assert(     ::mixinRequirementsFulfilled(prototype, mixin.mixInRequirements()) );
+					::mixin(newInstanceState, mixin_instance, mixin);
+					// now we CAN register the mixed-in class
+					newInstanceState.getClasses().push_back(mixin);
+				}
 				return newInstanceState;
+			},
+			method mixInRequirements {
+				return ::dobj_get(self, #mixInRequirements);
+			},
+			method fulfillsRequirements(a_mixin) {
+				assert( ::Class_isa(a_mixin, self) ); // assert tha a_mixin is a class
+				local mixInRequirements = a_mixin.mixInRequirements();
+				local myPrototype = self.getPrototype();
+				return ::mixinRequirementsFulfilled(myPrototype, mixInRequirements);
+			},
+			method stateFieldsClash(another_class) {
+				return ::stateFieldsClash(another_class.stateFields(), self.stateFields());
+			},
+			method prototypesClash(another_class) {
+				return ::prototypesClash(self.getPrototype(), another_class.getPrototype());
+			},
+			method mixIn(another_class, createInstanceArguments) {
+				// assert that given class is a class indeed
+				assert( ::Class_isa(another_class, self) );
+				// Make sure that we fulfil the requirements to mix in the other_class
+				// and that the another_class' state does not interfer with ours
+				if (self.fulfillsRequirements(another_class.mixInRequirements()) and not self.stateFieldsClash(another_class)) {
+					local mixInRegistry = ::dobj_get(self, #mixInRegistry);
+					std::list_push_back(mixInRegistry, [@class:another_class,@args:createInstanceArguments]);
+				}
+			},
+			method getPrototype {
+				return ::dobj_get(self, #prototype);
+			},
+			method stateFields {
+				return std::tabcopy(::dobj_get(self, #stateFields));
+			},
+			// Mixing in Object
+			method getClasses {
+				return [self];
 			}
 		];
-	if (std::isundefined(static class_Class)) {
+	if (std::isundefined(static Class_state)) {
 		Class_state = [
-			{ ::pfield(#stateInitialiser) : function (newClassInstance, stateInitialiser, prototype) {
-				::dobj_set(newClassInstance, #stateInitialiser, stateInitialiser);
-				::dobj_set(newClassInstance, #prototype       , prototype       );
+			{ ::pfield(#stateInitialiser) : function (newClassInstance, stateInitialiser, prototype, mixInRequirements, stateFields) {
+				assert( std::iscallable(stateInitialiser) );
+				assert( ::isdeltaobject(prototype) );
+				assert( ::isdeltaobject(mixInRequirements) );
+				assert( ::isdeltaobject(stateFields) );
+				Class_checkedStateInitialisation(
+					newClassInstance,
+					[ #stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry   ],
+					[ #stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry   ],
+					[  stateInitialiser,  prototype,  mixInRequirements,  stateFields,  std::list_new() ]
+				);
 			} },
-			{ ::pfield(#prototype) : Class_prototype }
+			{ ::pfield(#prototype)        : Class_prototype },
+			{ ::pfield(#mixInRequirements): [] },
+			{ ::pfield(#stateFields)      : [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry] },
+			{ ::pfield(#mixInRegistry)    : std::list_new() }
 		];
 		std::delegate(Class_state, Class_prototype);
 	}
 	return Class_state;
 }
 
-class_Class = Class();
-class_Point = class_Class.createInstance(
+
+Point_validStateFields = [#x, #y];
+Point_class = Class().createInstance(
+	// state initialiser
 	function (newPointInstance, x, y) {
-		::dobj_set(newPointInstance, #x, x);
-		::dobj_set(newPointInstance, #y, y);
+		assert( ::isdeltanumber(x) );
+		assert( ::isdeltanumber(y) );
+		Class_checkedStateInitialisation(
+			newPointInstance,
+			Point_validStateFields,
+			[ #x, #y ],
+			[  x,  y ]
+		);
 	},
+	// prototype
 	[
-		method print {
-			local x = ::dobj_get(self, #x);
-			local y = ::dobj_get(self, #y);
-			::println("Point[", x, ",", y, "]");
-		}
-	]
+		method show { ::println("Point[", ::dobj_get(self, #x), ",", ::dobj_get(self, #y), "]"); }
+	],
+	// mixin requirements
+	[],
+	// state fields
+	Point_validStateFields
 );
 
-point = class_Point.createInstance(12, 34);
+point = Point_class.createInstace(12, 45);
 
-point.print();
+point.show();
