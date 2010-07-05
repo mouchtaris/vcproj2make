@@ -144,6 +144,8 @@ function Class_isa(obj, a_class) {
 //         - getClasses()
 //           returns a delta object containing references to all the classes
 //           mixed-in into this object.
+//         - addClass(class)
+//           adds a class to the registery of classes mixed-in into this Object.`
 //     <^> state fields
 //         - classes : std::list
 function Object_stateFields {
@@ -171,6 +173,10 @@ function Object_prototype {
 				foreach (class, classes)
 					result[i++] = class;
 				return result;
+			},
+			method addClass(class) {
+				local classes = ::dobj_get(self, #classes);
+				std::list_push_back(classes, class);
 			}
 		];
 	return prototype;
@@ -248,6 +254,9 @@ function Class {
 				// manually mix-in the object class (by default)
 				::mixinObject(newInstanceState, self.stateFields(), prototype);
 				// no need to register the "object" class in the classes list. (we also cannot do it)
+				//
+				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
+				newInstanceState.addClass(self);
 				// perform mixins
 				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry)) {
 					local mixin = mixin_pair.class;
@@ -260,7 +269,7 @@ function Class {
 					// now we CAN register the mixed-in class
 					// since "newInstanceState" "is-an" Object (we manually mixed it in already)
 					// and we have a reference to the mix-in class.
-					newInstanceState.getClasses().push_back(mixin);
+					newInstanceState.addClass(mixin);
 				}
 				return newInstanceState;
 			},
@@ -321,7 +330,8 @@ function Class {
 		std::delegate(Class_state, Class_prototype);
 		// mix-in object
 		::mixinObject(Class_state, Class_stateFields, Class_prototype);
-		// TODO add "self" as this class' class.
+		// add "self" as this class' class.
+		Class_state.addClass(Class_state);
 	}
 	return Class_state;
 }
@@ -351,3 +361,6 @@ Point_class = Class().createInstance(
 point = Point_class.createInstance(12, 45);
 
 point.show();
+point_classes = point.getClasses();
+::println(point_classes);
+
