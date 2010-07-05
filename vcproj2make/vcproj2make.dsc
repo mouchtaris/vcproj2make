@@ -341,16 +341,15 @@ function Class {
 			]
 		);
 		// Add custom delta-object overloadings
-		// TODO check bug
-		// work around
-//		tostring_method = (method {
-//			return "class " + self.getclassname();
-//		});
-//		newclassinstance."tostring()" = std::tabmethodonme(newclassinstance, tostring_method);
+		// TODO restore to original after bug has been fixed
 		// original
-		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, method {
+//		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, method {
+//			return "Class " + self.getClassName();
+//		});
+		// work-around
+		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, [method {
 			return "Class " + self.getClassName();
-		});
+		}][0]);
 	}
 	if (std::isundefined(static Class_state)) {
 		Class_state = [];
@@ -365,32 +364,7 @@ function Class {
 }
 
 
-Point_class = Class().createInstance(
-	// state initialiser
-	function (newPointInstance, validStateFieldsNames, x, y) {
-		assert( ::isdeltanumber(x) );
-		assert( ::isdeltanumber(y) );
-		Class_checkedStateInitialisation(
-			newPointInstance,
-			validStateFieldsNames,
-			[ { #x: x}, { #y: y} ]
-		);
-	},
-	// prototype
-	[
-		method show { ::println("Point[", ::dobj_get(self, #x), ",", ::dobj_get(self, #y), "]"); }
-	],
-	// mixin requirements
-	[],
-	// state fields
-	[#x, #y],
-	// Class Name
-	#Point
-);
 
-point = Point_class.createInstance(12, 45);
+///////////// TESTING THE CLASS MODEL /////////////
 
-point.show();
-::println(point.getClasses());
-
-
+// Class Point
