@@ -117,14 +117,19 @@ function mixin(newInstanceState, mixin_instance, mixin_prototype) {
 	std::delegate(newInstanceState, mixin_prototype);
 }
 // Class class utility (static) methods
-function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fieldsNames, fieldsValues) {
+//
+// Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) 
+// //    newObjectInstance: the new object instance whose state will be initialised
+// //    validFieldsNames : a delta object with all the valid fields' names (in normal form)
+// //    fields           : a delta object which maps field-names to values
+function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) {
 	local number_of_fields = std::tablength(validFieldsNames);
-	assert( std::tablength(fieldsNames) == number_of_fields );
-	assert( std::tablength(fieldsValues) == number_of_fields);
-	for (local i = 0; i < number_of_fields; ++i) {
-		local fieldName = fieldsNames[i];
-		assert( ::dobj_contains(validFieldsNames, fieldName) );
-		::dobj_set(newObjectInstance, fieldName, fieldsValues[i]);
+	assert( std::tablength(fields) == number_of_fields );
+	foreach (validFieldName, validFieldsNames) {
+		local value = std::tabget(fields, validFieldName);
+		assert( not std::isundefined(value) );
+		assert( value != nil );
+		::dobj_set(newObjectInstance, validFieldName, value);
 	}
 }
 function Class_isa(obj, a_class) {
@@ -151,8 +156,7 @@ function Object_stateInitialiser {
 			Class_checkedStateInitialisation(
 				newObjectInstance,
 				Object_stateFields(),
-				[ #classes        ],
-				[ std::list_new() ]
+				[ { #classes: std::list_new() } ]
 			);
 		});
 	return stateInitialiser;
@@ -174,13 +178,24 @@ function Object_prototype {
 function Object_mixinRequirements {
 	return [];
 }
+function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) {
+	// manually mix-in the object class (by default)
+	assert( not ::stateFieldsClash( Object_stateFields(), newInstanceStateFields ) );
+	assert( not ::prototypesClash( Object_prototype(), newInstancePrototype ) );
+	assert(     ::mixinRequirementsFulfilled(newInstancePrototype, Object_mixinRequirements()) );
+	objectInstance = [];
+	Object_stateInitialiser()(objectInstance);
+	std::delegate(objectInstance, Object_prototype());
+	::mixin(newInstance, objectInstance, Object_prototype());
+}
 //////////////////////////////
 // *** Class class - hand made
 //     -----------------------
 //     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields )
 //     <^> Public methods
 //         - createInstance( ... )
-//               stateInitialiser is called with arguments: the new object's state
+//               stateInitialiser is called with arguments: the new object's state, a delta object
+//               with all the valid state member names
 //               and whatever other arguments are passed to createInstance().
 //         - mixInRequirements
 //               returns a delta object which contains strings that denote public methods
@@ -220,24 +235,18 @@ function Class {
 				local prototype        = self.getPrototype();
 				assert(std::iscallable(stateInitialiser));
 				assert(::isdeltaobject(prototype));
-				
+
 				// New state
 				newInstanceState = [];
+				// initialise
+				stateInitialiser(newInstanceState, self.stateFields(), ...);
 				// Link to prototype
 				std::delegate(newInstanceState, prototype);
-				// initialise
-				stateInitialiser(newInstanceState, ...);
 				// new instance is initialised and linked to its original class,
 				// so the class' API can be used after this point.
 				////
 				// manually mix-in the object class (by default)
-				assert( not ::stateFieldsClash( Object_stateFields(), self.stateFields() ) );
-				assert( not ::prototypesClash( Object_prototype(), prototype ) );
-				assert(     ::mixinRequirementsFulfilled(prototype, Object_mixinRequirements()) );
-				objectInstance = [];
-				Object_stateInitialiser()(objectInstance);
-				std::delegate(objectInstance, Object_prototype());
-				::mixin(newInstanceState, objectInstance, Object_prototype());
+				::mixinObject(newInstanceState, self.stateFields(), prototype);
 				// no need to register the "object" class in the classes list. (we also cannot do it)
 				// perform mixins
 				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry)) {
@@ -249,6 +258,8 @@ function Class {
 					assert(     ::mixinRequirementsFulfilled(prototype, mixin.mixInRequirements()) );
 					::mixin(newInstanceState, mixin_instance, mixin);
 					// now we CAN register the mixed-in class
+					// since "newInstanceState" "is-an" Object (we manually mixed it in already)
+					// and we have a reference to the mix-in class.
 					newInstanceState.getClasses().push_back(mixin);
 				}
 				return newInstanceState;
@@ -283,48 +294,48 @@ function Class {
 			},
 			method stateFields {
 				return std::tabcopy(::dobj_get(self, #stateFields));
-			},
-			// Mixing in Object
-			method getClasses {
-				return [self];
 			}
 		];
+	if (std::isundefined(static Class_stateFields))
+		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry];
+	function Class_stateInitialiser(newClassInstance, validStateFieldsNames, stateInitialiser, prototype, mixInRequirements, stateFields) {
+		assert( std::iscallable(stateInitialiser) );
+		assert( ::isdeltaobject(prototype) );
+		assert( ::isdeltaobject(mixInRequirements) );
+		assert( ::isdeltaobject(stateFields) );
+		Class_checkedStateInitialisation(
+			newClassInstance,
+			validStateFieldsNames,
+			[ 
+				{ #stateInitialiser : stateInitialiser  },
+				{ #prototype        : prototype         },
+				{ #mixInRequirements: mixInRequirements },
+				{ #stateFields      : stateFields       },
+				{ #mixInRegistry    : std::list_new()   }
+			]
+		);
+	};
 	if (std::isundefined(static Class_state)) {
-		Class_state = [
-			{ ::pfield(#stateInitialiser) : function (newClassInstance, stateInitialiser, prototype, mixInRequirements, stateFields) {
-				assert( std::iscallable(stateInitialiser) );
-				assert( ::isdeltaobject(prototype) );
-				assert( ::isdeltaobject(mixInRequirements) );
-				assert( ::isdeltaobject(stateFields) );
-				Class_checkedStateInitialisation(
-					newClassInstance,
-					[ #stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry   ],
-					[ #stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry   ],
-					[  stateInitialiser,  prototype,  mixInRequirements,  stateFields,  std::list_new() ]
-				);
-			} },
-			{ ::pfield(#prototype)        : Class_prototype },
-			{ ::pfield(#mixInRequirements): [] },
-			{ ::pfield(#stateFields)      : [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry] },
-			{ ::pfield(#mixInRegistry)    : std::list_new() }
-		];
+		Class_state = [];
+		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields);
 		std::delegate(Class_state, Class_prototype);
+		// mix-in object
+		::mixinObject(Class_state, Class_stateFields, Class_prototype);
+		// TODO add "self" as this class' class.
 	}
 	return Class_state;
 }
 
 
-Point_validStateFields = [#x, #y];
 Point_class = Class().createInstance(
 	// state initialiser
-	function (newPointInstance, x, y) {
+	function (newPointInstance, validStateFieldsNames, x, y) {
 		assert( ::isdeltanumber(x) );
 		assert( ::isdeltanumber(y) );
 		Class_checkedStateInitialisation(
 			newPointInstance,
-			Point_validStateFields,
-			[ #x, #y ],
-			[  x,  y ]
+			validStateFieldsNames,
+			[ { #x: x}, { #y: y} ]
 		);
 	},
 	// prototype
@@ -334,9 +345,9 @@ Point_class = Class().createInstance(
 	// mixin requirements
 	[],
 	// state fields
-	Point_validStateFields
+	[#x, #y]
 );
 
-point = Point_class.createInstace(12, 45);
+point = Point_class.createInstance(12, 45);
 
 point.show();
