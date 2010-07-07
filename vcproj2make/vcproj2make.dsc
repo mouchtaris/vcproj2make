@@ -58,6 +58,7 @@ function isdeltastring(val) { return std::typeof(val) == "String"; }
 function isdeltaobject(val) { return std::typeof(val) == "Object"; }
 function isdeltanumber(val) { return std::typeof(val) == "Number"; }
 function isdeltaboolean(val){ return std::typeof(val) == "Bool"  ; }
+function isdeltanil   (val) { return std::typeof(val) == "Nil"   ; }
 function toboolean    (val) { if (val) return true; else return false; }
 //
 // "private field"
@@ -139,7 +140,14 @@ function file_isreadable(filepath) {
 		std::fileclose(fh);
 	return result;
 }
-
+function file_isabsolutepath(filepath) {
+	local result = nil;
+	if (::islinux())
+		result = std::strchar(filepath, 0) == "/";
+	else if (::iswin32())
+		result = std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
+	return result;
+}
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
 	local indices = std::tabindices(mixin);
@@ -196,7 +204,7 @@ function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, f
 	foreach (validFieldName, validFieldsNames) {
 		local value = std::tabget(fields, validFieldName);
 		assert( not std::isundefined(value) );
-		assert( value != nil );
+		assert( not ::isdeltanil(value) );
 		::dobj_set(newObjectInstance, validFieldName, value);
 	}
 }
@@ -613,99 +621,118 @@ function Point {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////
-// *** String class
-//     Has a location on the file system.
+// *** Path class
+//     Modeling a path, which can be relative or absolute.
 //     -----------------------
-//     <^> createInstance( val:string )
+//     <^> createInstance( path:deltastring, isabsolute:boolean )
+//     <^> Mixes in:
 //     <^> Public methods
 //         - deltaString
-//               returns this String's value as a delta string
-//         - String_clone
-//               returns an identical new instance (deep copy)
+//               returns this path as a delta string
+//         - IsAbsolute
+//         - IsRelative
+//         - Concat(another_relative_path:deltastring)
+//               returns a deltastring representing the concatenation of
+//               the two paths.
 //     <^> state fields
-//         - String_deltaStringValue
-//function String {
-//	if (std::isundefined(static String_class))
-//		String_class = Class().createInstance(
-//			// stateInitialiser
-//			function String_stateInitialiser(newInstance, validStateFieldsNames, val) {
-//				assert( ::isdeltastring(val) );
-//				Class_checkedStateInitialisation(
-//					newInstance,
-//					validStateFieldsNames,
-//					[ { #String_deltaStringValue: val } ]
-//				);
-//			},
-//			//prototype
-//			[
-//				method deltaString {
-//					local result = ::dobj_get(self, #String_deltaStringValue);
-//					assert( ::isdeltastring(result) );
-//					return result;
-//				},
-//				method String_clone {
-//					return String().createInstance(self.deltaString());
-//				}
-//			],
-//			//mixInRequirements
-//			[],
-//			//stateFields
-//			[ #String_deltaStringValue ],
-//			//className
-//			#String
-//		);
-//	return String_class;
-//}
-//function String_isaString(something) {
-//	return ::Class_isa(something, String());
-//}
-//function String_fromString(val) {
-//	local result = nil;
-//	if ( ::isdeltastring(val) )
-//		result = String().createInstance(val);
-//	else if (String_isaString(val))
-//		result = val.String_clone();
-//	return result;
-//}
-
-//////////////////////////////
-// *** Locatable class
-//     Has a location on the file system.
-//     -----------------------
-//     <^> createInstance( location:deltastring )
-//     <^> Public methods
-//         - get/setLocation (location:deltastring)
-//               gets/sets this locatable's location
-//     <^> state fields
-//         - location
-function Locatable {
-	if (std::isundefined(static Locatable_class))
-		Locatable_class = Class().createInstance(
+//         - Path_path
+//         - Path_absolute
+function Path {
+	if (std::isundefined(static Path_class))
+		Path_class = ::Class().createInstance(
 			// stateInitialiser
-			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, location) {
-				assert( ::isdeltastring(location) );
+			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
+				assert( ::isdeltastring(path) );
 				Class_checkedStateInitialisation(
-					newInstance,
+					newPathInstance,
 					validStateFieldsNames,
-					[ { #location: location } ]
+					[ { #Path_absolute: isabsolute }, { #Path_path: path } ]
 				);
 			},
 			// prototype
 			[
-				method getLocation {
-					local location = ::dobj_get(self, #location);
-					assert( ::isdeltastring(location) );
-					return location;
+				method deltaString {
+					local result = ::dobj_get(self, #Path_path);
+					assert( ::isdeltastring(result) );
+					return result;
 				},
-				method setLocation(location) {
-					assert( ::isdeltastring(location) );
-					return ::dobj_set(self, #location, location);
+				method IsAbsolute {
+					local result = ::dobj_get(self, #Path_absolute);
+					assert( result != nil );
+					return result;
+				},
+				method IsRelative {
+					return not self.IsAbsolute();
+				},
+				method Concate(another_relative_path) {
+					assert( ::isdeltastring(another_relative_path) );
+					return self.Path() + "/" + another_relative_path;
 				}
 			],
 			// mixInRequirements
 			[],
 			// stateFields
-			[ #location ],
+			[ #Path_absolute, #Path_path ],
+			// className
+			#Path
+		);
+	return Path_class;
+}
+function Path_isaPath(obj) {
+	return ::Class_isa(obj, ::Path());
+}
+// "path" can be a deltastring or a Path instance.
+// If it is a deltastring, the path is checked for
+// absolutity by ::file_isabsolutepath.
+function Path_fromPath(path) {
+	local result = nil;
+	if ( ::isdeltastring(path) )
+		result = ::Path().createInstance(path, ::file_isabsolutepath(path));
+	else if ( ::Path_isaPath(path) )
+		result = ::Path().createInstance(path.deltaString(), path.IsAbsolute());
+	return result;
+}
+
+//////////////////////////////
+// *** Locatable class
+//     Has a location on the file system, represented as a Path object.
+//     -----------------------
+//     <^> createInstance( path:Path_fromPath() )
+//     <^> Public methods
+//         - get/setLocation (path:Path_fromPath())
+//               gets/sets this locatable's location
+//     <^> state fields
+//         - Locatable_path
+function Locatable {
+	if (std::isundefined(static Locatable_class))
+		Locatable_class = Class().createInstance(
+			// stateInitialiser
+			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, path) {
+				local p = ::Path_fromPath(path);
+				assert( p );
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[ { #Locatable_path: p } ]
+				);
+			},
+			// prototype
+			[
+				method getLocation {
+					local path = ::dobj_get(self, #Locatable_path);
+					assert( ::Path_isaPath(path) );
+					return path;
+				},
+				method setLocation(path) {
+					local p = ::Path_fromPath(path);
+					assert( p );
+					return ::dobj_set(self, #Locatable_path, p);
+				}
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #Locatable_path ],
 			// className 
 			#Locatable
 		);
@@ -756,63 +783,6 @@ function Namable {
 	return Namable_class;
 }
 
-//////////////////////////////
-// *** Path class
-//     Modeling a path, which can be relative or absolute.
-//     -----------------------
-//     <^> createInstance( path:deltastring, isabsolute:boolean )
-//     <^> Mixes in: Locatable
-//     <^> Public methods
-//         - getLocation [from Locatable]
-//               returns this path as a delta string
-//         - IsAbsolute
-//         - IsRelative
-//         - Merge(another_relative_path:deltastring)
-//     <^> state fields
-//         - Path_absolute
-function Path {
-	if (std::isundefined(static Path_class)) {
-		Path_class = ::Class().createInstance(
-			// stateInitialiser
-			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
-				assert( ::isdeltaboolean(isabsolute) );
-				Class_checkedStateInitialisation(
-					newPathInstance,
-					validStateFieldsNames,
-					[ { #Path_absolute: isabsolute } ]
-				);
-			},
-			// prototype
-			[
-				method IsAbsolute {
-					local result = ::dobj_get(self, #Path_absolute);
-					assert( result != nil );
-					return result;
-				},
-				method IsRelative {
-					return not self.IsAbsolute();
-				},
-				method Merge(another_relative_path) {
-					assert( ::isdeltastring(another_relative_path) );
-					return self.getLocation() + "/" + another_relative_path;
-				}
-			],
-			// mixInRequirements
-			[],
-			// stateFields
-			[ #Path_absolute ],
-			// className
-			#Path
-		);
-		Path_class.mixIn(::Locatable(), [
-			method @operator ()(newPathInstance, pathStateValidFieldsNames, path, isabsolute) {
-				return [path];
-			}
-		]); 
-	}
-	return Path_class;
-}
-
 // ProjectType
 const ProjectType_StaticLibrary  = 1;
 const ProjectType_DynamicLibrary = 2;
@@ -843,15 +813,15 @@ function ProjectType_isValid(type) {
 //     this project's building process, according to their type. Executable projects are generally
 //     ignored in the building process (they are still built before this project though).
 //     -----------------------
-//     <^> createInstance( projectType:ProjectType )
+//     <^> createInstance( projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
 //     <^> Mixs in: Locatable, Namable
 //     <^> Public methods
-//         - addSource(relpath:deltastring)
+//         - addSource(path:Path)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
 //         - Sources
 //               returns an std::list with all the sources that belong to this project.
-//         - addIncludeDirectory(relpath:deltastring)
+//         - addIncludeDirectory(path:Path)
 //               adds an include path to this project. The filepath is relative to
 //               the project's location.
 //         - IndluceDirectories
@@ -866,11 +836,11 @@ function ProjectType_isValid(type) {
 //               for this project.
 //         - PreprocessorDefinitions
 //               returns a delta object with all the extra preprocessor defnitions.
-//         - addLibraryPath(relpath:deltastring)
+//         - addLibraryPath(path:Path)
 //               adds a library-search path for this project's building.
 //         - LibraryPaths
 //               returns an std::list with the library search paths for this project's building.
-//         - addLibrary(relpath:deltastring)
+//         - addLibrary(path:Path)
 //               adds an extra library file name to be included in this project's building
 //               process.
 //         - Libraries
@@ -887,7 +857,7 @@ function ProjectType_isValid(type) {
 //         - isExecutable
 //               return true if this project's type is StaticLibrary, DynamicLibrary or
 //               Executable, respectively.
-//         - set/getOutput (output_filepath:deltastring)
+//         - set/getOutput (path:Path)
 //               sets/gets this projects output filepath. When this is a library project,
 //               this is the produced library file's filepath. When this is an executable
 //               project, this will be the produced executable's filepath.
@@ -901,12 +871,11 @@ function ProjectType_isValid(type) {
 //          7. CProject_librariesPaths
 //          8. CProject_libraries
 //          9. CProject_output
-//         10. 
 function CProject {
 	if (std::isundefined(static CProject_class)) {
-		CProject_class = ::Class().createInstnace(
+		CProject_class = ::Class().createInstance(
 			// stateInitialiser
-			function CProject_stateInitialiser(newInstance, validStateFieldsNames, projectType) {
+			function CProject_stateInitialiser(newInstance, validStateFieldsNames, projectType, path, projectName) {
 				assert( ::ProjectType_isValid(projectType) );
 				Class_checkedStateInitialisation(
 					newInstance,
@@ -926,55 +895,29 @@ function CProject {
 			},
 			// prototype
 			[
-//         - addSource(relpath:deltastring)
-//               adds a source file to this project. The filepath is relative to
-//               the project's location.
-				method addSource(relpath) {
-					//assert( ::file_isreadable(filepath) );
-					//::dobj_get(self, #CProject_sources).push_back(filepath);
+				method addSource(path) {
+					assert( ::Path_isaPath(path) );
+					::dobj_get(self, #CProject_sources).push_back(path);
+				},
+				method Sources {
+					return ::list_clone(::dobj_get(self, #CProject_source));
 				}
-//         - Sources
-//               returns an std::list with all the sources that belong to this project.
 //         - addIncludeDirectory(filepath:deltastring)
-//               adds an include path to this project. The filepath is relative to
-//               the project's location.
 //         - IndluceDirectories
-//               returns an std::list with all the include directories of this project.
 //         - addSubproject(subproject:Project)
-//               adds a project as a subproject of this projet. The subproject's
-//               paths is interpreted as relative to this project's path.
 //         - Subprojects
-//               return an std::list with the subprojects' objects' instances.
 //         - addPreprocessorDefinition(def:deltastring)
-//               adds a preprocessor definition to be defined in all compilation units
-//               for this project.
 //         - PreprocessorDefinitions
-//               returns a delta object with all the extra preprocessor defnitions.
 //         - addLibraryPath(filepath:deltastring)
-//               adds a library-search path for this project's building.
 //         - LibraryPaths
-//               returns an std::list with the library search paths for this project's building.
 //         - addLibrary(library_name:deltastring)
-//               adds an extra library file name to be included in this project's building
-//               process.
 //         - Libraries
-//               returns an std::list with all the extra libraries to be included in this project's
-//               building process.
 //         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
-//               sets the manifestation specific options for the given manifestation.
-//               Any previous configuration added for this manifestation is overwritten.
 //         - getManifestationConfiguration(manifestation_id:deltastring)
-//               returns this project's configuration (delta) object for the given
-//               manifestation.
 //         - isStaticLibrary
 //         - isDynamicLibrary
 //         - isExecutable
-//               return true if this project's type is StaticLibrary, DynamicLibrary or
-//               Executable, respectively.
 //         - set/getOutput (output_filepath:deltastring)
-//               sets/gets this projects output filepath. When this is a library project,
-//               this is the produced library file's filepath. When this is an executable
-//               project, this will be the produced executable's filepath.
 			],
 			// mixInRequirements
 			[],
@@ -985,8 +928,16 @@ function CProject {
 			// className
 			#CProject
 		);
-		CProject_class.mixIn(::Locatable(), "");
-		CProject_class.mixIn(::Namable()  , "");
+		CProject_class.mixIn(::Locatable(), [
+			method @operator () (newInstance, validStateFieldsNames, projectType, path) {
+				return [path];
+			}
+		]);
+		CProject_class.mixIn(::Namable()  , [
+			method @operator () (newInstance, validStateFieldsNames, projectType, path, projectName) {
+				return [projectName];
+			}
+		]);
 	}
 	return CProject_class;
 }
@@ -1048,7 +999,8 @@ function CProject {
 // - When a function returns nothing, the error message is confusing
 //   Illegal use of '::Locatable()' as an object (type is ').
 {
-	::println(::Path().createInstance("something", true).Merge("something else"));
+	local proj = ::CProject().createInstance(ProjectType_Executable, "/something/in/hell", "Loolis projec");
+	::println(proj);
 }
 
 // Show all classes
