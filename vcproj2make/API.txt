@@ -1,0 +1,259 @@
+﻿function foreacharg     (args, f) 
+function println        (...)
+function printlns       (...)
+function printsec       (...)
+function platform
+function iswin32
+function islinux
+function del            (delegator, delegate)
+function loadlibs
+//
+function constantf      (val)
+//
+function isdeltastring  (val)
+function isdeltaobject  (val)
+function isdeltanumber  (val)
+function isdeltaboolean (val)
+function isdeltanil     (val)
+function toboolean      (val)
+//
+function pfield                         (field_name)
+function dobj_get                       (dobj, field_name)
+function dobj_set                       (dobj, field_name, val)
+function dobj_contains                  (dobj, val)
+function dobj_contains_key              (dobj, key)
+function dobj_contains_any              (dobj, dobj_other)
+function dobj_contains_any_key          (dobj, keys)
+function dobj_contains_any_key_from     (dobj, dobj_other)
+function dobj_checked_set               (dobj, validKeys, key, val)
+//
+function iterable_contains              (iterable, value)
+function list_contains                  (iterable, value)
+function iterable_to_deltaobject        (iterable)
+function list_to_deltaobject            (list)
+function list_clone                     (list)
+//
+function file_isreadable                (filepath)
+function file_isabsolutepath            (filepath)
+
+////////////////////////////////////////////////////////////////////////
+function mixin_state                            (state, mixin)
+function stateFieldsClash                       (fields1, fields2)
+function prototypesClash                        (proto1, proto2)
+function mixinRequirementsFulfilled             (prototype, requirements)
+function stateFieldsClashForAnyMixIn            (object, newMixInStateFields)
+function prototypesClashForAnyMixIn             (object, newMixInPrototype)
+function mixinRequirementsFulfilledByAnyMixIn   (object, newMixInRequirements)
+function mixin                                  (newInstanceState, mixin_instance, mixin_prototype)
+//
+function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields)  
+                Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) 
+                        newObjectInstance: the new object instance whose state will be initialised
+                        validFieldsNames : a delta object with all the valid fields' names (in normal form)
+                        fields           : a delta object which maps field-names to values
+function Class_isa              (obj, a_class)
+function Class_classRegistry
+
+//////////////////////////////
+// Object-class-elements
+// for use in Class-class implementation (since it cannot use the Object class as a complete class)
+// *** Object mixin
+//     -----------------------
+//     <^> createInstance( )
+//     <^> Public methods
+//         - getClasses()
+//           returns a delta object containing references to all the classes
+//           mixed-in into this object.
+//         - addClass(class)
+//           adds a class to the registery of classes mixed-in into this Object.`
+//     <^> state fields
+//         - classes : std::list
+function Object_stateFields
+function Object_stateInitialiser
+function Object_prototype
+function Object_mixinRequirements
+function mixinObject                (newInstance, newInstanceStateFields, newInstancePrototype)
+function unmixinObject              (instance)
+
+//////////////////////////////
+// *** Class class - hand made
+//     -----------------------
+//     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields, className )
+//     <^> Public methods
+//         - createInstance( ... )
+//               stateInitialiser is called with arguments: the new object's state, a delta object
+//               with all the valid state member names
+//               and whatever other arguments are passed to createInstance().
+//         - mixInRequirements
+//               returns a delta object which contains strings that denote public methods
+//               which should exist in an object that is trying to mix in this class.
+//               If there are no mix-in requiremens this method may return [] or nil.
+//         - fulfillsRequirements(a_mixin)
+//               This method returns true if its prototype implements fully the requirements
+//               set by the provided mixin.
+//         - stateFieldsClash(a_mixin)
+//               Checks if this class' state fields (non-private-name-form) clash with the given
+//               mixin's.
+//         - prototypesClash(another_class)
+//               Checks if this class' prototype and the given prototype have some common
+//               members (public API methods).
+//         - mixIn(anotherClass, createInstanceArgumentsFunctor)
+//               registers a class to be mixed in when a new object of this calss is
+//               created. If the "anotherClass" cannot be mixed-in this one (due to
+//               common state entries or not fulfilling requirements) nil is returned.
+//               Otherwise, a "true" evaluating value is returned.
+//               "createInstanceArgumentsFunctor" is functor which is passed the same
+//               arguments that are passed to this class' "createInstance" and should return
+//               a delta object with arguments to be passed
+//               to the given class' "createInstance()" method in order to create an object
+//               for merging with a new object of this class.
+//         - getPrototype
+//               returns this class' prototype for inspection and possible alteration.
+//         - stateFields
+//               returns a delta object with this class' state fields (not in their private-field-name form)
+//         - get/setClassName
+//               gets/sets this class' name
+//     <^> state fields
+//         - stateInitialiser
+//         - prototype
+//         - mixInRequirements
+//         - stateFields
+//         - mixInRegistry
+//         - className
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** Path class
+//     Modeling a path, which can be relative or absolute.
+//     -----------------------
+//     <^> createInstance( path:deltastring, isabsolute:boolean )
+//     <^> Mixes in:
+//     <^> Public methods
+//         - deltaString
+//               returns this path as a delta string
+//         - IsAbsolute
+//         - IsRelative
+//         - Concat(another_relative_path:deltastring)
+//               returns a deltastring representing the concatenation of
+//               the two paths.
+//     <^> state fields
+//         - Path_path
+//         - Path_absolute
+
+function Path_isaPath     (obj)
+function Path_fromPath    (path)    "path" can be a deltastring or a Path instance.
+                                    If it is a deltastring, the path is checked for
+                                    absolutity by ::file_isabsolutepath.
+function Path_castFromPath(path)    same for "castFromPath" but if passed argument is a Path instance
+                                    already, it is returned as-is.
+                                    
+
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** Locatable class
+//     Has a location on the file system, represented as a Path object.
+//     -----------------------
+//     <^> createInstance( path:Path_fromPath() )
+//     <^> Public methods
+//         - get/setLocation (path:Path_fromPath())
+//               gets/sets this locatable's location
+//     <^> state fields
+//         - Locatable_path
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** Namable class
+//     A mix-in so that objects have names.
+//     -----------------------
+//     <^> createInstance( name:string )
+//     <^> Public methods
+//         - get/seName
+//               gets/sets this object's name.
+//     <^> state fields
+//         - Namable_name
+
+////////////////////////////////////////////////////////////////////////
+enum ProjectType: StaticLibrary
+                  DynamicLibrary
+                  Executable 
+function ProjectType_isValid(type)
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** CProject class
+//       A programming project, containing source fileds, include directories, subprojects.
+//     Subproject's location is interpreted as relative to this project's location.
+//     The building order (for the various generated project files) is as follows:
+//         - building every subproject, in order of addition to this project
+//         - building this project
+//       "Project manifestation" (or simply "manifestation") is the concept of this 
+//     projet object manifesting as a series of files on the filesystem which
+//     represent "project files" of a building system or another. Manifestations are
+//     identified by string identifiers (for e.x., Makefile, VS, etc).
+//       Each project object can hold an arbitrary object which represents
+//     manifestation-specific extra options or configuration. These are understanble only by
+//     the specific manifestation they refer to.
+//       Subprojects referred to by this project are automtically added to this project's
+//     dependencies according to the manifestation. They are also automatically included in
+//     this project's building process, according to their type. Executable projects are generally
+//     ignored in the building process (they are still built before this project though).
+//     -----------------------
+//     <^> createInstance( projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
+//     <^> Mixs in: Locatable, Namable
+//     <^> Public methods
+//         - addSource(path:Path-castable)
+//               adds a source file to this project. The filepath is relative to
+//               the project's location.
+//         - Sources
+//               returns an std::list with all the sources that belong to this project.
+//         - addIncludeDirectory(path:Path-castable)
+//               adds an include path to this project. The filepath is relative to
+//               the project's location.
+//         - IndluceDirectories
+//               returns an std::list with all the include directories of this project.
+//         - addSubproject(subproject:Project)
+//               adds a project as a subproject of this projet. The subproject's
+//               paths is interpreted as relative to this project's path.
+//         - Subprojects
+//               return an std::list with the subprojects' objects' instances.
+//         - addPreprocessorDefinition(def:deltastring)
+//               adds a preprocessor definition to be defined in all compilation units
+//               for this project.
+//         - PreprocessorDefinitions
+//               returns an std::list with all the extra preprocessor defnitions.
+//         - addLibraryPath(path:Path-castable)
+//               adds a library-search path for this project's building.
+//         - LibrariesPaths
+//               returns an std::list with the library search paths for this project's building.
+//         - addLibrary(path:Path-castable)
+//               adds an extra library file name to be included in this project's building
+//               process.
+//         - Libraries
+//               returns an std::list with all the extra libraries to be included in this project's
+//               building process.
+//         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
+//               sets the manifestation specific options for the given manifestation.
+//               Any previous configuration added for this manifestation is overwritten.
+//         - getManifestationConfiguration(manifestation_id:deltastring)
+//               returns this project's configuration (delta) object for the given
+//               manifestation.
+//         - isStaticLibrary
+//         - isDynamicLibrary
+//         - isExecutable
+//               return true if this project's type is StaticLibrary, DynamicLibrary or
+//               Executable, respectively.
+//         - set/getOutput (path:Path-castable)
+//               sets/gets this projects output filepath. When this is a library project,
+//               this is the produced library file's filepath. When this is an executable
+//               project, this will be the produced executable's filepath.
+//     <^> state fields
+//         01. CProject_type
+//         02. CProject_manifestationsConfigurations
+//         03. CProject_sources
+//         04. CProject_includes
+//         05. CProject_subprojects
+//         06. CProject_definitions
+//         07. CProject_librariesPaths
+//         08. CProject_libraries
+//         09. CProject_output
