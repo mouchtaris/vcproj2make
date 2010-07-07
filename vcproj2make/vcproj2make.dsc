@@ -629,11 +629,12 @@ function Locatable {
 		Locatable_class = Class().createInstance(
 			// stateInitialiser
 			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, location) {
-				assert( ::isdeltastring(location) );
+				local loc = String_fromString(location);
+				assert( loc );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
-					[ { #location: location } ]
+					[ { #location: loc } ]
 				);
 			},
 			// prototype
@@ -656,6 +657,7 @@ function Locatable {
 			// className 
 			#Locatable
 		);
+	return Locatable_class;
 }
 
 
@@ -714,17 +716,18 @@ function Locatable {
 // - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
 //   (if delegators are not collected, then maybe manual reference counting has to be
 //    implemented -- and the global assignment operatator overloading should be user)
-
+// Bug-reports
+// - When a function returns nothing, the error message is confusing
+//   Illegal use of '::Locatable()' as an object (type is ').
+{
+	::println(::Locatable().createInstance("something").getLocation());
+}
 
 // Show all classes
 {
+	::println("----");
 	local reg = ::dobj_get(Class_classRegistry(), #list);
 	foreach (class, reg)
 		::println(class);
 	::println("----");
-}
-
-
-{
-	::println(String().createInstance("something").deltaString());
 }
