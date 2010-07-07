@@ -158,6 +158,16 @@ function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, f
 function Class_isa(obj, a_class) {
 	return ::dobj_contains(obj.getClasses(), a_class);
 }
+function Class_classRegistry {
+	if (std::isundefined(static classRegistry) )
+		classRegistry = [
+			{ ::pfield(#list) : std::list_new() },
+			method add(class) {
+				::dobj_get(self, #list).push_back(class);
+			}
+		];
+	return classRegistry;
+}
 // Object-class-elements
 // for use in Class-class implementation (since it cannot use the Object class as a complete class)
 // *** Object mixin
@@ -406,6 +416,9 @@ function Class {
 			return "Class " + self.getClassName();
 		}][0]);
 		// TODO move this tostring() overloading to the Class class' prototype
+		
+		// Register class
+		::Class_classRegistry().add(newClassInstance);
 	}
 	if (std::isundefined(static Class_state)) {
 		Class_state = [];
@@ -521,4 +534,11 @@ function Point {
 	pclass = Point();
 	p = pclass.createInstance(3, 4);
 	p.serialise();
+	
+	::println(Class_classRegistry());
 }
+
+
+
+
+
