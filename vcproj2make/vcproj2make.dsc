@@ -106,6 +106,13 @@ function list_contains(iterable, value) {
 	return ::iterable_contains(iterable, value);
 }
 
+function list_clone(iterable) {
+	local result = std::list_new();
+	foreach (something, iterable)
+		result.push_back(something);
+	return result;
+}
+
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
 	local indices = std::tabindices(mixin);
@@ -696,7 +703,7 @@ function Namable {
 					return name;
 				},
 				method setName(name) {
-					local nm = ::Strin_fromString(name);
+					local nm = ::String_fromString(name);
 					assert( nm );
 					return ::dobj_set(self, #Namable_name, nm);
 				}
@@ -716,7 +723,7 @@ const ProjectType_StaticLibrary  = 1;
 const ProjectType_DynamicLibrary = 2;
 const ProjectType_Executable     = 3;
 //////////////////////////////
-// *** Project class
+// *** CProject class
 //       A programming project, containing source fileds, include directories, subprojects.
 //     Subproject's location is interpreted as relative to this project's location.
 //     The building order (for the various generated project files) is as follows:
@@ -729,28 +736,71 @@ const ProjectType_Executable     = 3;
 //       Each project object can hold an arbitrary object which represents
 //     manifestation-specific extra options or configuration. These are understanble only by
 //     the specific manifestation they refer to.
+//       Subprojects referred to by this project are automtically added to this project's
+//     dependencies according to the manifestation. They are also automatically included in
+//     this project's building process, according to their type. Executable projects are generally
+//     ignored in the building process (they are still built before this project though).
 //     -----------------------
 //     <^> createInstance( projectType:ProjectType )
 //     <^> Mixs in: Locatable, Namable
 //     <^> Public methods
-//         - addSource(filepath:string)
+//         - addSource(filepath:deltastring)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
-//         - addIncludeDirectory(filepath:string)
+//         - Sources
+//               returns an std::list with all the sources that belong to this project.
+//         - addIncludeDirectory(filepath:deltastring)
 //               adds an include path to this project. The filepath is relative to
 //               the project's location.
+//         - IndluceDirectories
+//               returns an std::list with all the include directories of this project.
 //         - addSubproject(subproject:Project)
 //               adds a project as a subproject of this projet. The subproject's
 //               paths is interpreted as relative to this project's path.
-//         - setManifestationConfiguration(manifestation_id:sting, config:delta object)
+//         - Subprojects
+//               return an std::list with the subprojects' objects' instances.
+//         - addPreprocessorDefinition(def:deltastring)
+//               adds a preprocessor definition to be defined in all compilation units
+//               for this project.
+//         - PreprocessorDefinitions
+//               returns a delta object with all the extra preprocessor defnitions.
+//         - addLibraryPath(filepath:deltastring)
+//               adds a library-search path for this project's building.
+//         - LibraryPaths
+//               returns an std::list with the library search paths for this project's building.
+//         - addLibrary(library_name:deltastring)
+//               adds an extra library file name to be included in this project's building
+//               process.
+//         - Libraries
+//               returns an std::list with all the extra libraries to be included in this project's
+//               building process.
+//         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
 //               sets the manifestation specific options for the given manifestation.
 //               Any previous configuration added for this manifestation is overwritten.
+//         - getManifestationConfiguration(manifestation_id:deltastring)
+//               returns this project's configuration (delta) object for the given
+//               manifestation.
+//         - isStaticLibrary
+//         - isDynamicLibrary
+//         - isExecutable
+//               return true if this project's type is StaticLibrary, DynamicLibrary or
+//               Executable, respectively.
+//         - set/getOutput (output_filepath:deltastring)
+//               sets/gets this projects output filepath. When this is a library project,
+//               this is the produced library file's filepath. When this is an executable
+//               project, this will be the produced executable's filepath.
 //     <^> state fields
-//         - Project_type
-//         - Project_manifestationsConfigurations
-//         - Project_sources
-//         - Project_includes
-//         - Project_subprojects
+//          1. CProject_type
+//          2. CProject_manifestationsConfigurations
+//          3. CProject_sources
+//          4. CProject_includes
+//          5. CProject_subprojects
+//          6. CProject_definitions
+//          7. CProject_librariesPaths
+//          8. CProject_libraries
+//          9. CProject_output
+//         10. 
+
 
 
 
