@@ -665,8 +665,92 @@ function Locatable {
 	return Locatable_class;
 }
 
+//////////////////////////////
+// *** Namable class
+//     A mix-in so that objects have names.
+//     -----------------------
+//     <^> createInstance( name:string )
+//     <^> Public methods
+//         - get/seName
+//               gets/sets this object's name.
+//     <^> state fields
+//         - Namable_name
+function Namable {
+	if (std::isundefined(static Namable_class))
+		Namable_class = ::Class().createInstance(
+			// stateInitialiser
+			function Namable_stateInitialiser(newInstance, validStateFieldsNames, name) {
+				local nm = ::String_fromString(name);
+				assert( nm );
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[ { #Namable_name: nm } ]
+				);
+			},
+			// prototype
+			[
+				method getName {
+					local name = ::dobj_get(self, #Namable_name);
+					assert( ::String_isaString(name) );
+					return name;
+				},
+				method setName(name) {
+					local nm = ::Strin_fromString(name);
+					assert( nm );
+					return ::dobj_set(self, #Namable_name, nm);
+				}
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #Namable_name ],
+			// className
+			#Namable
+		);
+	return Namable_class;
+}
 
-
+// ProjectType
+const ProjectType_StaticLibrary  = 1;
+const ProjectType_DynamicLibrary = 2;
+const ProjectType_Executable     = 3;
+//////////////////////////////
+// *** Project class
+//       A programming project, containing source fileds, include directories, subprojects.
+//     Subproject's location is interpreted as relative to this project's location.
+//     The building order (for the various generated project files) is as follows:
+//         - building every subproject, in order of addition to this project
+//         - building this project
+//       "Project manifestation" (or simply "manifestation") is the concept of this 
+//     projet object manifesting as a series of files on the filesystem which
+//     represent "project files" of a building system or another. Manifestations are
+//     identified by string identifiers (for e.x., Makefile, VS, etc).
+//       Each project object can hold an arbitrary object which represents
+//     manifestation-specific extra options or configuration. These are understanble only by
+//     the specific manifestation they refer to.
+//     -----------------------
+//     <^> createInstance( projectType:ProjectType )
+//     <^> Mixs in: Locatable, Namable
+//     <^> Public methods
+//         - addSource(filepath:string)
+//               adds a source file to this project. The filepath is relative to
+//               the project's location.
+//         - addIncludeDirectory(filepath:string)
+//               adds an include path to this project. The filepath is relative to
+//               the project's location.
+//         - addSubproject(subproject:Project)
+//               adds a project as a subproject of this projet. The subproject's
+//               paths is interpreted as relative to this project's path.
+//         - setManifestationConfiguration(manifestation_id:sting, config:delta object)
+//               sets the manifestation specific options for the given manifestation.
+//               Any previous configuration added for this manifestation is overwritten.
+//     <^> state fields
+//         - Project_type
+//         - Project_manifestationsConfigurations
+//         - Project_sources
+//         - Project_includes
+//         - Project_subprojects
 
 
 
