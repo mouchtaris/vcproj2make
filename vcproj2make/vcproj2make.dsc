@@ -546,11 +546,185 @@ function Point {
 	pclass = Point();
 	p = pclass.createInstance(3, 4);
 	p.serialise();
-	
-	::println(Class_classRegistry());
 }
 
 
 
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////// VCPROJ 2 MAKE ////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////
+// *** String class
+//     Has a location on the file system.
+//     -----------------------
+//     <^> createInstance( val:string )
+//     <^> Public methods
+//         - deltaString
+//               returns this String's value as a delta string
+//         - String_clone
+//               returns an identical new instance (deep copy)
+//     <^> state fields
+//         - String_deltaStringValue
+function String {
+	if (std::isundefined(static String_class))
+		String_class = Class().createInstance(
+			// stateInitialiser
+			function String_stateInitialiser(newInstance, validStateFieldsNames, val) {
+				assert( ::isdeltastring(val) );
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[ { #String_deltaStringValue: val } ]
+				);
+			},
+			//prototype
+			[
+				method deltaString {
+					local result = ::dobj_get(self, #String_deltaStringValue);
+					assert( ::isdeltastring(result) );
+					return result;
+				},
+				method String_clone {
+					return String().createInstance(self.deltaString());
+				}
+			],
+			//mixInRequirements
+			[],
+			//stateFields
+			[ #String_deltaStringValue ],
+			//className
+			#String
+		);
+	return String_class;
+}
+function String_isaString(something) {
+	return ::Class_isa(something, String());
+}
+function String_fromString(val) {
+	local result = nil;
+	if ( ::isdeltastring(val) )
+		result = String().createInstance(val);
+	else if (String_isaString(val))
+		result = val.String_clone();
+	return result;
+}
+
+//////////////////////////////
+// *** Locatable class
+//     Has a location on the file system.
+//     -----------------------
+//     <^> createInstance( location:string )
+//     <^> Public methods
+//         - get/setLocation
+//               gets/sets this locatable's location
+//     <^> state fields
+//         - location
+function Locatable {
+	if (std::isundefined(static Locatable_class))
+		Locatable_class = Class().createInstance(
+			// stateInitialiser
+			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, location) {
+				assert( ::isdeltastring(location) );
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[ { #location: location } ]
+				);
+			},
+			// prototype
+			[
+				method getLocation {
+					local location = ::dobj_get(self, #location);
+					assert( ::String_isaString(location) );
+					return location;
+				},
+				method setLocation(location) {
+					local loc = String_fromString(location);
+					assert( loc );
+					return ::dobj_set(self, #location, loc);
+				}
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #location ],
+			// className 
+			#Locatable
+		);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// TODO think about:
+// - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
+//   (if delegators are not collected, then maybe manual reference counting has to be
+//    implemented -- and the global assignment operatator overloading should be user)
+
+
+// Show all classes
+{
+	local reg = ::dobj_get(Class_classRegistry(), #list);
+	foreach (class, reg)
+		::println(class);
+	::println("----");
+}
+
+
+{
+	::println(String().createInstance("something").deltaString());
+}
