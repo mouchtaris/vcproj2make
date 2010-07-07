@@ -94,6 +94,17 @@ function dobj_checked_set(dobj, validKeys, key, val) {
 	assert( ::dobj_contains(validKeys, key) );
 	return ::dobj_set(dobj, key, val);
 }
+//
+// Utilities for iterables
+function iterable_contains(iterable, value) {
+	foreach (val, iterable)
+		if (val == value)
+			return true;
+	return false;
+}
+function list_contains(iterable, value) {
+	return ::iterable_contains(iterable, value);
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -163,6 +174,7 @@ function Class_classRegistry {
 		classRegistry = [
 			{ ::pfield(#list) : std::list_new() },
 			method add(class) {
+				assert( not ::list_contains(::dobj_get(self, #list), class) );
 				::dobj_get(self, #list).push_back(class);
 			}
 		];
