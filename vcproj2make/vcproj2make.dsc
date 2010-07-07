@@ -48,10 +48,16 @@ function loadlibs {
 		std::error("could not load xml parser lib");
 	return true;
 }
-//
+// Functional games
+function constantf(val) {
+	return [ method @operator () { return @val; }, { #val: val } ];
+}
+
+// type games
 function isdeltastring(val) { return std::typeof(val) == "String"; }
 function isdeltaobject(val) { return std::typeof(val) == "Object"; }
 function isdeltanumber(val) { return std::typeof(val) == "Number"; }
+function toboolean    (val) { if (val) return true; else return false; }
 //
 // "private field"
 function pfield(field_name) {
@@ -106,10 +112,30 @@ function list_contains(iterable, value) {
 	return ::iterable_contains(iterable, value);
 }
 
+function iterable_to_deltaobject(iterable) {
+	local i = 0;
+	local result = [];
+	foreach (something, iterable)
+		result[i++] = something;
+	return result;
+}
+function list_to_deltaobject(list) {
+	return iterable_to_deltaobject(list);
+}
+
 function list_clone(iterable) {
 	local result = std::list_new();
 	foreach (something, iterable)
 		result.push_back(something);
+	return result;
+}
+
+/// File utilities
+function file_isreadable(filepath) {
+	local fh = std::fileopen(filepath, "rt");
+	local result = ::toboolean(fh);
+	if (result)
+		std::fileclose(fh);
 	return result;
 }
 
@@ -273,12 +299,14 @@ function unmixinObject(instance) {
 //         - prototypesClash(another_class)
 //               Checks if this class' prototype and the given prototype have some common
 //               members (public API methods).
-//         - mixIn(anotherClass, createInstanceArguments)
+//         - mixIn(anotherClass, createInstanceArgumentsFunctor)
 //               registers a class to be mixed in when a new object of this calss is
 //               created. If the "anotherClass" cannot be mixed-in this one (due to
 //               common state entries or not fulfilling requirements) nil is returned.
 //               Otherwise, a "true" evaluating value is returned.
-//               "createInstanceArguments" is a delta object with arguments passed
+//               "createInstanceArgumentsFunctor" is functor which is passed the same
+//               arguments that are passed to this class' "createInstance" and should return
+//               a delta object with arguments to be passed
 //               to the given class' "createInstance()" method in order to create an object
 //               for merging with a new object of this class.
 //         - getPrototype
@@ -304,11 +332,12 @@ function Class {
 				local prototype        = self.getPrototype();
 				assert(std::iscallable(stateInitialiser));
 				assert(::isdeltaobject(prototype));
+				local self_stateFields = self.stateFields();
 
 				// New state
 				newInstanceState = [];
 				// initialise
-				stateInitialiser(newInstanceState, self.stateFields(), ...);
+				stateInitialiser(newInstanceState, self_stateFields, ...);
 				// Link to prototype
 				std::delegate(newInstanceState, prototype);
 				// new instance is initialised and linked to its original class,
@@ -323,8 +352,10 @@ function Class {
 				// perform mixins
 				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry)) {
 					local mixin = mixin_pair.class;
-					local createInstanceArguments = mixin_pair.args;
-					local mixin_instance = mixin.createInstance(|createInstanceArguments|);
+					local createInstanceArgumentsFunctor = mixin_pair.args;
+					local mixin_instance = mixin.createInstance(
+							|createInstanceArgumentsFunctor(newInstanceState, self_stateFields, ...)|
+					);
 					// We can perform assertions concerning clashes, since _newInstanceState_ 
 					// is a fully functioning object and classes can be registered as its mixins,
 					// as well as be queried about what classes are mixed-into it.
@@ -464,13 +495,16 @@ function Printable() {
 	if (std::isundefined(static Printable_class))
 		Printable_class = ::Class().createInstance(
 			// stateInitialiser
-			function Printable_stateInitialiser(newPointInstance, validStateFieldsNames) {
+			function Printable_stateInitialiser(newPointInstance, validStateFieldsNames, prefix) {
 				assert( std::tablength(validStateFieldsNames) == 0 );
+				if (prefix)
+					::dobj_set(newPointInstance, #prefix, prefix);
 			},
 			// prototype
 			[
 				method print {
-					::println(self.tostring());
+					local prefix = ::dobj_get(self, #prefix);
+					::println(prefix, self.tostring());
 				}
 			],
 			// mixInRequirements
@@ -516,7 +550,7 @@ function Point {
 	if (std::isundefined(static Point_class)) {
 		Point_class = ::Class().createInstance(
 			// stateInitialiser
-			function Point_stateInitialiser(newPointInstance, validStateFieldsNames, x, y) {
+			function Point_stateInitialiser(newPointInstance, validStateFieldsNames, x, y, printPrefix) {
 				assert( ::isdeltanumber(x) );
 				assert( ::isdeltanumber(y) );
 				Class_checkedStateInitialisation(
@@ -544,19 +578,26 @@ function Point {
 			// className
 			#Point
 		);
-		Point_class.mixIn(::Printable(), []);
-		Point_class.mixIn(::Serialisable(), []);
+		Point_class.mixIn(::Printable(), [
+			method @operator ()(newInstance, validStateFieldsNames, x, y, printPrefix) {
+				assert( newInstance.getX() == x );
+				assert( newInstance.getY() == y );
+				assert( ::isdeltastring(printPrefix) );
+				return [printPrefix];
+			}
+		]);
+		Point_class.mixIn(::Serialisable(), ::constantf([]));
 		// state clash
-		if (::Point_class_mixin_failure == "state clash")      Point_class.mixIn(Class().createInstance(function{},[],[],[#x],#Nothing), []);
-		if (::Point_class_mixin_failure == "proto clash")      Point_class.mixIn(Class().createInstance(function{},[{#getX:0}],[],[],#Nothing), []);
-		if (::Point_class_mixin_failure == "requirement fail") Point_class.mixIn(Class().createInstance(function{},[],[#Alalumpa],[],#Nothing), []);
+		if (::Point_class_mixin_failure == "state clash")      Point_class.mixIn(Class().createInstance(function{},[            ],[         ],[#x],#Nothing), ::constantf([]));
+		if (::Point_class_mixin_failure == "proto clash")      Point_class.mixIn(Class().createInstance(function{},[{#getX:0}   ],[         ],[  ],#Nothing), ::constantf([]));
+		if (::Point_class_mixin_failure == "requirement fail") Point_class.mixIn(Class().createInstance(function{},[            ],[#Alalumpa],[  ],#Nothing), ::constantf([]));
 	}
 	return Point_class;
 }
 
 {
 	pclass = Point();
-	p = pclass.createInstance(3, 4);
+	p = pclass.createInstance(3, 4, "Omphalus");
 	p.serialise();
 }
 
@@ -714,10 +755,32 @@ function Namable {
 	return Namable_class;
 }
 
+//////////////////////////////
+// *** Path class
+//     Modeling a path, which can be relative or absolute.
+//     -----------------------
+//     <^> createInstance( path:deltastring, isabsolute:boolean )
+//     <^> Mixes in:
+//     <^> Public methods
+//         - Path
+//               returns this path as a delta string
+//         - IsAbsolute
+//         - IsRelative
+//     <^> state fields
+//         - Path_path
+//         - Path_absolute
+
 // ProjectType
 const ProjectType_StaticLibrary  = 1;
 const ProjectType_DynamicLibrary = 2;
 const ProjectType_Executable     = 3;
+function ProjectType_isValid(type) {
+	return 
+		   type == ::ProjectType_StaticLibrary 
+		or type == ::ProjectType_DynamicLibrary
+		or type == ::ProjectType_Executable
+		;
+}
 //////////////////////////////
 // *** CProject class
 //       A programming project, containing source fileds, include directories, subprojects.
@@ -740,9 +803,93 @@ const ProjectType_Executable     = 3;
 //     <^> createInstance( projectType:ProjectType )
 //     <^> Mixs in: Locatable, Namable
 //     <^> Public methods
-//         - addSource(filepath:deltastring)
+//         - addSource(relpath:deltastring)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
+//         - Sources
+//               returns an std::list with all the sources that belong to this project.
+//         - addIncludeDirectory(relpath:deltastring)
+//               adds an include path to this project. The filepath is relative to
+//               the project's location.
+//         - IndluceDirectories
+//               returns an std::list with all the include directories of this project.
+//         - addSubproject(subproject:Project)
+//               adds a project as a subproject of this projet. The subproject's
+//               paths is interpreted as relative to this project's path.
+//         - Subprojects
+//               return an std::list with the subprojects' objects' instances.
+//         - addPreprocessorDefinition(def:deltastring)
+//               adds a preprocessor definition to be defined in all compilation units
+//               for this project.
+//         - PreprocessorDefinitions
+//               returns a delta object with all the extra preprocessor defnitions.
+//         - addLibraryPath(relpath:deltastring)
+//               adds a library-search path for this project's building.
+//         - LibraryPaths
+//               returns an std::list with the library search paths for this project's building.
+//         - addLibrary(relpath:deltastring)
+//               adds an extra library file name to be included in this project's building
+//               process.
+//         - Libraries
+//               returns an std::list with all the extra libraries to be included in this project's
+//               building process.
+//         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
+//               sets the manifestation specific options for the given manifestation.
+//               Any previous configuration added for this manifestation is overwritten.
+//         - getManifestationConfiguration(manifestation_id:deltastring)
+//               returns this project's configuration (delta) object for the given
+//               manifestation.
+//         - isStaticLibrary
+//         - isDynamicLibrary
+//         - isExecutable
+//               return true if this project's type is StaticLibrary, DynamicLibrary or
+//               Executable, respectively.
+//         - set/getOutput (output_filepath:deltastring)
+//               sets/gets this projects output filepath. When this is a library project,
+//               this is the produced library file's filepath. When this is an executable
+//               project, this will be the produced executable's filepath.
+//     <^> state fields
+//          1. CProject_type
+//          2. CProject_manifestationsConfigurations
+//          3. CProject_sources
+//          4. CProject_includes
+//          5. CProject_subprojects
+//          6. CProject_definitions
+//          7. CProject_librariesPaths
+//          8. CProject_libraries
+//          9. CProject_output
+//         10. 
+function CProject {
+	if (std::isundefined(static CProject_class)) {
+		CProject_class = ::Class().createInstnace(
+			// stateInitialiser
+			function CProject_stateInitialiser(newInstance, validStateFieldsNames, projectType) {
+				assert( ::ProjectType_isValid(projectType) );
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[
+						{ #CProject_type                        : projectType     },
+						{ #CProject_manifestationsConfigurations: []              },
+						{ #CProject_sources                     : std::list_new() },
+						{ #CProject_includes                    : std::list_new() },
+						{ #CProject_subprojects                 : std::list_new() },
+						{ #CProject_definitions                 : std::list_new() },
+						{ #CProject_librariesPaths              : std::list_new() },
+						{ #CProject_libraries                   : std::list_new() },
+						{ #CProject_output                      : false           }
+					]
+				);
+			},
+			// prototype
+			[
+//         - addSource(relpath:deltastring)
+//               adds a source file to this project. The filepath is relative to
+//               the project's location.
+				method addSource(relpath) {
+					//assert( ::file_isreadable(filepath) );
+					//::dobj_get(self, #CProject_sources).push_back(filepath);
+				}
 //         - Sources
 //               returns an std::list with all the sources that belong to this project.
 //         - addIncludeDirectory(filepath:deltastring)
@@ -785,18 +932,21 @@ const ProjectType_Executable     = 3;
 //               sets/gets this projects output filepath. When this is a library project,
 //               this is the produced library file's filepath. When this is an executable
 //               project, this will be the produced executable's filepath.
-//     <^> state fields
-//          1. CProject_type
-//          2. CProject_manifestationsConfigurations
-//          3. CProject_sources
-//          4. CProject_includes
-//          5. CProject_subprojects
-//          6. CProject_definitions
-//          7. CProject_librariesPaths
-//          8. CProject_libraries
-//          9. CProject_output
-//         10. 
-
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #CProject_type, #CProject_manifestationsConfigurations, #CProject_sources, #CProject_includes,
+			  #CProject_subprojects, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
+			  #CProject_output],
+			// className
+			#CProject
+		);
+		CProject_class.mixIn(::Locatable(), "");
+		CProject_class.mixIn(::Namable()  , "");
+	}
+	return CProject_class;
+}
 
 
 
