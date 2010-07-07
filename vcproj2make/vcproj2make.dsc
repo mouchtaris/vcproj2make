@@ -396,6 +396,11 @@ function Class {
 			},
 			method setClassName(className) {
 				return ::dobj_checked_set(self, self.stateFields(), #className, className);
+			},
+			//
+			// Delta overloadings -- NOT related to API
+			method @{
+				return "Class " + self.getClassName();
 			}
 		];
 	if (std::isundefined(static Class_stateFields))
@@ -420,11 +425,11 @@ function Class {
 		// Add custom delta-object overloadings
 		// TODO restore to original after bug has been fixed
 		// original
-//		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, method {
+//		newClassInstance."____SOMETHING___USELESS___" = std::tabmethodonme(newClassInstance, method {
 //			return "Class " + self.getClassName();
 //		});
 		// work-around
-		newClassInstance."tostring()" = std::tabmethodonme(newClassInstance, [method {
+		newClassInstance."____SOMETHING___USELESS___" = std::tabmethodonme(newClassInstance, [method {
 			return "Class " + self.getClassName();
 		}][0]);
 		// TODO move this tostring() overloading to the Class class' prototype
@@ -729,5 +734,28 @@ function Locatable {
 	local reg = ::dobj_get(Class_classRegistry(), #list);
 	foreach (class, reg)
 		::println(class);
+	::println("----");
+}
+
+{
+	::println("----");
+	c = [method@{return #c;}];
+	b = [method@{return #b;}];
+	a=[];
+	::println("A before delegation: ", a);
+	std::delegate(a, b);
+	::println("A delegated to b: ", a);
+	std::undelegate(a, b);
+	std::delegate(a, c);
+	::println("A delegated to c: ", a);
+	std::undelegate(a, c);
+	std::delegate(a, b);
+	std::delegate(a, c);
+	::println("A delegated to b, c: ", a);
+	std::undelegate(a, c);
+	std::undelegate(a, b);
+	std::delegate(a, c);
+	std::delegate(a, b);
+	::println("A delegated to c, b: ", a);
 	::println("----");
 }
