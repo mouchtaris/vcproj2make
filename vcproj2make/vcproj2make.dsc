@@ -57,6 +57,7 @@ function constantf(val) {
 function isdeltastring(val) { return std::typeof(val) == "String"; }
 function isdeltaobject(val) { return std::typeof(val) == "Object"; }
 function isdeltanumber(val) { return std::typeof(val) == "Number"; }
+function isdeltaboolean(val){ return std::typeof(val) == "Bool"  ; }
 function toboolean    (val) { if (val) return true; else return false; }
 //
 // "private field"
@@ -760,15 +761,57 @@ function Namable {
 //     Modeling a path, which can be relative or absolute.
 //     -----------------------
 //     <^> createInstance( path:deltastring, isabsolute:boolean )
-//     <^> Mixes in:
+//     <^> Mixes in: Locatable
 //     <^> Public methods
-//         - Path
+//         - getLocation [from Locatable]
 //               returns this path as a delta string
 //         - IsAbsolute
 //         - IsRelative
+//         - Merge(another_relative_path:deltastring)
 //     <^> state fields
-//         - Path_path
 //         - Path_absolute
+function Path {
+	if (std::isundefined(static Path_class)) {
+		Path_class = ::Class().createInstance(
+			// stateInitialiser
+			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
+				assert( ::isdeltaboolean(isabsolute) );
+				Class_checkedStateInitialisation(
+					newPathInstance,
+					validStateFieldsNames,
+					[ { #Path_absolute: isabsolute } ]
+				);
+			},
+			// prototype
+			[
+				method IsAbsolute {
+					local result = ::dobj_get(self, #Path_absolute);
+					assert( result != nil );
+					return result;
+				},
+				method IsRelative {
+					return not self.IsAbsolute();
+				},
+				method Merge(another_relative_path) {
+					assert( ::isdeltastring(another_relative_path) );
+					return self.getLocation() + "/" + another_relative_path;
+				}
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #Path_absolute ],
+			// className
+			#Path
+		);
+		Path_class.mixIn(::Locatable(), [
+			method @operator ()(newPathInstance, pathStateValidFieldsNames, path, isabsolute) {
+				return [path];
+			}
+		]); 
+	}
+	return Path_class;
+}
 
 // ProjectType
 const ProjectType_StaticLibrary  = 1;
@@ -1005,7 +1048,7 @@ function CProject {
 // - When a function returns nothing, the error message is confusing
 //   Illegal use of '::Locatable()' as an object (type is ').
 {
-	::println(::Locatable().createInstance("something").getLocation());
+	::println(::Path().createInstance("something", true).Merge("something else"));
 }
 
 // Show all classes
