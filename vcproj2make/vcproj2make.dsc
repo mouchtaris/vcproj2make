@@ -692,6 +692,16 @@ function Path_fromPath(path) {
 		result = ::Path().createInstance(path.deltaString(), path.IsAbsolute());
 	return result;
 }
+// same for "castFromPath" but if passed argument is a Path instance
+// already, it is returned as-is.
+function Path_castFromPath(path) {
+	local result = nil;
+	if ( ::isdeltastring(path) )
+		result = ::Path_fromPath(path);
+	else if ( ::Path_isaPath(path) )
+		result = path;
+	return result;
+}
 
 //////////////////////////////
 // *** Locatable class
@@ -816,12 +826,12 @@ function ProjectType_isValid(type) {
 //     <^> createInstance( projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
 //     <^> Mixs in: Locatable, Namable
 //     <^> Public methods
-//         - addSource(path:Path)
+//         - addSource(path:Path-castable)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
 //         - Sources
 //               returns an std::list with all the sources that belong to this project.
-//         - addIncludeDirectory(path:Path)
+//         - addIncludeDirectory(path:Path-castable)
 //               adds an include path to this project. The filepath is relative to
 //               the project's location.
 //         - IndluceDirectories
@@ -835,12 +845,12 @@ function ProjectType_isValid(type) {
 //               adds a preprocessor definition to be defined in all compilation units
 //               for this project.
 //         - PreprocessorDefinitions
-//               returns a delta object with all the extra preprocessor defnitions.
-//         - addLibraryPath(path:Path)
+//               returns an std::list with all the extra preprocessor defnitions.
+//         - addLibraryPath(path:Path-castable)
 //               adds a library-search path for this project's building.
-//         - LibraryPaths
+//         - LibrariesPaths
 //               returns an std::list with the library search paths for this project's building.
-//         - addLibrary(path:Path)
+//         - addLibrary(path:Path-castable)
 //               adds an extra library file name to be included in this project's building
 //               process.
 //         - Libraries
@@ -857,7 +867,7 @@ function ProjectType_isValid(type) {
 //         - isExecutable
 //               return true if this project's type is StaticLibrary, DynamicLibrary or
 //               Executable, respectively.
-//         - set/getOutput (path:Path)
+//         - set/getOutput (path:Path-castable)
 //               sets/gets this projects output filepath. When this is a library project,
 //               this is the produced library file's filepath. When this is an executable
 //               project, this will be the produced executable's filepath.
@@ -896,28 +906,90 @@ function CProject {
 			// prototype
 			[
 				method addSource(path) {
-					assert( ::Path_isaPath(path) );
-					::dobj_get(self, #CProject_sources).push_back(path);
+					local p = ::Path_castFromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_get(self, #CProject_sources).push_back(p);
 				},
 				method Sources {
 					return ::list_clone(::dobj_get(self, #CProject_source));
+				},
+				method addIncludeDirectory(path) {
+					local p = ::Path_castFromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_get(self, #CProject_includes).push_back(p);
+				},
+				method IndluceDirectories {
+					return ::list_clone(::dobj_get(self, #CProject_includes));
+				},
+				method addSubproject(project) {
+					assert( ::Class_isa(project, ::CProject()) );
+					::dobj_get(self, #CProject_subprojects).push_back(project);
+				},
+				method Subprojects {
+					return ::list_clone(::dobj_get(self, #CProject_subprojects));
+				},
+				method addPreprocessorDefinition(definition) {
+					assert( ::isdeltastring(definition) );
+					::dobj_get(self, #CProject_definitions).push_back(definition);
+				},
+				method PreprocessorDefinitions {
+					return ::list_clone(::dobj_get(self, #CProject_definitions));
+				},
+				method addLibraryPath(path) {
+					local p = ::Path_castFromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_get(self, #CProject_librariesPaths).push_back(p);
+				},
+				method LibrariesPaths {
+					return ::list_clone(::dobj_get(self, #Cproject_librariesPaths));
+				},
+				method addLibrary(path) {
+					local p = ::Path_castFromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_get(self, #CProject_libraries).push_back(p);
+				},
+				method Libraries {
+					return ::list_clone(::dobj_get(self, #CProject_libraries));
+				},
+				method setManifestationConfiguration(manifestationID, configuration) {
+					assert( ::isdeltastring(manifestationID) );
+					assert( ::isdeltaobject(configuration) );
+					local configs = ::dobj_get(self, #CProject_manifestationsConfigurations);
+					assert( ::isdeltaobject(configs) );
+					configs[manifestationID] = configuration;
+				},
+				method getManifestationConfiguration(manifestationID) {
+					assert( ::isdeltastring(manifestationID) );
+					local configs = ::dobj_get(self, #CProject_manifestationsConfigurations);
+					assert( ::isdeltaobject(configs) );
+					local config = configs[manifestationID];
+					assert( not ::isdeltanil(config) );
+					return config;
+				},
+				method isStaticLibrary {
+					local type = ::dobj_get(self, #CProject_type);
+					assert( ::ProjectType_isValid(type));
+					return type == ProjectType_StaticLibrary;
+				},
+				method isDynicLibrary {
+					local type = ::dobj_get(self, #CProject_type);
+					assert( ::ProjectType_isValid(type));
+					return type == ProjectType_DynamicLibrary;
+				},
+				method isExecutable {
+					local type = ::dobj_get(self, #CProject_type);
+					assert( ::ProjectType_isValid(type));
+				},
+				method getOutput {
+					local outputPath = ::dobj_get(self, #CProject_output);
+					assert( ::Path_isaPath(outputPath) );
+					return outputPath;
+				},
+				method setOutput(path) {
+					local p = ::Path_fromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_set(self, #CProject_output, p);
 				}
-//         - addIncludeDirectory(filepath:deltastring)
-//         - IndluceDirectories
-//         - addSubproject(subproject:Project)
-//         - Subprojects
-//         - addPreprocessorDefinition(def:deltastring)
-//         - PreprocessorDefinitions
-//         - addLibraryPath(filepath:deltastring)
-//         - LibraryPaths
-//         - addLibrary(library_name:deltastring)
-//         - Libraries
-//         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
-//         - getManifestationConfiguration(manifestation_id:deltastring)
-//         - isStaticLibrary
-//         - isDynamicLibrary
-//         - isExecutable
-//         - set/getOutput (output_filepath:deltastring)
 			],
 			// mixInRequirements
 			[],
