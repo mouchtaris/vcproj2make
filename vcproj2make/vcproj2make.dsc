@@ -582,57 +582,57 @@ function Point {
 //               returns an identical new instance (deep copy)
 //     <^> state fields
 //         - String_deltaStringValue
-function String {
-	if (std::isundefined(static String_class))
-		String_class = Class().createInstance(
-			// stateInitialiser
-			function String_stateInitialiser(newInstance, validStateFieldsNames, val) {
-				assert( ::isdeltastring(val) );
-				Class_checkedStateInitialisation(
-					newInstance,
-					validStateFieldsNames,
-					[ { #String_deltaStringValue: val } ]
-				);
-			},
-			//prototype
-			[
-				method deltaString {
-					local result = ::dobj_get(self, #String_deltaStringValue);
-					assert( ::isdeltastring(result) );
-					return result;
-				},
-				method String_clone {
-					return String().createInstance(self.deltaString());
-				}
-			],
-			//mixInRequirements
-			[],
-			//stateFields
-			[ #String_deltaStringValue ],
-			//className
-			#String
-		);
-	return String_class;
-}
-function String_isaString(something) {
-	return ::Class_isa(something, String());
-}
-function String_fromString(val) {
-	local result = nil;
-	if ( ::isdeltastring(val) )
-		result = String().createInstance(val);
-	else if (String_isaString(val))
-		result = val.String_clone();
-	return result;
-}
+//function String {
+//	if (std::isundefined(static String_class))
+//		String_class = Class().createInstance(
+//			// stateInitialiser
+//			function String_stateInitialiser(newInstance, validStateFieldsNames, val) {
+//				assert( ::isdeltastring(val) );
+//				Class_checkedStateInitialisation(
+//					newInstance,
+//					validStateFieldsNames,
+//					[ { #String_deltaStringValue: val } ]
+//				);
+//			},
+//			//prototype
+//			[
+//				method deltaString {
+//					local result = ::dobj_get(self, #String_deltaStringValue);
+//					assert( ::isdeltastring(result) );
+//					return result;
+//				},
+//				method String_clone {
+//					return String().createInstance(self.deltaString());
+//				}
+//			],
+//			//mixInRequirements
+//			[],
+//			//stateFields
+//			[ #String_deltaStringValue ],
+//			//className
+//			#String
+//		);
+//	return String_class;
+//}
+//function String_isaString(something) {
+//	return ::Class_isa(something, String());
+//}
+//function String_fromString(val) {
+//	local result = nil;
+//	if ( ::isdeltastring(val) )
+//		result = String().createInstance(val);
+//	else if (String_isaString(val))
+//		result = val.String_clone();
+//	return result;
+//}
 
 //////////////////////////////
 // *** Locatable class
 //     Has a location on the file system.
 //     -----------------------
-//     <^> createInstance( location:string )
+//     <^> createInstance( location:deltastring )
 //     <^> Public methods
-//         - get/setLocation
+//         - get/setLocation (location:deltastring)
 //               gets/sets this locatable's location
 //     <^> state fields
 //         - location
@@ -641,25 +641,23 @@ function Locatable {
 		Locatable_class = Class().createInstance(
 			// stateInitialiser
 			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, location) {
-				local loc = String_fromString(location);
-				assert( loc );
+				assert( ::isdeltastring(location) );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
-					[ { #location: loc } ]
+					[ { #location: location } ]
 				);
 			},
 			// prototype
 			[
 				method getLocation {
 					local location = ::dobj_get(self, #location);
-					assert( ::String_isaString(location) );
+					assert( ::isdeltastring(location) );
 					return location;
 				},
 				method setLocation(location) {
-					local loc = String_fromString(location);
-					assert( loc );
-					return ::dobj_set(self, #location, loc);
+					assert( ::isdeltastring(location) );
+					return ::dobj_set(self, #location, location);
 				}
 			],
 			// mixInRequirements
@@ -687,25 +685,23 @@ function Namable {
 		Namable_class = ::Class().createInstance(
 			// stateInitialiser
 			function Namable_stateInitialiser(newInstance, validStateFieldsNames, name) {
-				local nm = ::String_fromString(name);
-				assert( nm );
+				assert( ::isdeltastring(name) );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
-					[ { #Namable_name: nm } ]
+					[ { #Namable_name: name } ]
 				);
 			},
 			// prototype
 			[
 				method getName {
 					local name = ::dobj_get(self, #Namable_name);
-					assert( ::String_isaString(name) );
+					assert( ::isdeltastring(name) );
 					return name;
 				},
 				method setName(name) {
-					local nm = ::String_fromString(name);
-					assert( nm );
-					return ::dobj_set(self, #Namable_name, nm);
+					assert( ::isdeltastring(name) );
+					return ::dobj_set(self, #Namable_name, name);
 				}
 			],
 			// mixInRequirements
