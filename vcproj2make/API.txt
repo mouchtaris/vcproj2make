@@ -134,7 +134,7 @@ function unmixinObject              (instance)
 //         - IsAbsolute
 //         - IsRelative
 //         - Concatenate(another_relative_path:deltastring)
-//               returns a deltastring representing the concatenation of
+//               returns a Path representing the concatenation of
 //               the two paths.
 //     <^> state fields
 //         - Path_path
@@ -247,6 +247,10 @@ function ProjectType_isValid(type)
 //               sets/gets this projects output filepath. When this is a library project,
 //               this is the produced library file's filepath. When this is an executable
 //               project, this will be the produced executable's filepath.
+//        - set/getAPIDirectory(path:Path-transformable)
+//               sets/gets this projects root API directory filepath (a Path instance).
+//               The API directory is where this project stores its header files, in
+//               case this is a library project.
 //     <^> state fields
 //         01. CProject_type
 //         02. CProject_manifestationsConfigurations
@@ -257,3 +261,4 @@ function ProjectType_isValid(type)
 //         07. CProject_librariesPaths
 //         08. CProject_libraries
 //         09. CProject_output
+//         10. CProject_apidir

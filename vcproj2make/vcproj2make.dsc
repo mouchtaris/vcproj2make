@@ -1,4 +1,5 @@
-const nl = "\n";
+const nl = "
+";
 const pref = " ****** ";
 function foreacharg(args, f) {
 	local args_start = args.start;
@@ -122,7 +123,7 @@ function iterable_to_deltaobject(iterable) {
 	return result;
 }
 function list_to_deltaobject(list) {
-	return iterable_to_deltaobject(list);
+	return ::iterable_to_deltaobject(list);
 }
 
 function list_clone(iterable) {
@@ -631,7 +632,26 @@ function Point {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function Path {
-	if (std::isundefined(static Path_class))
+	function isaPath(obj) {
+		return ::Class_isa(obj, ::Path());
+	}
+	function fromPath(path) {
+		local result = nil;
+		if ( ::isdeltastring(path) )
+			result = ::Path().createInstance(path, ::file_isabsolutepath(path));
+		else if ( isaPath(path) )
+			result = ::Path().createInstance(path.deltaString(), path.IsAbsolute());
+		return result;
+	}
+	function castFromPath(path) {
+		local result = nil;
+		if ( ::isdeltastring(path) )
+			result = fromPath(path);
+		else if ( isaPath(path) )
+			result = path;
+		return result;
+	}
+	if (std::isundefined(static Path_class)) {
 		Path_class = ::Class().createInstance(
 			// stateInitialiser
 			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
@@ -658,8 +678,15 @@ function Path {
 					return not self.IsAbsolute();
 				},
 				method Concatenate(another_relative_path) {
-					assert( ::isdeltastring(another_relative_path) );
-					return self.deltaString() + "/" + another_relative_path;
+					local result = nil;
+					if ( ::isdeltastring(another_relative_path) )
+						result = self.Concatenate( fromPath(another_relative_path) );
+					else {
+						assert( isaPath(another_relative_path) );
+						assert( another_relative_path.IsRelative() );
+						result = fromPath(self.deltaString() + "/" + another_relative_path.deltaString());
+					}
+					return result;
 				}
 			],
 			// mixInRequirements
@@ -669,27 +696,15 @@ function Path {
 			// className
 			#Path
 		);
+		Path_class.isaPath      = isaPath;
+		Path_class.fromPath     = fromPath;
+		Path_class.castFromPath = castFromPath;
+	}
 	return Path_class;
 }
-function Path_isaPath(obj) {
-	return ::Class_isa(obj, ::Path());
-}
-function Path_fromPath(path) {
-	local result = nil;
-	if ( ::isdeltastring(path) )
-		result = ::Path().createInstance(path, ::file_isabsolutepath(path));
-	else if ( ::Path_isaPath(path) )
-		result = ::Path().createInstance(path.deltaString(), path.IsAbsolute());
-	return result;
-}
-function Path_castFromPath(path) {
-	local result = nil;
-	if ( ::isdeltastring(path) )
-		result = ::Path_fromPath(path);
-	else if ( ::Path_isaPath(path) )
-		result = path;
-	return result;
-}
+function Path_isaPath     (obj ) { return Path().isaPath     (obj ); }
+function Path_fromPath    (path) { return Path().fromPath    (path); }
+function Path_castFromPath(path) { return Path().castFromPath(path); }
 
 function Locatable {
 	if (std::isundefined(static Locatable_class))
@@ -792,7 +807,8 @@ function CProject {
 						{ #CProject_definitions                 : std::list_new() },
 						{ #CProject_librariesPaths              : std::list_new() },
 						{ #CProject_libraries                   : std::list_new() },
-						{ #CProject_output                      : false           }
+						{ #CProject_output                      : false           },
+						{ #CProject_apidir                      : false           }
 					]
 				);
 			},
@@ -881,6 +897,16 @@ function CProject {
 					local p = ::Path_fromPath(path);
 					assert( ::Path_isaPath(p) );
 					::dobj_set(self, #CProject_output, p);
+				},
+				method setAPIDirectory(path) {
+					local p = ::Path_fromPath(path);
+					assert( ::Path_isaPath(p) );
+					::dobj_set(self, #CProject_apidir, p);
+				},
+				method getAPIDirectory {
+					local apidir = ::dobj_get(self, #CProject_apidir);
+					assert( ::Path_isaPath(apidir) );
+					return apidir;
 				}
 			],
 			// mixInRequirements
@@ -888,7 +914,7 @@ function CProject {
 			// stateFields
 			[ #CProject_type, #CProject_manifestationsConfigurations, #CProject_sources, #CProject_includes,
 			  #CProject_subprojects, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
-			  #CProject_output],
+			  #CProject_output, #CProject_apidir],
 			// className
 			#CProject
 		);
@@ -938,6 +964,18 @@ function MakefileManifestation(project, basedir__) {
 		assert( ::Path_isaPath(path) );
 		return deltastringToString(path.deltaString());
 	}
+	function subprojectToCPPFLAGS_functor(parent_project) {
+		return [
+			@parentproj: parent_project,
+			method @operator()(subproj) {
+				if (subproj.isDynicLibrary() or subproj.isStaticLibrary()) {
+					local parentproj = @parentproj;
+					assert( subproj.getLocation().IsRelative() );
+					return pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
+				}
+			}
+		];
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
 			method writePre(ID) {
@@ -957,12 +995,21 @@ function MakefileManifestation(project, basedir__) {
 			method writePrefixedOptions(iterable, prefix, toString) {
 				assert( ::isdeltastring(prefix) );
 				assert( std::iscallable(toString) );
-				foreach (option, iterable)
-					std::filewrite(@fh, "\n        ", prefix, "'", toString(option), "' \\");
+				foreach (option, iterable) {
+					local option_string = toString(option);
+					if (option_string) {
+						assert( ::isdeltastring(option_string) );
+						std::filewrite(@fh, "\n        ", prefix, "'", option_string, "' \\");
+					}
+				}
+			},
+			method writeSubprojectRelatedCPPFLAGS {
+				@writePrefixedOptions(@proj.Subprojects(), "-I", subprojectToCPPFLAGS_functor(@proj));
 			},
 			method writeCPPFLAGS {
 				std::filewrite(@fh, "\nCPPFLAGS = \\");
 				@writePre(#CPPFLAGS);
+				@writeSubprojectRelatedCPPFLAGS();
 				@writePrefixedOptions(@proj.PreprocessorDefinitions(), "-D", deltastringToString);
 				@writePrefixedOptions(@proj.IncludeDirectories()     , "-I", pathToString);
 				@writePost(#CPPFLAGS);
@@ -992,9 +1039,9 @@ function MakefileManifestation(project, basedir__) {
 			// before calling, set basedir (setBasedir())
 			method writeAll {
 				local pathstr = @basedir.Concatenate("Makefile");
-				::println("Writing crap to ", pathstr);
+				::println("Writing crap to ", pathstr.deltaString());
 				// TODO restore after VM bug has been fixed
-				local fh = std::fileopen(pathstr, "wt");
+				local fh = std::fileopen(pathstr.deltaString(), "wt");
 				if (fh) {
 					@fh = fh;
 					@writeFlags();
@@ -1078,25 +1125,42 @@ function MakefileManifestation(project, basedir__) {
 // - When a function returns nothing, the error message is confusing
 //   Illegal use of '::Locatable()' as an object (type is ').
 {
+	local projlibisi = ::CProject().createInstance(ProjectType_StaticLibrary, "./libisi/Project", "Lib ISI  for the elderly");
+	projlibisi.setAPIDirectory("../Include");
+
+	local projcalc_type = 
+			ProjectType_Executable
+//			ProjectType_StaticLibrary
+	;
+	local projcalc = ::CProject().createInstance(projcalc_type, "./calc/Project", "A calculator for lulz");
+	projcalc.setAPIDirectory("../bin");
+
 	local proj = ::CProject().createInstance(ProjectType_Executable, "/something/in/hell", "Loolis projec");
+	proj.addSubproject(projlibisi);
+	proj.addSubproject(projcalc);
+	//
 	proj.addPreprocessorDefinition("Sakhs");
 	proj.addPreprocessorDefinition("_LINUX_");
 	proj.addPreprocessorDefinition("_DEBUG");
 	proj.addPreprocessorDefinition("__NM_UNUSED(A)=A __attribute__((unused))");
+	//
 	proj.addLibrary("m");
 	proj.addLibrary("pthread");
 	proj.addLibrary("IsiLib");
 	proj.addLibrary("DeltaVMCompilerAndStdLibContainerElementsComponent");
+	//
 	proj.addLibraryPath("/usr/bin");
 	proj.addLibraryPath("../../..//Tools/Detla/Common/Lib/");
 	proj.addLibraryPath("./");
 	proj.addLibraryPath("../");
 	proj.addLibraryPath("/");
+	//
 	proj.addIncludeDirectory("/jinka");
 	proj.addIncludeDirectory("///////////");
 	proj.addIncludeDirectory("@#@*@*@#@##@#@&%^");
 	proj.addIncludeDirectory("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"");
 	proj.addIncludeDirectory(".///////////");
+	//
 	proj.setManifestationConfiguration(#Makefile,
 		[
 			@CPPFLAGS_pre : [ "-custom_whatever=a_cpp_pre_flag" ],
