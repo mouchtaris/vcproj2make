@@ -740,7 +740,7 @@ function CProject {
 					assert( ::Path_isaPath(p) );
 					::dobj_get(self, #CProject_includes).push_back(p);
 				},
-				method IndluceDirectories {
+				method IncludeDirectories {
 					return ::list_clone(::dobj_get(self, #CProject_includes));
 				},
 				method addSubproject(project) {
@@ -775,7 +775,6 @@ function CProject {
 				},
 				method setManifestationConfiguration(manifestationID, configuration) {
 					assert( ::isdeltastring(manifestationID) );
-					assert( ::isdeltaobject(configuration) );
 					local configs = ::dobj_get(self, #CProject_manifestationsConfigurations);
 					assert( ::isdeltaobject(configs) );
 					configs[manifestationID] = configuration;
@@ -842,24 +841,64 @@ function CProject_isaCProject(obj) {
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
 function MakefileManifestation(project, basedir__) {
+	function pathToString(path) {
+		assert( ::Path_isaPath(path) );
+		return path.deltaString();
+	}
+	function deltastringToString(str) {
+		assert( ::isdeltastring(str) );
+		return str;
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
+			method writePre(ID) {
+				if (local pres = @config[ID + "_pre"])
+					foreach (preflag, pres)
+						std::filewrite(@fh, "\n        ", preflag, " \\");
+				else
+					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_pre");
+			},
+			method writePost(ID) {
+				if (local posts = @config[ ID + "_post"])
+					foreach (postflag, posts)
+						std::filewrite(@fh, "\n        ", postflag, " \\");
+				else
+					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_post");
+			},
+			method writePrefixedOptions(iterable, prefix, toString) {
+				assert( ::isdeltastring(prefix) );
+				assert( std::iscallable(toString) );
+				foreach (option, iterable)
+					std::filewrite(@fh, "\n        ", prefix, "'", toString(option), "' \\");
+			},
+			method writeCPPFLAGS {
+				std::filewrite(@fh, "\nCPPFLAGS = \\");
+				@writePre(#CPPFLAGS);
+				@writePrefixedOptions(@proj.PreprocessorDefinitions(), "-D", deltastringToString);
+				@writePrefixedOptions(@proj.IncludeDirectories()     , "-I", pathToString);
+				@writePost(#CPPFLAGS);
+				std::filewrite(@fh, "\n");
+			},
+			method writeLDFLAGS {
+				std::filewrite(@fh, "\nLDFLAGS = \\");
+				@writePre(#LDFLAGS);
+				@writePrefixedOptions(@proj.LibrariesPaths(), "-L", pathToString);
+				@writePrefixedOptions(@proj.Libraries()     , "-l", pathToString);
+				@writePost(#LDFLAGS);
+				std::filewrite(@fh, "\n");
+			},
+			method writeCXXFLAGS {
+				std::filewrite(@fh, "\nCXXFLAGS = \\");
+				@writePre(#CXXFLAGS);
+				@writePrefixedOptions(["pedantic", "Wall", "ansi"], "-", deltastringToString);
+				@writePost(#CXXFLAGS);
+				std::filewrite(@fh, "\n");
+			},
 			method writeFlags {
-				// CPPFLAGS
-				std::filewrite(@fh, "# Flagspace\nSHELL = /bin/bash\n\nCPPFLAGS = ");
-				foreach (cppdef, @proj.PreprocessorDefinitions())
-					std::filewrite(@fh, " -D'", cppdef, "' ");
-				// LDFLAGS
-				std::filewrite(@fh, "\nLDFLAGS = ");
-				foreach (libpath, @proj.LibrariesPaths())
-					std::filewrite(@fh, " -L'", libpath.deltaString(), "' ");
-				foreach (lib, @proj.Libraries()) {
-					assert( lib.IsRelative() );
-					std::filewrite(@fh, " -l'", lib.deltaString(), "' ");
-				}
-				// CXXFLAGS
-				std::filewrite(@fh, "\nCXXFLAGS = -pedantic -Wall -ansi ");
-				
+				std::filewrite(@fh, "# Flagspace\nSHELL = /bin/bash\n");
+				@writeCPPFLAGS();
+				@writeLDFLAGS();
+				@writeCXXFLAGS();
 			},
 			// before calling, set basedir (setBasedir())
 			method writeAll {
@@ -870,26 +909,28 @@ function MakefileManifestation(project, basedir__) {
 				if (fh) {
 					@fh = fh;
 					@writeFlags();
+					std::filewrite(@fh, "\n\n\nall:\n	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS)\n\n");
 					std::fileclose(@fh);
 				}
 				else
 					::println("Error, could not open file ", pathstr);
 			},
-			method setBasedir(basedir) {
+			method init(basedir, project) {
 				assert( ::Path_isaPath(basedir) );
 				@basedir = basedir;
-			},
-			method setProject(project) {
+				//
 				assert( ::CProject_isaCProject(project) );
 				@proj = project;
+				//
+				@config = @proj.getManifestationConfiguration(#Makefile);
+				assert( ::isdeltaobject(@config) );
 			}
 		];
 	else
 		makemani = makemani;
 	assert( ::CProject_isaCProject(project) );
 	local basedir = ::Path_castFromPath(basedir__);
-	makemani.setBasedir(basedir);
-	makemani.setProject(project);
+	makemani.init(basedir, project);
 	makemani.writeAll();
 }
 
@@ -962,6 +1003,21 @@ function MakefileManifestation(project, basedir__) {
 	proj.addLibraryPath("./");
 	proj.addLibraryPath("../");
 	proj.addLibraryPath("/");
+	proj.addIncludeDirectory("/jinka");
+	proj.addIncludeDirectory("///////////");
+	proj.addIncludeDirectory("@#$@*@$*@#$@#$#@$#@&%^");
+	proj.addIncludeDirectory("../../../../../../../../../32423423423424234@#$%*@*#%@%@%@$?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-");
+	proj.addIncludeDirectory(".///////////");
+	proj.setManifestationConfiguration(#Makefile,
+		[
+			@CPPFLAGS_pre : [ "-custom_whatever=a_cpp_pre_flag" ],
+			@CPPFLAGS_post: [ "-invalid_option_whatever=a_cpp_post_flag"],
+			@LDFLAGS_pre  : [ "-lolwhat=an_ld_flag_pre" ],
+			@LDFLAGS_post : [ "-whatisthis=an_ld_flag_post" ],
+			@CXXFLAGS_pre : [ "-flute=a_cxx_flag_pre" ],
+			@CXXFLAGS_post: [ "-lute=a_cxx_flag_post" ]
+		]
+	);
 	MakefileManifestation(proj, ".");
 	::println(proj);
 }
