@@ -807,7 +807,8 @@ function CProject {
 						{ #CProject_definitions                 : std::list_new() },
 						{ #CProject_librariesPaths              : std::list_new() },
 						{ #CProject_libraries                   : std::list_new() },
-						{ #CProject_output                      : false           },
+						{ #CProject_outputName                  : false           },
+						{ #CProject_outputDirectory             : false           },
 						{ #CProject_apidir                      : false           }
 					]
 				);
@@ -888,15 +889,24 @@ function CProject {
 					local type = ::dobj_get(self, #CProject_type);
 					assert( ::ProjectType_isValid(type));
 				},
-				method getOutput {
-					local outputPath = ::dobj_get(self, #CProject_output);
-					assert( ::Path_isaPath(outputPath) );
-					return outputPath;
+				method getOutputDirectory {
+					local outputDirectory = ::dobj_get(self, #CProject_outputDirectory);
+					assert( ::Path().isaPath(outputDirectory) );
+					return outputDirectory;
 				},
-				method setOutput(path) {
-					local p = ::Path_fromPath(path);
-					assert( ::Path_isaPath(p) );
-					::dobj_set(self, #CProject_output, p);
+				method setOutputDirectory(pathable) {
+					local path = ::Path().fromPath(pathable);
+					assert( ::Path().isaPath(path) );
+					::dobj_set(self, #CProject_outputDirectory, path);
+				},
+				method getOutputName {
+					local name = ::dobj_get(self, #CProject_outputName);
+					assert( ::isdeltastring(name) );
+					return name;
+				},
+				method setOutputName(name) {
+					assert( ::isdeltastring(name) );
+					::dobj_checked_set(self, ::CProject().stateFields(), #CProject_outputName, name);
 				},
 				method setAPIDirectory(path) {
 					local p = ::Path_fromPath(path);
@@ -914,7 +924,7 @@ function CProject {
 			// stateFields
 			[ #CProject_type, #CProject_manifestationsConfigurations, #CProject_sources, #CProject_includes,
 			  #CProject_subprojects, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
-			  #CProject_output, #CProject_apidir],
+			  #CProject_outputDirectory, #CProject_outputName, #CProject_apidir],
 			// className
 			#CProject
 		);
@@ -968,11 +978,13 @@ function MakefileManifestation(project, basedir__) {
 		return [
 			@parentproj: parent_project,
 			method @operator()(subproj) {
+				local result = nil;
 				if (subproj.isDynicLibrary() or subproj.isStaticLibrary()) {
 					local parentproj = @parentproj;
 					assert( subproj.getLocation().IsRelative() );
-					return pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
+					result = pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
 				}
+				return result;
 			}
 		];
 	}
@@ -1127,17 +1139,23 @@ function MakefileManifestation(project, basedir__) {
 {
 	local projlibisi = ::CProject().createInstance(ProjectType_StaticLibrary, "./libisi/Project", "Lib ISI  for the elderly");
 	projlibisi.setAPIDirectory("../Include");
+	projlibisi.setOutputDirectory("../lib/");
+	projlibisi.setOutputName("libisi.so");
 
-	local projcalc_type = 
-			ProjectType_Executable
-//			ProjectType_StaticLibrary
-	;
-	local projcalc = ::CProject().createInstance(projcalc_type, "./calc/Project", "A calculator for lulz");
-	projcalc.setAPIDirectory("../bin");
+	local projcalc = ::CProject().createInstance(ProjectType_Executable, "./calc/Project", "A calculator for lulz");
+	projcalc.setOutputDirectory("../bin/");
+	projcalc.setOutputName("calc");
+
+
+	local projfail = ::CProject().createInstance(ProjectType_StaticLibrary, "./fail/Project", "A Failium");
+	projfail.setAPIDirectory("../Include");
+	projfail.setOutputDirectory("../lib/");
+	projfail.setOutputName("libfail.a");
 
 	local proj = ::CProject().createInstance(ProjectType_Executable, "/something/in/hell", "Loolis projec");
 	proj.addSubproject(projlibisi);
 	proj.addSubproject(projcalc);
+	proj.addSubproject(projfail);
 	//
 	proj.addPreprocessorDefinition("Sakhs");
 	proj.addPreprocessorDefinition("_LINUX_");

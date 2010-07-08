@@ -243,11 +243,16 @@ function ProjectType_isValid(type)
 //         - isExecutable
 //               return true if this project's type is StaticLibrary, DynamicLibrary or
 //               Executable, respectively.
-//         - set/getOutput (path:Path-castable)
-//               sets/gets this projects output filepath. When this is a library project,
-//               this is the produced library file's filepath. When this is an executable
-//               project, this will be the produced executable's filepath.
-//        - set/getAPIDirectory(path:Path-transformable)
+//         - set/getOutputDirectory (path:Path-castable)
+//               sets/gets this projects output directory filepath. When this is a library project,
+//               this is the produced library file's directory-filepath. When this is an executable
+//               project, this will be the produced executable's directory-filepath.
+//         - set/getOutputName (name:deltastring)
+//               sets/gets this project's result's name. If this is a library project, this
+//               should be the library name, stripped of all system-dependent library naming
+//               conventions (prefices, extensions, etc). The same holds in case this is an
+//               executable project (extensions, etc).
+//         - set/getAPIDirectory(path:Path-transformable)
 //               sets/gets this projects root API directory filepath (a Path instance).
 //               The API directory is where this project stores its header files, in
 //               case this is a library project.
@@ -260,5 +265,6 @@ function ProjectType_isValid(type)
 //         06. CProject_definitions
 //         07. CProject_librariesPaths
 //         08. CProject_libraries
-//         09. CProject_output
-//         10. CProject_apidir
+//         09. CProject_outputName
+//         10. CProject_outputDirectory
+//         11. CProject_apidir
