@@ -148,6 +148,77 @@ function file_isabsolutepath(filepath) {
 		result = std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
 	return result;
 }
+
+/// delta strings utilities
+function strslice(str, start_index, end_index) {
+	local result = nil;
+	if (start_index >= std::strlen(str))
+		result = "";
+	else if (start_index == end_index)
+		result = std::strchar(str, start_index);
+	else {
+		assert( end_index > start_index or end_index == 0 );
+		result = std::strslice(str, start_index, end_index);
+	}
+	return result;
+}
+function strsubstr(str, start_index ...) {
+	local result = nil;
+	local end_index = nil;
+	local length = nil;
+	if (local arg3 = arguments[2]) {
+		if ( not std::typeof(arg3) == "Number" )
+			std::error("substring() expects length of type Number but " + arg3 + "(" + std::typeof(arg3) + ") given");
+		length = arg3;
+	}
+	assert( ::isdeltanumber(start_index) );
+	assert( start_index >= 0 );
+	if (length) {
+		assert( ::isdeltanumber(length) );
+		assert( length >= 0 );
+		end_index = start_index + length;
+	}
+	else
+		end_index = 0;
+	assert( end_index >= start_index or end_index == 0 );
+	result = ::strslice(str, start_index, end_index);
+	return result;
+}
+function strsub(string, pattern, replacement) {
+	local result = string;
+	local pattern_index = std::strsub(string, pattern);
+	if (pattern_index >= 0) {
+		::println("&&&strsub&&& looking for \"", pattern, "\" in \"", string, "\"");
+		local initial_part = ::strslice(string, 0, pattern_index - 1);
+		assert( ::isdeltastring(initial_part) );
+		local rest = ::strslice(string, pattern_index + std::strlen(pattern), 0);
+		assert( ::isdeltastring(rest) );
+		result = initial_part + replacement + rest;
+	}
+	return result;
+}
+function strgsub(string, pattern, replacement) {
+	assert( ::isdeltastring(pattern) );
+	if (pattern == "")
+			return string;
+	local string_to_check = string;
+	local result = "";
+	while ((local pattern_index = std::strsub(string_to_check, pattern)) >= 0) {
+		local initial_part = nil;
+		if (pattern_index == 0)
+			initial_part = "";
+		else
+			initial_part = ::strslice(string_to_check, 0, pattern_index - 1);
+		assert( ::isdeltastring(initial_part) );
+		string_to_check = ::strsubstr(string_to_check, pattern_index + std::strlen(pattern));
+		assert( ::isdeltastring(string_to_check) );
+		
+		result += initial_part + replacement;
+	}
+	return result + string_to_check;
+}
+
+
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
 	local indices = std::tabindices(mixin);
@@ -841,13 +912,31 @@ function CProject_isaCProject(obj) {
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
 function MakefileManifestation(project, basedir__) {
-	function pathToString(path) {
-		assert( ::Path_isaPath(path) );
-		return path.deltaString();
+	function escapeString(str) {
+		if (str == "")
+			return str;
+		// escape for Makefile
+		// - escape all "#"s with "\"s
+		local result = ::strgsub(str, "#", "\\#");
+		assert( result );
+		// - "escape" all "$"s with "$$"
+		result = ::strgsub(result, "$", "$$");
+		assert( result );
+		//
+		// escape for bash
+		// - replace all "'"s with "'\''"s
+		result = ::strgsub(result, "'", "'\\''");
+		assert( result );
+
+		return result;
 	}
 	function deltastringToString(str) {
 		assert( ::isdeltastring(str) );
-		return str;
+		return escapeString(str);
+	}
+	function pathToString(path) {
+		assert( ::Path_isaPath(path) );
+		return deltastringToString(path.deltaString());
 	}
 	if (std::isundefined(static makemani))
 		makemani = [
@@ -1005,13 +1094,13 @@ function MakefileManifestation(project, basedir__) {
 	proj.addLibraryPath("/");
 	proj.addIncludeDirectory("/jinka");
 	proj.addIncludeDirectory("///////////");
-	proj.addIncludeDirectory("@#$@*@$*@#$@#$#@$#@&%^");
-	proj.addIncludeDirectory("../../../../../../../../../32423423423424234@#$%*@*#%@%@%@$?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-");
+	proj.addIncludeDirectory("@#@*@*@#@##@#@&%^");
+	proj.addIncludeDirectory("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"");
 	proj.addIncludeDirectory(".///////////");
 	proj.setManifestationConfiguration(#Makefile,
 		[
 			@CPPFLAGS_pre : [ "-custom_whatever=a_cpp_pre_flag" ],
-			@CPPFLAGS_post: [ "-invalid_option_whatever=a_cpp_post_flag"],
+			@CPPFLAGS_post: [ "-invalid_option_whatever=a_cpp_post_flag" ],
 			@LDFLAGS_pre  : [ "-lolwhat=an_ld_flag_pre" ],
 			@LDFLAGS_post : [ "-whatisthis=an_ld_flag_post" ],
 			@CXXFLAGS_pre : [ "-flute=a_cxx_flag_pre" ],
@@ -1019,7 +1108,9 @@ function MakefileManifestation(project, basedir__) {
 		]
 	);
 	MakefileManifestation(proj, ".");
-	::println(proj);
+	//::println(proj);
+	::println(::strgsub("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"", "#", "\\#"));
+	::println(::strgsub("Sakhs", "#", "\\#"));
 }
 
 // Show all classes
