@@ -133,7 +133,7 @@ function unmixinObject              (instance)
 //               returns this path as a delta string
 //         - IsAbsolute
 //         - IsRelative
-//         - Concat(another_relative_path:deltastring)
+//         - Concatenate(another_relative_path:deltastring)
 //               returns a deltastring representing the concatenation of
 //               the two paths.
 //     <^> state fields

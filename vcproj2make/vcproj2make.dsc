@@ -143,9 +143,9 @@ function file_isreadable(filepath) {
 function file_isabsolutepath(filepath) {
 	local result = nil;
 	if (::islinux())
-		result = std::strchar(filepath, 0) == "/";
+		result = std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "/";
 	else if (::iswin32())
-		result = std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
+		result = std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
 	return result;
 }
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
@@ -586,9 +586,9 @@ function Path {
 				method IsRelative {
 					return not self.IsAbsolute();
 				},
-				method Concate(another_relative_path) {
+				method Concatenate(another_relative_path) {
 					assert( ::isdeltastring(another_relative_path) );
-					return self.Path() + "/" + another_relative_path;
+					return self.deltaString() + "/" + another_relative_path;
 				}
 			],
 			// mixInRequirements
@@ -842,9 +842,6 @@ function CProject_isaCProject(obj) {
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
 function MakefileManifestation(project, basedir__) {
-	assert( ::CProject_isaCProject(project) );
-	local basedir = ::Path_castFromPath(basedir__);
-	
 	if (std::isundefined(static makemani))
 		makemani = [
 			method writeFlags {
@@ -852,13 +849,29 @@ function MakefileManifestation(project, basedir__) {
 			},
 			// before calling, set basedir (setBasedir())
 			method writeAll {
-				@fh = std::fileopen(@basedir.);
+				local pathstr = @basedir.Concatenate("Makefile");
+				::println("Writing crap to ", pathstr);
+				// TODO restore after VM bug has been fixed
+				local fh = std::fileopen(pathstr, "wt");
+				if (fh) {
+					@fh = fh;
+					@writeFlags();
+					std::fileclose(@fh);
+				}
+				else
+					::println("Error, could not open file ", pathstr);
 			},
 			method setBasedir(basedir) {
 				assert( ::Path_isaPath(basedir) );
 				@basedir = basedir;
 			}
 		];
+	else
+		makemani = makemani;
+	assert( ::CProject_isaCProject(project) );
+	local basedir = ::Path_castFromPath(basedir__);
+	makemani.setBasedir(basedir);
+	makemani.writeAll();
 }
 
 
@@ -917,6 +930,7 @@ function MakefileManifestation(project, basedir__) {
 //   Illegal use of '::Locatable()' as an object (type is ').
 {
 	local proj = ::CProject().createInstance(ProjectType_Executable, "/something/in/hell", "Loolis projec");
+	MakefileManifestation(proj, ".");
 	::println(proj);
 }
 
