@@ -974,19 +974,58 @@ function MakefileManifestation(project, basedir__) {
 		assert( ::Path_isaPath(path) );
 		return deltastringToString(path.deltaString());
 	}
-	function subprojectToCPPFLAGS_functor(parent_project) {
+	function optionPair(prefix, value) {
 		return [
-			@parentproj: parent_project,
-			method @operator()(subproj) {
-				local result = nil;
-				if (subproj.isDynicLibrary() or subproj.isStaticLibrary()) {
-					local parentproj = @parentproj;
-					assert( subproj.getLocation().IsRelative() );
-					result = pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
-				}
-				return result;
-			}
+			method prefix { return @prefix_; },
+			method value  { return @value_ ; },
+			@prefix_      : prefix            ,
+			@value_       : value
 		];
+	}
+	function optionsFromIterableConstantPrefixAndValueToStringFunctor(iterable, prefix, valueToStringFunctor) {
+		local result = std::list_new();
+		foreach (value, iterable) {
+			local valueString = valueToStringFunctor(value);
+			if (valueString) {
+				assert( ::isdeltastring(valueString) );
+				result.push_back(optionPair(prefix, valueString));
+			}
+		}
+		return result;
+	}
+	function cppOptionsFromSubprojects(parent_project, subprojects) {
+		local result = std::list_new();
+		foreach (subproj, subprojects)
+			result.push_back([
+				method prefix {
+					local val = self.value();
+					local result = nil;
+					if (val)
+						result = "-I";
+					return result;
+				},
+				method value {
+					if (@val)
+						return @val;
+					local result = nil;
+					local subproj = @subproj;
+					if (subproj.isDynicLibrary() or subproj.isStaticLibrary()) {
+						local parentproj = @parentproj;
+						assert( subproj.getLocation().IsRelative() );
+						@val = result = pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
+					}
+					return result;
+				},
+				@subproj   : subproj,
+				@parentproj: parent_project
+			]);
+		return result;
+	}
+	function ldOptionsFromSubprojects(subprojects) {
+		local result = std::list_new();
+//		foreach (subproj, subprojects) {
+//		}
+		return result;
 	}
 	if (std::isundefined(static makemani))
 		makemani = [
@@ -1004,41 +1043,48 @@ function MakefileManifestation(project, basedir__) {
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_post");
 			},
-			method writePrefixedOptions(iterable, prefix, toString) {
-				assert( ::isdeltastring(prefix) );
-				assert( std::iscallable(toString) );
-				foreach (option, iterable) {
-					local option_string = toString(option);
-					if (option_string) {
-						assert( ::isdeltastring(option_string) );
-						std::filewrite(@fh, "\n        ", prefix, "'", option_string, "' \\");
+			// iterable contains pairs (prefix(), value()) for options
+			method writePrefixedOptions(iterable) {
+				foreach (pair, iterable) {
+					local prefix = pair.prefix();
+					local value  = pair.value();
+					if (prefix) {
+						assert( ::isdeltastring(prefix) );
+						assert( ::isdeltastring(value) );
+						std::filewrite(@fh, "\n        ", prefix, "'", value, "' \\");
 					}
 				}
 			},
 			method writeSubprojectRelatedCPPFLAGS {
-				@writePrefixedOptions(@proj.Subprojects(), "-I", subprojectToCPPFLAGS_functor(@proj));
+				local options = cppOptionsFromSubprojects(@proj, @proj.Subprojects());
+				@writePrefixedOptions(options);
 			},
 			method writeCPPFLAGS {
 				std::filewrite(@fh, "\nCPPFLAGS = \\");
 				@writePre(#CPPFLAGS);
 				@writeSubprojectRelatedCPPFLAGS();
-				@writePrefixedOptions(@proj.PreprocessorDefinitions(), "-D", deltastringToString);
-				@writePrefixedOptions(@proj.IncludeDirectories()     , "-I", pathToString);
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
 				@writePost(#CPPFLAGS);
 				std::filewrite(@fh, "\n");
+			},
+			method writeSubprojectRelatedLDFLAGS {
+				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj.Subprojects());
+				// TODO continue here
 			},
 			method writeLDFLAGS {
 				std::filewrite(@fh, "\nLDFLAGS = \\");
 				@writePre(#LDFLAGS);
-				@writePrefixedOptions(@proj.LibrariesPaths(), "-L", pathToString);
-				@writePrefixedOptions(@proj.Libraries()     , "-l", pathToString);
+				@writeSubprojectRelatedLDFLAGS();
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", pathToString));
 				@writePost(#LDFLAGS);
 				std::filewrite(@fh, "\n");
 			},
 			method writeCXXFLAGS {
 				std::filewrite(@fh, "\nCXXFLAGS = \\");
 				@writePre(#CXXFLAGS);
-				@writePrefixedOptions(["pedantic", "Wall", "ansi"], "-", deltastringToString);
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(["pedantic", "Wall", "ansi"], "-", deltastringToString));
 				@writePost(#CXXFLAGS);
 				std::filewrite(@fh, "\n");
 			},
