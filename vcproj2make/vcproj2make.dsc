@@ -580,7 +580,7 @@ function Path {
 				},
 				method IsAbsolute {
 					local result = ::dobj_get(self, #Path_absolute);
-					assert( result != nil );
+					assert( not ::isdeltanil(result) );
 					return result;
 				},
 				method IsRelative {
@@ -763,7 +763,7 @@ function CProject {
 					::dobj_get(self, #CProject_librariesPaths).push_back(p);
 				},
 				method LibrariesPaths {
-					return ::list_clone(::dobj_get(self, #Cproject_librariesPaths));
+					return ::list_clone(::dobj_get(self, #CProject_librariesPaths));
 				},
 				method addLibrary(path) {
 					local p = ::Path_castFromPath(path);
@@ -845,7 +845,21 @@ function MakefileManifestation(project, basedir__) {
 	if (std::isundefined(static makemani))
 		makemani = [
 			method writeFlags {
-				std::filewrite(@fh, "# Flagspace");
+				// CPPFLAGS
+				std::filewrite(@fh, "# Flagspace\nSHELL = /bin/bash\n\nCPPFLAGS = ");
+				foreach (cppdef, @proj.PreprocessorDefinitions())
+					std::filewrite(@fh, " -D'", cppdef, "' ");
+				// LDFLAGS
+				std::filewrite(@fh, "\nLDFLAGS = ");
+				foreach (libpath, @proj.LibrariesPaths())
+					std::filewrite(@fh, " -L'", libpath.deltaString(), "' ");
+				foreach (lib, @proj.Libraries()) {
+					assert( lib.IsRelative() );
+					std::filewrite(@fh, " -l'", lib.deltaString(), "' ");
+				}
+				// CXXFLAGS
+				std::filewrite(@fh, "\nCXXFLAGS = -pedantic -Wall -ansi ");
+				
 			},
 			// before calling, set basedir (setBasedir())
 			method writeAll {
@@ -864,6 +878,10 @@ function MakefileManifestation(project, basedir__) {
 			method setBasedir(basedir) {
 				assert( ::Path_isaPath(basedir) );
 				@basedir = basedir;
+			},
+			method setProject(project) {
+				assert( ::CProject_isaCProject(project) );
+				@proj = project;
 			}
 		];
 	else
@@ -871,6 +889,7 @@ function MakefileManifestation(project, basedir__) {
 	assert( ::CProject_isaCProject(project) );
 	local basedir = ::Path_castFromPath(basedir__);
 	makemani.setBasedir(basedir);
+	makemani.setProject(project);
 	makemani.writeAll();
 }
 
@@ -930,6 +949,19 @@ function MakefileManifestation(project, basedir__) {
 //   Illegal use of '::Locatable()' as an object (type is ').
 {
 	local proj = ::CProject().createInstance(ProjectType_Executable, "/something/in/hell", "Loolis projec");
+	proj.addPreprocessorDefinition("Sakhs");
+	proj.addPreprocessorDefinition("_LINUX_");
+	proj.addPreprocessorDefinition("_DEBUG");
+	proj.addPreprocessorDefinition("__NM_UNUSED(A)=A __attribute__((unused))");
+	proj.addLibrary("m");
+	proj.addLibrary("pthread");
+	proj.addLibrary("IsiLib");
+	proj.addLibrary("DeltaVMCompilerAndStdLibContainerElementsComponent");
+	proj.addLibraryPath("/usr/bin");
+	proj.addLibraryPath("../../..//Tools/Detla/Common/Lib/");
+	proj.addLibraryPath("./");
+	proj.addLibraryPath("../");
+	proj.addLibraryPath("/");
 	MakefileManifestation(proj, ".");
 	::println(proj);
 }
