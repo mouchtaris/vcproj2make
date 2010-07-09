@@ -8,3 +8,8 @@ glob:vcproj2make/vcproj2make.idc
 glob:vcproj2make/OptimizerOutput.txt
 glob:vcproj2make/vcproj2make.dbc
 glob:vcproj2make/derror.txt
+glob:vcproj2make/util.dbc
+glob:vcproj2make/util.txt
+glob:vcproj2make/break.dat
+glob:vcproj2make/util.idc
+glob:vcproj2make/Makefile
