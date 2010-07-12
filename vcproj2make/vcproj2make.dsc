@@ -88,7 +88,7 @@ function MakefileManifestation(project, basedir__) {
 		local result = std::list_new();
 		foreach (local subproj, subprojects)
 			if (subproj.isLibrary())
-				result.push_back(Option().createInstance(
+				result.push_back(optionPair(
 					// prefix getter functor
 					[
 						method @operator () {
@@ -121,7 +121,7 @@ function MakefileManifestation(project, basedir__) {
 			if (subproj.isLibrary()) {
 				// Add a library path option (-L)
 				result.push_back(
-					Option().createInstance(
+					optionPair(
 						// prefix getter
 						[
 							method @operator () {
@@ -149,7 +149,7 @@ function MakefileManifestation(project, basedir__) {
 				);
 				// Add a library linking option (-l)
 				result.push_back(
-					Option().createInstance(
+					optionPair(
 						// prefix getter
 						[
 							method @operator () {
@@ -189,7 +189,7 @@ function MakefileManifestation(project, basedir__) {
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_post");
 			},
-			// iterable contains pairs (prefix(), value()) for options
+			// iterable contains Option instances
 			method writePrefixedOptions(iterable) {
 				foreach (local pair, iterable) {
 					local prefix = pair.prefix();
@@ -244,7 +244,6 @@ function MakefileManifestation(project, basedir__) {
 			method writeAll {
 				local pathstr = @basedir.Concatenate("Makefile");
 				::util.println("Writing crap to ", pathstr.deltaString());
-				// TODO restore after VM bug has been fixed
 				local fh = std::fileopen(pathstr.deltaString(), "wt");
 				if (fh) {
 					@fh = fh;
@@ -332,7 +331,7 @@ function MakefileManifestation(project, basedir__) {
 	local projlibisi = ::util.CProject().createInstance(::util.ProjectType().DynamicLibrary, "./libisi/Project", "Lib ISI  for the elderly");
 	projlibisi.setAPIDirectory("../Include");
 	projlibisi.setOutputDirectory("../lib/");
-	projlibisi.setOutputName("libisi.so");
+	projlibisi.setOutputName("isi");
 
 	local projcalc = ::util.CProject().createInstance(::util.ProjectType().Executable, "./calc/Project", "A calculator for lulz");
 	projcalc.setOutputDirectory("../bin/");
@@ -342,7 +341,7 @@ function MakefileManifestation(project, basedir__) {
 	local projfail = ::util.CProject().createInstance(::util.ProjectType().StaticLibrary, "./fail/Project", "A Failium");
 	projfail.setAPIDirectory("../Include");
 	projfail.setOutputDirectory("../lib/");
-	projfail.setOutputName("libfail.a");
+	projfail.setOutputName("fail");
 
 	local proj = ::util.CProject().createInstance(::util.ProjectType().Executable, "/something/in/hell", "Loolis projec");
 	proj.addSubproject(projlibisi);

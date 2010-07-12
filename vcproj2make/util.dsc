@@ -27,9 +27,7 @@ function val(const_or_f) {
 		return const_or_f;
 }
 
-// work around linux compiler crash (TODO restore after bugfix)
-//function printsec(...) { std::print(pref, ..., ::nl); }
-function printsec(...) { local nl = ::nl; std::print(pref, ..., nl); }
+function printsec(...) { std::print(pref, ..., ::nl); }
 function platform {
 	local result = nil;
 	if (local platform = std::libfuncget("std::platform"))
@@ -49,9 +47,9 @@ function loadlibs {
 		xmldll = std::dllimport("XMLParser.dll", "Install");
 	else if (::islinux())
 		xmldll = std::dllimport("libXMLParser-linux.so", "Install");
-	else		
+	else
 		std::error("unknown platform: " + ::platform());
-		
+
 	if (not xmldll)
 		std::error("could not load xml parser lib");
 	return true;
@@ -226,7 +224,7 @@ function strgsub(string, pattern, replacement) {
 		assert( ::isdeltastring(initial_part) );
 		string_to_check = ::strsubstr(string_to_check, pattern_index + std::strlen(pattern));
 		assert( ::isdeltastring(string_to_check) );
-		
+
 		result += initial_part + replacement;
 	}
 	return result + string_to_check;
@@ -390,7 +388,7 @@ function Class {
 					local mixin_instance = mixin.createInstance(
 							|createInstanceArgumentsFunctor(newInstanceState, self_stateFields, ...)|
 					);
-					// We can perform assertions concerning clashes, since _newInstanceState_ 
+					// We can perform assertions concerning clashes, since _newInstanceState_
 					// is a fully functioning object and classes can be registered as its mixins,
 					// as well as be queried about what classes are mixed-into it.
 					assert( not ::stateFieldsClashForAnyMixIn( newInstanceState, mixin.stateFields() ) );
@@ -485,7 +483,7 @@ function Class {
 		Class_checkedStateInitialisation(
 			newClassInstance,
 			validStateFieldsNames,
-			[ 
+			[
 				{ #stateInitialiser : stateInitialiser  },
 				{ #prototype        : prototype         },
 				{ #mixInRequirements: mixInRequirements },
@@ -494,18 +492,7 @@ function Class {
 				{ #className        : className         }
 			]
 		);
-		// Add custom delta-object overloadings
-		// TODO restore to original after bug has been fixed
-		// original
-//		newClassInstance."____SOMETHING___USELESS___" = std::tabmethodonme(newClassInstance, method {
-//			return "Class " + self.getClassName();
-//		});
-		// work-around
-		newClassInstance."____SOMETHING___USELESS___" = std::tabmethodonme(newClassInstance, [method {
-			return "Class " + self.getClassName();
-		}][0]);
-		// TODO move this tostring() overloading to the Class class' prototype
-		
+
 		// Register class
 		::Class_classRegistry().add(newClassInstance);
 	}
@@ -576,7 +563,7 @@ function Serialisable {
 }
 // Class Point
 function Point {
-	Point_class_mixin_failure = 
+	Point_class_mixin_failure =
 	//		"state clash"
 	//		"proto clash"
 	//		"requirement fail"
@@ -751,7 +738,7 @@ function Locatable {
 			[],
 			// stateFields
 			[ #Locatable_path ],
-			// className 
+			// className
 			#Locatable
 		);
 	return Locatable_class;
@@ -797,8 +784,8 @@ const ProjectType_StaticLibrary  = 1;
 const ProjectType_DynamicLibrary = 2;
 const ProjectType_Executable     = 3;
 function ProjectType_isValid(type) {
-	return 
-		   type == ::ProjectType_StaticLibrary 
+	return
+		   type == ::ProjectType_StaticLibrary
 		or type == ::ProjectType_DynamicLibrary
 		or type == ::ProjectType_Executable
 		;
