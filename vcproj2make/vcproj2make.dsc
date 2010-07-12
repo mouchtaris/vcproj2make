@@ -1,6 +1,9 @@
 util = std::vmload("util.dbc", "util");
 std::vmrun(util);
 
+
+
+
 //////////////////////////////
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
@@ -31,6 +34,42 @@ function MakefileManifestation(project, basedir__) {
 		assert( ::util.Path_isaPath(path) );
 		return deltastringToString(path.deltaString());
 	}
+	// struct Option
+	// createInstance(prefix_const_Or_f, value_const_or_f)
+	function Option {
+		if (std::isundefined(static Option_class))
+			Option_class = ::util.Class().createInstance(
+				// stateInitialiser
+				function Option_stateInitialiser(newOptionInstance, validStateFieldsNames, prefix_const_or_f, value_const_or_f) {
+					assert( ::util.isdeltastring(prefix_const_or_f) or ::util.isdeltacallable(prefix_const_or_f) );
+					assert( ::util.isdeltastring(prefix_const_or_f) or ::util.isdeltacallable(value_const_or_f));
+					::util.Class_checkedStateInitialisation(
+						newOptionInstance, validStateFieldsNames,
+						[ {#Option_prefix: prefix_const_or_f}, {#Option_value: value_const_or_f} ]
+					);
+				},
+				// prototype
+				[
+					method prefix {
+						local result = ::util.val(::util.dobj_checked_get(self, #Option_prefix));
+						assert( ::util.isdeltastring(result) );
+						return result;
+					},
+					method value {
+						local result = ::util.val(::util.dobj_checked_get(self, #Option_value));
+						assert( ::util.isdeltastring(result) );
+						return result;
+					}
+				],
+				// mixInRequirements
+				[],
+				// stateFields
+				[#Option_value, #Option_prefix],
+				// className
+				#Option
+			);
+		return Option_class;
+	}
 	function optionPair(prefix, value) {
 		return [
 			method prefix { return @prefix_; },
@@ -41,7 +80,7 @@ function MakefileManifestation(project, basedir__) {
 	}
 	function optionsFromIterableConstantPrefixAndValueToStringFunctor(iterable, prefix, valueToStringFunctor) {
 		local result = std::list_new();
-		foreach (value, iterable) {
+		foreach (local value, iterable) {
 			local valueString = valueToStringFunctor(value);
 			if (valueString) {
 				assert( ::util.isdeltastring(valueString) );
@@ -52,30 +91,36 @@ function MakefileManifestation(project, basedir__) {
 	}
 	function cppOptionsFromSubprojects(parent_project, subprojects) {
 		local result = std::list_new();
-		foreach (subproj, subprojects)
-			result.push_back([
-				method prefix {
-					local val = self.value();
-					local result = nil;
-					if (val)
-						result = "-I";
-					return result;
-				},
-				method value {
-					if (@val)
-						return @val;
-					local result = nil;
-					local subproj = @subproj;
-					if (subproj.isDynicLibrary() or subproj.isStaticLibrary()) {
-						local parentproj = @parentproj;
-						assert( subproj.getLocation().IsRelative() );
-						@val = result = pathToString(parentproj.getLocation().Concatenate(subproj.getLocation()).Concatenate(subproj.getAPIDirectory()));
-					}
-					return result;
-				},
-				@subproj   : subproj,
-				@parentproj: parent_project
-			]);
+		foreach (local subproj, subprojects)
+			result.push_back(Option().createInstance(
+				// prefix getter functor
+				[
+					method @operator () {
+						local result = nil;
+						local subproj = @subproj;
+						if (subproj.isLibrary())
+							result = "-I";
+						return result;
+					},
+					@subproj: subproj
+				],
+				// value getter functor
+				[
+					method @operator () {
+						local result = nil;
+						local subproj = @subproj;
+						if (subproj.isLibrary())
+							result = pathToString(
+									@parentproj.getLocation()
+											.Concatenate(subproj.getLocation())
+											.Concatenate(subproj.getAPIDirectory())
+							);
+						return result;
+					},
+					@subproj   : subproj,
+					@parentproj: parent_project
+				]
+			));
 		return result;
 	}
 	function ldOptionsFromSubprojects(subprojects) {
@@ -88,21 +133,21 @@ function MakefileManifestation(project, basedir__) {
 		makemani = [
 			method writePre(ID) {
 				if (local pres = @config[ID + "_pre"])
-					foreach (preflag, pres)
+					foreach (local preflag, pres)
 						std::filewrite(@fh, "\n        ", preflag, " \\");
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_pre");
 			},
 			method writePost(ID) {
 				if (local posts = @config[ ID + "_post"])
-					foreach (postflag, posts)
+					foreach (local postflag, posts)
 						std::filewrite(@fh, "\n        ", postflag, " \\");
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_post");
 			},
 			// iterable contains pairs (prefix(), value()) for options
 			method writePrefixedOptions(iterable) {
-				foreach (pair, iterable) {
+				foreach (local pair, iterable) {
 					local prefix = pair.prefix();
 					local value  = pair.value();
 					if (prefix) {
@@ -151,7 +196,7 @@ function MakefileManifestation(project, basedir__) {
 				@writeLDFLAGS();
 				@writeCXXFLAGS();
 			},
-			// before calling, set basedir (setBasedir())
+			// before calling, call init()
 			method writeAll {
 				local pathstr = @basedir.Concatenate("Makefile");
 				::util.println("Writing crap to ", pathstr.deltaString());
@@ -302,7 +347,7 @@ function MakefileManifestation(project, basedir__) {
 {
 	::util.println("----");
 	local reg = ::util.dobj_get(::util.Class_classRegistry(), #list);
-	foreach (class, reg)
+	foreach (local class, reg)
 		::util.println(class);
 	::util.println("----");
 }

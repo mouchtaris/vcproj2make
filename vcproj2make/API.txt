@@ -15,6 +15,7 @@ function isdeltaobject  (val)
 function isdeltanumber  (val)
 function isdeltaboolean (val)
 function isdeltanil     (val)
+function isdeltacallable(val)
 function toboolean      (val)
 //
 function pfield                         (field_name)
@@ -26,6 +27,7 @@ function dobj_contains_any              (dobj, dobj_other)
 function dobj_contains_any_key          (dobj, keys)
 function dobj_contains_any_key_from     (dobj, dobj_other)
 function dobj_checked_set               (dobj, validKeys, key, val)
+function dobj_checked_get               (dobj, key)
 //
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
@@ -240,6 +242,7 @@ function ProjectType_isValid(type)
 //               manifestation.
 //         - isStaticLibrary
 //         - isDynamicLibrary
+//         - isLibrary
 //         - isExecutable
 //               return true if this project's type is StaticLibrary, DynamicLibrary or
 //               Executable, respectively.

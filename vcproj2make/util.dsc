@@ -20,6 +20,13 @@ function printlns(...) {
 			}
 	);
 }
+function val(const_or_f) {
+	if (std::iscallable(const_or_f))
+		return const_or_f();
+	else
+		return const_or_f;
+}
+
 // work around linux compiler crash (TODO restore after bugfix)
 //function printsec(...) { std::print(pref, ..., ::nl); }
 function printsec(...) { local nl = ::nl; std::print(pref, ..., nl); }
@@ -60,6 +67,7 @@ function isdeltaobject(val) { return std::typeof(val) == "Object"; }
 function isdeltanumber(val) { return std::typeof(val) == "Number"; }
 function isdeltaboolean(val){ return std::typeof(val) == "Bool"  ; }
 function isdeltanil   (val) { return std::typeof(val) == "Nil"   ; }
+function isdeltacallable(va){ return std::iscallable(va)         ; }
 function toboolean    (val) { if (val) return true; else return false; }
 //
 // "private field"
@@ -87,7 +95,7 @@ function dobj_contains_key(dobj, key) {
 	return dobj[key] != nil;
 }
 function dobj_contains_any(dobj, dobj_other) {
-	foreach (val, dobj_other)
+	foreach (local val, dobj_other)
 		if (::dobj_contains(dobj, val))
 			return true;
 	return false;
@@ -103,10 +111,15 @@ function dobj_checked_set(dobj, validKeys, key, val) {
 	assert( ::dobj_contains(validKeys, key) );
 	return ::dobj_set(dobj, key, val);
 }
+function dobj_checked_get(dobj, key) {
+	local result = ::dobj_get(dobj, key);
+	assert( not ::isdeltanil(result) );
+	return result;
+}
 //
 // Utilities for iterables
 function iterable_contains(iterable, value) {
-	foreach (val, iterable)
+	foreach (local val, iterable)
 		if (val == value)
 			return true;
 	return false;
@@ -118,7 +131,7 @@ function list_contains(iterable, value) {
 function iterable_to_deltaobject(iterable) {
 	local i = 0;
 	local result = [];
-	foreach (something, iterable)
+	foreach (local something, iterable)
 		result[i++] = something;
 	return result;
 }
@@ -128,7 +141,7 @@ function list_to_deltaobject(list) {
 
 function list_clone(iterable) {
 	local result = std::list_new();
-	foreach (something, iterable)
+	foreach (local something, iterable)
 		result.push_back(something);
 	return result;
 }
@@ -223,7 +236,7 @@ function strgsub(string, pattern, replacement) {
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
 	local indices = std::tabindices(mixin);
-	foreach (index, indices)
+	foreach (local index, indices)
 		if (std::tabget(state, index))
 			std::error("mixing in overwrites existing state\nstate: " + state + "\nmixin: " + mixin);
 		else
@@ -243,19 +256,19 @@ function mixinRequirementsFulfilled(prototype, requirements) {
 	return requirementsFulfilled;
 }
 function stateFieldsClashForAnyMixIn(object, newMixInStateFields) {
-	foreach (objectClass, object.getClasses())
+	foreach (local objectClass, object.getClasses())
 		if (::stateFieldsClash(objectClass.stateFields(), newMixInStateFields))
 			return true;
 	return false;
 }
 function prototypesClashForAnyMixIn(object, newMixInPrototype) {
-	foreach (objectClass, object.getClasses())
+	foreach (local objectClass, object.getClasses())
 		if (::prototypesClash(objectClass.getPrototype(), newMixInPrototype))
 			return true;
 	return false;
 }
 function mixinRequirementsFulfilledByAnyMixIn(object, newMixInRequirements) {
-	foreach (objectClass, object.getClasses())
+	foreach (local objectClass, object.getClasses())
 		if (::mixinRequirementsFulfilled(objectClass.getPrototype(), newMixInRequirements))
 			return true;
 	return false;
@@ -269,7 +282,7 @@ function mixin(newInstanceState, mixin_instance, mixin_prototype) {
 function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) {
 	local number_of_fields = std::tablength(validFieldsNames);
 	assert( std::tablength(fields) == number_of_fields );
-	foreach (validFieldName, validFieldsNames) {
+	foreach (local validFieldName, validFieldsNames) {
 		local value = std::tabget(fields, validFieldName);
 		assert( not std::isundefined(value) );
 		assert( not ::isdeltanil(value) );
@@ -313,7 +326,7 @@ function Object_prototype {
 				local classes = ::dobj_get(self, #classes);
 				local result = [];
 				local i = 0;
-				foreach (class, classes)
+				foreach (local class, classes)
 					result[i++] = class;
 				return result;
 			},
@@ -339,7 +352,7 @@ function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) 
 }
 function unmixinObject(instance) {
 	local objectValidStateFields = Object_stateFields();
-	foreach (field, objectValidStateFields)
+	foreach (local field, objectValidStateFields)
 		::dobj_set(instance, field, nil);
 }
 
@@ -371,7 +384,7 @@ function Class {
 				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
 				newInstanceState.addClass(self);
 				// perform mixins
-				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry)) {
+				foreach (local mixin_pair, ::dobj_get(self, #mixInRegistry)) {
 					local mixin = mixin_pair.class;
 					local createInstanceArgumentsFunctor = mixin_pair.args;
 					local mixin_instance = mixin.createInstance(
@@ -416,7 +429,7 @@ function Class {
 			},
 			method stateFieldsClash(another_class) {
 				local another_class_stateFields = another_class.stateFields();
-				foreach (mixin_pair, ::dobj_get(self, #mixInRegistry))
+				foreach (local mixin_pair, ::dobj_get(self, #mixInRegistry))
 					if (::stateFieldsClash(another_class_stateFields, mixin_pair.class.stateFields()))
 						return true;
 				return ::stateFieldsClash(another_class_stateFields, self.stateFields());
@@ -892,7 +905,7 @@ function CProject {
 					assert( ::ProjectType_isValid(type));
 					return type == ProjectType_StaticLibrary;
 				},
-				method isDynicLibrary {
+				method isDynamicLibrary {
 					local type = ::dobj_get(self, #CProject_type);
 					assert( ::ProjectType_isValid(type));
 					return type == ProjectType_DynamicLibrary;
@@ -900,6 +913,9 @@ function CProject {
 				method isExecutable {
 					local type = ::dobj_get(self, #CProject_type);
 					assert( ::ProjectType_isValid(type));
+				},
+				method isLibrary {
+					return self.isDynamicLibrary() or self.isStaticLibrary();
 				},
 				method getOutputDirectory {
 					local outputDirectory = ::dobj_get(self, #CProject_outputDirectory);
