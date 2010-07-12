@@ -175,6 +175,7 @@ function MakefileManifestation(project, basedir__) {
 	}
 	if (std::isundefined(static makemani))
 		makemani = [
+			// Utility methods
 			method writePre(ID) {
 				if (local pres = @config[ID + "_pre"])
 					foreach (local preflag, pres)
@@ -201,6 +202,8 @@ function MakefileManifestation(project, basedir__) {
 					}
 				}
 			},
+
+			// Specific flag methods
 			method writeSubprojectRelatedCPPFLAGS {
 				local options = cppOptionsFromSubprojects(@proj, @proj.Subprojects());
 				@writePrefixedOptions(options);
