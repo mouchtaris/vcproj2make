@@ -13,3 +13,4 @@ glob:vcproj2make/util.txt
 glob:vcproj2make/break.dat
 glob:vcproj2make/util.idc
 glob:vcproj2make/Makefile
+glob:.svn

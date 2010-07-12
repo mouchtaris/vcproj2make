@@ -52,12 +52,12 @@ function MakefileManifestation(project, basedir__) {
 				[
 					method prefix {
 						local result = ::util.val(::util.dobj_checked_get(self, #Option_prefix));
-						assert( ::util.isdeltastring(result) );
+						assert( ::util.isdeltastring(result) or ::util.isdeltanil(result) );
 						return result;
 					},
 					method value {
 						local result = ::util.val(::util.dobj_checked_get(self, #Option_value));
-						assert( ::util.isdeltastring(result) );
+						assert( ::util.isdeltastring(result) or ::util.isdeltanil(result) );
 						return result;
 					}
 				],
@@ -71,12 +71,7 @@ function MakefileManifestation(project, basedir__) {
 		return Option_class;
 	}
 	function optionPair(prefix, value) {
-		return [
-			method prefix { return @prefix_; },
-			method value  { return @value_ ; },
-			@prefix_      : prefix            ,
-			@value_       : value
-		];
+		return Option().createInstance(prefix, value);
 	}
 	function optionsFromIterableConstantPrefixAndValueToStringFunctor(iterable, prefix, valueToStringFunctor) {
 		local result = std::list_new();
@@ -92,41 +87,90 @@ function MakefileManifestation(project, basedir__) {
 	function cppOptionsFromSubprojects(parent_project, subprojects) {
 		local result = std::list_new();
 		foreach (local subproj, subprojects)
-			result.push_back(Option().createInstance(
-				// prefix getter functor
-				[
-					method @operator () {
-						local result = nil;
-						local subproj = @subproj;
-						if (subproj.isLibrary())
-							result = "-I";
-						return result;
-					},
-					@subproj: subproj
-				],
-				// value getter functor
-				[
-					method @operator () {
-						local result = nil;
-						local subproj = @subproj;
-						if (subproj.isLibrary())
-							result = pathToString(
-									@parentproj.getLocation()
+			if (subproj.isLibrary())
+				result.push_back(Option().createInstance(
+					// prefix getter functor
+					[
+						method @operator () {
+							assert( @subproj.isLibrary() );
+							return "-I";
+						},
+						@subproj: subproj
+					],
+					// value getter functor
+					[
+						method @operator () {
+							local subproj = @subproj;
+							local parentproj = @parentproj;
+							assert( subproj.isLibrary() );
+							return pathToString(
+									parentproj.getLocation()
 											.Concatenate(subproj.getLocation())
 											.Concatenate(subproj.getAPIDirectory())
 							);
-						return result;
-					},
-					@subproj   : subproj,
-					@parentproj: parent_project
-				]
-			));
+						},
+						@subproj   : subproj,
+						@parentproj: parent_project
+					]
+				));
 		return result;
 	}
-	function ldOptionsFromSubprojects(subprojects) {
+	function ldOptionsFromSubprojects(parent_project, subprojects) {
 		local result = std::list_new();
-//		foreach (subproj, subprojects) {
-//		}
+		foreach (local subproj, subprojects)
+			if (subproj.isLibrary()) {
+				// Add a library path option (-L)
+				result.push_back(
+					Option().createInstance(
+						// prefix getter
+						[
+							method @operator () {
+								assert( @subproj.isLibrary() );
+								return "-L";
+							},
+							@subproj: subproj
+						],
+						// value getter
+						[
+							method @operator () {
+								local subproj = @subproj;
+								local parentproj = @parentproj;
+								assert( subproj.isLibrary() );
+								return pathToString(
+									parentproj.getLocation()
+											.Concatenate(subproj.getLocation())
+											.Concatenate(subproj.getOutputDirectory())
+								);
+							},
+							@subproj   : subproj,
+							@parentproj: parent_project
+						]
+					)
+				);
+				// Add a library linking option (-l)
+				result.push_back(
+					Option().createInstance(
+						// prefix getter
+						[
+							method @operator () {
+								assert( @subproj.isLibrary() );
+								return "-l";
+							},
+							@subproj: subproj
+						],
+						// value getter
+						[
+							method @operator () {
+								local subproj = @subproj;
+								assert( subproj.isLibrary() );
+								local parentproj = @parentproj;
+								return deltastringToString(subproj.getOutputName());
+							},
+							@subproj: subproj
+						]
+					)
+				);
+			}
 		return result;
 	}
 	if (std::isundefined(static makemani))
@@ -171,8 +215,8 @@ function MakefileManifestation(project, basedir__) {
 				std::filewrite(@fh, "\n");
 			},
 			method writeSubprojectRelatedLDFLAGS {
-				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj.Subprojects());
-				// TODO continue here
+				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj, @proj.Subprojects());
+				@writePrefixedOptions(subprojGeneratedOptions);
 			},
 			method writeLDFLAGS {
 				std::filewrite(@fh, "\nLDFLAGS = \\");
