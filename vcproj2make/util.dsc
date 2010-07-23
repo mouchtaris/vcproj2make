@@ -20,6 +20,7 @@ function printlns(...) {
 			}
 	);
 }
+function ENDL { return ::nl; }
 function val(const_or_f) {
 	if (std::iscallable(const_or_f))
 		return const_or_f();
@@ -184,16 +185,17 @@ function strsubstr(str, start_index ...) {
 		length = arg3;
 	}
 	assert( ::isdeltanumber(start_index) );
-	assert( start_index >= 0 );
-	if (length) {
-		assert( ::isdeltanumber(length) );
-		assert( length >= 0 );
-		end_index = start_index + length;
+	assert ( start_index >= 0 ); {
+		if (length) {
+			assert( ::isdeltanumber(length) );
+			assert( length >= 0 );
+			end_index = start_index + length;
+		}
+		else
+			end_index = 0;
+		assert( end_index >= start_index or end_index == 0 );
+		result = ::strslice(str, start_index, end_index);
 	}
-	else
-		end_index = 0;
-	assert( end_index >= start_index or end_index == 0 );
-	result = ::strslice(str, start_index, end_index);
 	return result;
 }
 function strsub(string, pattern, replacement) {
@@ -229,7 +231,16 @@ function strgsub(string, pattern, replacement) {
 	}
 	return result + string_to_check;
 }
-
+function strrindex(hay, needle) {
+	assert( ::isdeltastring(hay) );
+	assert( ::isdeltastring(needle) );
+	for (local i = std::strlen(hay); i >= 0 and std::strsub(::strsubstr(hay, i), needle) == -1; --i)
+		;
+	return i;
+}
+function strlength(str) {
+	return std::strlen(str);
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -689,7 +700,10 @@ function Path {
 						result = fromPath(self.deltaString() + "/" + another_relative_path.deltaString());
 					}
 					return result;
-				}
+				},
+				method Extension {
+					assert( not "Not implemented" ); // TODO implement
+				}	
 			],
 			// mixInRequirements
 			[],
@@ -830,10 +844,11 @@ function CProject {
 				method addSource(path) {
 					local p = ::Path_castFromPath(path);
 					assert( ::Path_isaPath(p) );
+					assert( p.Extension() == self.SourceExtension() );
 					::dobj_get(self, #CProject_sources).push_back(p);
 				},
 				method Sources {
-					return ::list_clone(::dobj_get(self, #CProject_source));
+					return ::list_clone(::dobj_get(self, #CProject_sources));
 				},
 				method addIncludeDirectory(path) {
 					local p = ::Path_castFromPath(path);
@@ -932,6 +947,9 @@ function CProject {
 					local apidir = ::dobj_get(self, #CProject_apidir);
 					assert( ::Path_isaPath(apidir) );
 					return apidir;
+				},
+				method SourceExtension {
+					return "cpp";
 				}
 			],
 			// mixInRequirements

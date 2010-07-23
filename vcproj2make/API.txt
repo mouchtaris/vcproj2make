@@ -138,6 +138,8 @@ function unmixinObject              (instance)
 //         - Concatenate(another_relative_path:deltastring)
 //               returns a Path representing the concatenation of
 //               the two paths.
+//         - Extension
+//               returns the fie extension if this is a file path.
 //     <^> state fields
 //         - Path_path
 //         - Path_absolute
@@ -259,6 +261,9 @@ function ProjectType_isValid(type)
 //               sets/gets this projects root API directory filepath (a Path instance).
 //               The API directory is where this project stores its header files, in
 //               case this is a library project.
+//         - SourceExtension
+//               returns a deltastring with the extension that source files of this project
+//               should have.
 //     <^> state fields
 //         01. CProject_type
 //         02. CProject_manifestationsConfigurations

@@ -176,17 +176,30 @@ function MakefileManifestation(project, basedir__) {
 	if (std::isundefined(static makemani))
 		makemani = [
 			// Utility methods
+			method writeLine(...) {
+				local fh = @fh;
+				std::filewrite(fh, "\n        ");
+				::util.foreacharg(arguments,
+					[
+						method @operator () (arg) {
+							std::filewrite(@fh, arg);
+							return true;
+						},
+						@fh: fh
+					]);
+				std::filewrite(fh, " \\");
+			},
 			method writePre(ID) {
 				if (local pres = @config[ID + "_pre"])
 					foreach (local preflag, pres)
-						std::filewrite(@fh, "\n        ", preflag, " \\");
+						@writeLine(preflag);
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_pre");
 			},
 			method writePost(ID) {
 				if (local posts = @config[ ID + "_post"])
 					foreach (local postflag, posts)
-						std::filewrite(@fh, "\n        ", postflag, " \\");
+						@writeLine(postflag);
 				else
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_post");
 			},
@@ -198,11 +211,12 @@ function MakefileManifestation(project, basedir__) {
 					if (prefix) {
 						assert( ::util.isdeltastring(prefix) );
 						assert( ::util.isdeltastring(value) );
-						std::filewrite(@fh, "\n        ", prefix, "'", value, "' \\");
+						@writeLine(prefix, "'", value, "'");
 					}
 				}
 			},
 
+			// FLAGS
 			// Specific flag methods
 			method writeSubprojectRelatedCPPFLAGS {
 				local options = cppOptionsFromSubprojects(@proj, @proj.Subprojects());
@@ -243,6 +257,16 @@ function MakefileManifestation(project, basedir__) {
 				@writeLDFLAGS();
 				@writeCXXFLAGS();
 			},
+			
+			// VARIABLES
+			method writeSourcesVariables {
+				std::filewrite(@fh, "\nSOURCES = \\");
+				foreach (local src, @proj.Sources())
+					@writeLine(pathToString(@proj.getLocation().Concatenate(src)));
+			},
+			method writeVariables {
+				@writeSourcesVariables();
+			},
 			// before calling, call init()
 			method writeAll {
 				local pathstr = @basedir.Concatenate("Makefile");
@@ -251,6 +275,7 @@ function MakefileManifestation(project, basedir__) {
 				if (fh) {
 					@fh = fh;
 					@writeFlags();
+					@writeVariables();
 					std::filewrite(@fh, "\n\n\nall:\n	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS)\n\n");
 					std::fileclose(@fh);
 				}
@@ -322,7 +347,7 @@ function MakefileManifestation(project, basedir__) {
 
 
 
-
+if (false)
 // TODO think about:
 // - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
 //   (if delegators are not collected, then maybe manual reference counting has to be
@@ -346,7 +371,7 @@ function MakefileManifestation(project, basedir__) {
 	projfail.setOutputDirectory("../lib/");
 	projfail.setOutputName("fail");
 
-	local proj = ::util.CProject().createInstance(::util.ProjectType().Executable, "/something/in/hell", "Loolis projec");
+	local proj = ::util.CProject().createInstance(::util.ProjectType().Executable, "/something/in/hell/Project", "Loolis projec");
 	proj.addSubproject(projlibisi);
 	proj.addSubproject(projcalc);
 	proj.addSubproject(projfail);
@@ -373,6 +398,9 @@ function MakefileManifestation(project, basedir__) {
 	proj.addIncludeDirectory("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"");
 	proj.addIncludeDirectory(".///////////");
 	//
+	proj.addSource("../Src/something.cpp");
+	proj.addSource("../Src/nothing.cpp");
+	//
 	proj.setManifestationConfiguration(#Makefile,
 		[
 			@CPPFLAGS_pre : [ "-custom_whatever=a_cpp_pre_flag" ],
@@ -389,6 +417,31 @@ function MakefileManifestation(project, basedir__) {
 	::util.println(::util.strgsub("Sakhs", "#", "\\#"));
 }
 
+
+{
+	local s1 = "The fogx jumps the dog.";
+	local s2 = "og";
+	local s3 = "";
+	local s4 = ".";
+	local s5 = "z";
+	::util.println(
+			"s1               : ", s1                                     , ::util.ENDL(),
+			"s2               : ", s2                                     , ::util.ENDL(),
+			"s3               : ", s3                                     , ::util.ENDL(),
+			"s4               : ", s4                                     , ::util.ENDL(),
+			"strlength(s1)    : ", ::util.strlength(s1)                   , ::util.ENDL(),
+			"strrindex(s1, s2): ", local rindex = ::util.strrindex(s1, s2), ::util.ENDL(),
+			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
+			"strrindex(s1, s3): ", rindex = ::util.strrindex(s1, s3)      , ::util.ENDL(),
+			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
+			"strrindex(s1, s4): ", rindex = ::util.strrindex(s1, s4)      , ::util.ENDL(),
+			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
+			"strrindex(s1, s5): ", rindex = ::util.strrindex(s1, s5)      , ::util.ENDL(),
+			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),		
+			nil
+	);
+	// TODO resume continue here (currently an assertion fails: when going a frame down and inspecting start_index, VM crashes)
+}
 // Show all classes
 {
 	::util.println("----");
@@ -398,6 +451,7 @@ function MakefileManifestation(project, basedir__) {
 	::util.println("----");
 }
 
+if (false)
 {
 	::util.println("----");
 	c = [method@{return #c;}];
