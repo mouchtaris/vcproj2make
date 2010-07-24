@@ -27,7 +27,7 @@ function MakefileManifestation(project, basedir__) {
 		return result;
 	}
 	function deltastringToString(str) {
-		assert( ::util.isdeltastring(str) );
+		::util.assert_str( str );
 		return escapeString(str);
 	}
 	function pathToString(path) {
@@ -41,8 +41,8 @@ function MakefileManifestation(project, basedir__) {
 			Option_class = ::util.Class().createInstance(
 				// stateInitialiser
 				function Option_stateInitialiser(newOptionInstance, validStateFieldsNames, prefix_const_or_f, value_const_or_f) {
-					assert( ::util.isdeltastring(prefix_const_or_f) or ::util.isdeltacallable(prefix_const_or_f) );
-					assert( ::util.isdeltastring(prefix_const_or_f) or ::util.isdeltacallable(value_const_or_f));
+					::util.assert_or( ::util.isdeltastring(prefix_const_or_f) , ::util.isdeltacallable(prefix_const_or_f) );
+					::util.assert_or( ::util.isdeltastring(prefix_const_or_f) , ::util.isdeltacallable(value_const_or_f)  );
 					::util.Class_checkedStateInitialisation(
 						newOptionInstance, validStateFieldsNames,
 						[ {#Option_prefix: prefix_const_or_f}, {#Option_value: value_const_or_f} ]
@@ -52,12 +52,12 @@ function MakefileManifestation(project, basedir__) {
 				[
 					method prefix {
 						local result = ::util.val(::util.dobj_checked_get(self, #Option_prefix));
-						assert( ::util.isdeltastring(result) or ::util.isdeltanil(result) );
+						::util.assert_or( ::util.isdeltastring(result) , ::util.isdeltanil(result) );
 						return result;
 					},
 					method value {
 						local result = ::util.val(::util.dobj_checked_get(self, #Option_value));
-						assert( ::util.isdeltastring(result) or ::util.isdeltanil(result) );
+						::util.assert_or( ::util.isdeltastring(result) , ::util.isdeltanil(result) );
 						return result;
 					}
 				],
@@ -78,7 +78,7 @@ function MakefileManifestation(project, basedir__) {
 		foreach (local value, iterable) {
 			local valueString = valueToStringFunctor(value);
 			if (valueString) {
-				assert( ::util.isdeltastring(valueString) );
+				::util.assert_str( valueString );
 				result.push_back(optionPair(prefix, valueString));
 			}
 		}
@@ -209,8 +209,8 @@ function MakefileManifestation(project, basedir__) {
 					local prefix = pair.prefix();
 					local value  = pair.value();
 					if (prefix) {
-						assert( ::util.isdeltastring(prefix) );
-						assert( ::util.isdeltastring(value) );
+						::util.assert_str( prefix );
+						::util.assert_str( value );
 						@writeLine(prefix, "'", value, "'");
 					}
 				}
@@ -290,7 +290,7 @@ function MakefileManifestation(project, basedir__) {
 				@proj = project;
 				//
 				@config = @proj.getManifestationConfiguration(#Makefile);
-				assert( ::util.isdeltaobject(@config) );
+				::util.assert_obj( @config );
 			}
 		];
 	else
@@ -347,7 +347,6 @@ function MakefileManifestation(project, basedir__) {
 
 
 
-if (false)
 // TODO think about:
 // - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
 //   (if delegators are not collected, then maybe manual reference counting has to be
@@ -419,28 +418,38 @@ if (false)
 
 
 {
+	// Checked: string utility functions work correctly
 	local s1 = "The fogx jumps the dog.";
 	local s2 = "og";
 	local s3 = "";
 	local s4 = ".";
 	local s5 = "z";
+	local s1_len = ::util.strlength(s1);
+	local rindex01 = ::util.strrindex(s1, s2);
+	local rindex02 = ::util.strrindex(s1, s3);
+	local rindex03 = ::util.strrindex(s1, s4);
+	local rindex04 = ::util.strrindex(s1, s5);
+	local insp = ::util.inspect;
 	::util.println(
-			"s1               : ", s1                                     , ::util.ENDL(),
-			"s2               : ", s2                                     , ::util.ENDL(),
-			"s3               : ", s3                                     , ::util.ENDL(),
-			"s4               : ", s4                                     , ::util.ENDL(),
-			"strlength(s1)    : ", ::util.strlength(s1)                   , ::util.ENDL(),
-			"strrindex(s1, s2): ", local rindex = ::util.strrindex(s1, s2), ::util.ENDL(),
-			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
-			"strrindex(s1, s3): ", rindex = ::util.strrindex(s1, s3)      , ::util.ENDL(),
-			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
-			"strrindex(s1, s4): ", rindex = ::util.strrindex(s1, s4)      , ::util.ENDL(),
-			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),
-			"strrindex(s1, s5): ", rindex = ::util.strrindex(s1, s5)      , ::util.ENDL(),
-			"strsubstr(...)   : ", ::util.strsubstr(s1, rindex)           , ::util.ENDL(),		
+			"ruler            : ", "0123456789012345678901234567890123456"      , ::util.ENDL(),
+			"s1               : ", insp(s1                                     ), ::util.ENDL(),
+			"s2               : ", insp(s2                                     ), ::util.ENDL(),
+			"s3               : ", insp(s3                                     ), ::util.ENDL(),
+			"s4               : ", insp(s4                                     ), ::util.ENDL(),
+			"s5               : ", insp(s5                                     ), ::util.ENDL(),
+			"strlength(s1)    : ", insp(s1_len                                 ), ::util.ENDL(),
+			"strrindex(s1, s2): ", insp(rindex01                               ), ::util.ENDL(),
+			"strsubstr(...)   : ", insp(::util.strsubstr(s1, rindex01)         ), ::util.ENDL(),
+			"strrindex(s1, s3): ", insp(rindex02                               ), ::util.ENDL(),
+			"strsubstr(...)   : ", insp(::util.strsubstr(s1, rindex02)         ), ::util.ENDL(),
+			"strrindex(s1, s4): ", insp(rindex03                               ), ::util.ENDL(),
+			"strsubstr(...)   : ", insp(::util.strsubstr(s1, rindex03)         ), ::util.ENDL(),
+			"strrindex(s1, s5): ", insp(rindex04                               ), ::util.ENDL(),
+			"strsubstr(...)   : ", insp(::util.strsubstr(s1, rindex04)         ), ::util.ENDL(),
+			"strsubstr(len_s1): ", insp(::util.strsubstr(s1, s1_len)           ), ::util.ENDL(),
+			"strsubstr(len+1) : ", insp(::util.strsubstr(s1, s1_len + 1)       ), ::util.ENDL(),
 			nil
 	);
-	// TODO resume continue here (currently an assertion fails: when going a frame down and inspecting start_index, VM crashes)
 }
 // Show all classes
 {
@@ -451,8 +460,8 @@ if (false)
 	::util.println("----");
 }
 
-if (false)
-{
+
+if (::util.False()) {
 	::util.println("----");
 	c = [method@{return #c;}];
 	b = [method@{return #b;}];

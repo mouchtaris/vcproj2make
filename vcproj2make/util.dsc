@@ -1,3 +1,16 @@
+function False {
+	return false;
+}
+
+function typeof(arg) {
+	return std::typeof(arg);
+}
+
+function inspect(arg) {
+	return "[" + ::typeof(arg) + "]{" + arg + "}";
+}
+
+// printing/inspecting/debugging utils
 const nl = "
 ";
 const pref = " ****** ";
@@ -11,13 +24,29 @@ function foreacharg(args, f) {
 	assert( i == args_end );
 	return i;
 }
-function println(...) { std::print(..., ::nl); }
+function print(...) {
+	::foreacharg(arguments,
+			function(arg){
+				std::print(arg);
+				return true;
+			}
+	);
+}
+function println(...) { ::print(..., ::nl); }
 function printlns(...) {
 	::foreacharg(arguments,
 			function(arg) {
 				::println(arg);
 				return true;
 			}
+	);
+}
+function p(...) {
+	::foreacharg(arguments,
+		function(arg) {
+			::print(::inspect(arg));
+			return true;
+		}
 	);
 }
 function ENDL { return ::nl; }
@@ -61,17 +90,53 @@ function constantf(val) {
 }
 
 // type games
-function isdeltastring(val) { return std::typeof(val) == "String"; }
-function isdeltaobject(val) { return std::typeof(val) == "Object"; }
-function isdeltanumber(val) { return std::typeof(val) == "Number"; }
-function isdeltaboolean(val){ return std::typeof(val) == "Bool"  ; }
-function isdeltanil   (val) { return std::typeof(val) == "Nil"   ; }
-function isdeltacallable(va){ return std::iscallable(va)         ; }
+function isdeltastring(val) { return ::typeof(val) == "String"; }
+function isdeltaobject(val) { return ::typeof(val) == "Object"; }
+function isdeltanumber(val) { return ::typeof(val) == "Number"; }
+function isdeltaboolean(val){ return ::typeof(val) == "Bool"  ; }
+function isdeltanil   (val) { return ::typeof(val) == "Nil"   ; }
+function isdeltaundefined(val){return std::isundefined(val)   ; }
+function isdeltacallable(va){ return std::iscallable(va)      ; }
 function toboolean    (val) { if (val) return true; else return false; }
+//
+// assertion utils
+function assert_notnil(val) {
+	assert( not ::isdeltanil(val) );
+}
+function assert_notundef(val) {
+	assert( not ::isdeltaundefined(val) );
+}
+function assert_str(val) {
+	assert( ::isdeltastring(val) );
+}
+function assert_num(val) {
+	assert( ::isdeltanumber(val) );
+}
+function assert_obj(val) {
+	assert( ::isdeltaobject(val) );
+}
+function assert_eq(val1, val2) {
+	assert( val1 == val2 );
+}
+function assert_ge(val1, val2) {
+	assert( val1 >= val2 );
+}
+function assert_or(cond1, cond2) {
+	assert( cond1 or cond2 );
+}
+function assert_gt_or_eq(val1, val2, val3, val4) {
+	assert( val1 > val2 or val3 == val4 );
+}
+function assert_ge_or_eq(val1, val2, val3, val4) {
+	assert( val1 >= val2 or val3 == val4 );
+}
+function assert_fail {
+	assert( not "Assertion-failure requested" );
+}
 //
 // "private field"
 function pfield(field_name) {
-	assert(::isdeltastring(field_name));
+	::assert_str(field_name);
 	return "$_" + field_name;
 }
 // "delta object", "field name"
@@ -112,7 +177,7 @@ function dobj_checked_set(dobj, validKeys, key, val) {
 }
 function dobj_checked_get(dobj, key) {
 	local result = ::dobj_get(dobj, key);
-	assert( not ::isdeltanil(result) );
+	::assert_notnil(result);
 	return result;
 }
 //
@@ -170,7 +235,7 @@ function strslice(str, start_index, end_index) {
 	else if (start_index == end_index)
 		result = std::strchar(str, start_index);
 	else {
-		assert( end_index > start_index or end_index == 0 );
+		::assert_gt_or_eq( end_index , start_index , end_index , 0 );
 		result = std::strslice(str, start_index, end_index);
 	}
 	return result;
@@ -184,16 +249,16 @@ function strsubstr(str, start_index ...) {
 			std::error("substring() expects length of type Number but " + arg3 + "(" + std::typeof(arg3) + ") given");
 		length = arg3;
 	}
-	assert( ::isdeltanumber(start_index) );
-	assert ( start_index >= 0 ); {
+	::assert_num(start_index);
+	if ( start_index >= 0 ) {
 		if (length) {
-			assert( ::isdeltanumber(length) );
-			assert( length >= 0 );
+			::assert_num(length);
+			::assert_ge( length , 0 );
 			end_index = start_index + length;
 		}
 		else
 			end_index = 0;
-		assert( end_index >= start_index or end_index == 0 );
+		::assert_ge_or_eq( end_index , start_index , end_index , 0 );
 		result = ::strslice(str, start_index, end_index);
 	}
 	return result;
@@ -204,15 +269,15 @@ function strsub(string, pattern, replacement) {
 	if (pattern_index >= 0) {
 		::println("&&&strsub&&& looking for \"", pattern, "\" in \"", string, "\"");
 		local initial_part = ::strslice(string, 0, pattern_index - 1);
-		assert( ::isdeltastring(initial_part) );
+		::assert_str(initial_part);
 		local rest = ::strslice(string, pattern_index + std::strlen(pattern), 0);
-		assert( ::isdeltastring(rest) );
+		::assert_str(rest);
 		result = initial_part + replacement + rest;
 	}
 	return result;
 }
 function strgsub(string, pattern, replacement) {
-	assert( ::isdeltastring(pattern) );
+	::assert_str(pattern);
 	if (pattern == "")
 			return string;
 	local string_to_check = string;
@@ -223,17 +288,17 @@ function strgsub(string, pattern, replacement) {
 			initial_part = "";
 		else
 			initial_part = ::strslice(string_to_check, 0, pattern_index - 1);
-		assert( ::isdeltastring(initial_part) );
+		::assert_str(initial_part);
 		string_to_check = ::strsubstr(string_to_check, pattern_index + std::strlen(pattern));
-		assert( ::isdeltastring(string_to_check) );
+		::assert_str(string_to_check);
 
 		result += initial_part + replacement;
 	}
 	return result + string_to_check;
 }
 function strrindex(hay, needle) {
-	assert( ::isdeltastring(hay) );
-	assert( ::isdeltastring(needle) );
+	::assert_str(hay);
+	::assert_str(needle);
 	for (local i = std::strlen(hay); i >= 0 and std::strsub(::strsubstr(hay, i), needle) == -1; --i)
 		;
 	return i;
@@ -290,11 +355,11 @@ function mixin(newInstanceState, mixin_instance, mixin_prototype) {
 //
 function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) {
 	local number_of_fields = std::tablength(validFieldsNames);
-	assert( std::tablength(fields) == number_of_fields );
+	::assert_eq( std::tablength(fields), number_of_fields );
 	foreach (local validFieldName, validFieldsNames) {
 		local value = std::tabget(fields, validFieldName);
-		assert( not std::isundefined(value) );
-		assert( not ::isdeltanil(value) );
+		::assert_notundef( value );
+		::assert_notnil( value );
 		::dobj_set(newObjectInstance, validFieldName, value);
 	}
 }
@@ -319,7 +384,7 @@ function Object_stateFields {
 function Object_stateInitialiser {
 	if (std::isundefined(static stateInitialiser))
 		stateInitialiser = (function (newObjectInstance) {
-			assert( ::isdeltaobject(newObjectInstance) );
+			::assert_obj( newObjectInstance );
 			Class_checkedStateInitialisation(
 				newObjectInstance,
 				Object_stateFields(),
@@ -373,8 +438,7 @@ function Class {
 				// Get the ingredients
 				local stateInitialiser = ::dobj_get(self, #stateInitialiser);
 				local prototype        = self.getPrototype();
-				assert(std::iscallable(stateInitialiser));
-				assert(::isdeltaobject(prototype));
+				::assert_obj(prototype);
 				local self_stateFields = self.stateFields();
 
 				// New state
@@ -458,11 +522,11 @@ function Class {
 							std::list_push_back(mixInRegistry, [@class:another_class,@args:createInstanceArguments]);
 						}
 						else
-							assert(false);
+							::assert_fail();
 					else
-						assert(false);
+						::assert_fail();
 				else
-					assert(false);
+					::assert_fail();
 			},
 			method getPrototype {
 				return ::dobj_get(self, #prototype);
@@ -472,7 +536,7 @@ function Class {
 			},
 			method getClassName {
 				local result = ::dobj_get(self, #className);
-				assert( ::isdeltastring(result) );
+				::assert_str( result );
 				return result;
 			},
 			method setClassName(className) {
@@ -487,10 +551,9 @@ function Class {
 	if (std::isundefined(static Class_stateFields))
 		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry, #className];
 	function Class_stateInitialiser(newClassInstance, validStateFieldsNames, stateInitialiser, prototype, mixInRequirements, stateFields, className) {
-		assert( std::iscallable(stateInitialiser) );
-		assert( ::isdeltaobject(prototype) );
-		assert( ::isdeltaobject(mixInRequirements) );
-		assert( ::isdeltaobject(stateFields) );
+		::assert_obj( prototype );
+		::assert_obj( mixInRequirements );
+		::assert_obj( stateFields );
 		Class_checkedStateInitialisation(
 			newClassInstance,
 			validStateFieldsNames,
@@ -529,7 +592,7 @@ function Printable() {
 		Printable_class = ::Class().createInstance(
 			// stateInitialiser
 			function Printable_stateInitialiser(newPointInstance, validStateFieldsNames, prefix) {
-				assert( std::tablength(validStateFieldsNames) == 0 );
+				::assert_eq( std::tablength(validStateFieldsNames), 0 );
 				if (prefix)
 					::dobj_set(newPointInstance, #prefix, prefix);
 			},
@@ -555,7 +618,7 @@ function Serialisable {
 		Serialisable_class = ::Class().createInstance(
 			// stateInitialiser
 			function Serialisable_stateInitialiser(newInstance, validStateFieldsNames) {
-				assert( std::tablength(validStateFieldsNames) == 0 );
+				::assert_eq( std::tablength(validStateFieldsNames) , 0 );
 			},
 			// prototype
 			[
@@ -584,8 +647,8 @@ function Point {
 		Point_class = ::Class().createInstance(
 			// stateInitialiser
 			function Point_stateInitialiser(newPointInstance, validStateFieldsNames, x, y, printPrefix) {
-				assert( ::isdeltanumber(x) );
-				assert( ::isdeltanumber(y) );
+				::assert_num( x );
+				::assert_num( y );
 				Class_checkedStateInitialisation(
 					newPointInstance,
 					validStateFieldsNames,
@@ -613,9 +676,9 @@ function Point {
 		);
 		Point_class.mixIn(Printable(), [
 			method @operator ()(newInstance, validStateFieldsNames, x, y, printPrefix) {
-				assert( newInstance.getX() == x );
-				assert( newInstance.getY() == y );
-				assert( ::isdeltastring(printPrefix) );
+				::assert_eq( newInstance.getX(), x );
+				::assert_eq( newInstance.getY(), y );
+				::assert_str( printPrefix );
 				return [printPrefix];
 			}
 		]);
@@ -629,8 +692,8 @@ function Point {
 }
 
 {
-	pclass = Point();
-	p = pclass.createInstance(3, 4, "Omphalus");
+	local pclass = Point();
+	local p = pclass.createInstance(3, 4, "Omphalus");
 	p.serialise();
 }
 
@@ -668,7 +731,7 @@ function Path {
 		Path_class = ::Class().createInstance(
 			// stateInitialiser
 			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
-				assert( ::isdeltastring(path) );
+				::assert_str( path );
 				Class_checkedStateInitialisation(
 					newPathInstance,
 					validStateFieldsNames,
@@ -679,12 +742,12 @@ function Path {
 			[
 				method deltaString {
 					local result = ::dobj_get(self, #Path_path);
-					assert( ::isdeltastring(result) );
+					::assert_str( result );
 					return result;
 				},
 				method IsAbsolute {
 					local result = ::dobj_get(self, #Path_absolute);
-					assert( not ::isdeltanil(result) );
+					::assert_notnil( result );
 					return result;
 				},
 				method IsRelative {
@@ -702,7 +765,11 @@ function Path {
 					return result;
 				},
 				method Extension {
-					assert( not "Not implemented" ); // TODO implement
+					local path = ::dobj_get(self, #Path_path);
+					::assert_str( path );
+					local ext = ::strsubstr(path, ::strrindex(path, ".") + 1);
+					::assert_str( ext );
+					return ext;
 				}	
 			],
 			// mixInRequirements
@@ -764,7 +831,7 @@ function Namable {
 		Namable_class = ::Class().createInstance(
 			// stateInitialiser
 			function Namable_stateInitialiser(newInstance, validStateFieldsNames, name) {
-				assert( ::isdeltastring(name) );
+				::assert_str( name );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
@@ -775,11 +842,11 @@ function Namable {
 			[
 				method getName {
 					local name = ::dobj_get(self, #Namable_name);
-					assert( ::isdeltastring(name) );
+					::assert_str( name );
 					return name;
 				},
 				method setName(name) {
-					assert( ::isdeltastring(name) );
+					::assert_str( name );
 					return ::dobj_set(self, #Namable_name, name);
 				}
 			],
@@ -844,7 +911,7 @@ function CProject {
 				method addSource(path) {
 					local p = ::Path_castFromPath(path);
 					assert( ::Path_isaPath(p) );
-					assert( p.Extension() == self.SourceExtension() );
+					::assert_eq( p.Extension(), self.SourceExtension() );
 					::dobj_get(self, #CProject_sources).push_back(p);
 				},
 				method Sources {
@@ -866,7 +933,7 @@ function CProject {
 					return ::list_clone(::dobj_get(self, #CProject_subprojects));
 				},
 				method addPreprocessorDefinition(definition) {
-					assert( ::isdeltastring(definition) );
+					::assert_str( definition );
 					::dobj_get(self, #CProject_definitions).push_back(definition);
 				},
 				method PreprocessorDefinitions {
@@ -889,17 +956,17 @@ function CProject {
 					return ::list_clone(::dobj_get(self, #CProject_libraries));
 				},
 				method setManifestationConfiguration(manifestationID, configuration) {
-					assert( ::isdeltastring(manifestationID) );
+					::assert_str( manifestationID );
 					local configs = ::dobj_get(self, #CProject_manifestationsConfigurations);
-					assert( ::isdeltaobject(configs) );
+					::assert_obj( configs );
 					configs[manifestationID] = configuration;
 				},
 				method getManifestationConfiguration(manifestationID) {
-					assert( ::isdeltastring(manifestationID) );
+					::assert_str( manifestationID );
 					local configs = ::dobj_get(self, #CProject_manifestationsConfigurations);
-					assert( ::isdeltaobject(configs) );
+					::assert_obj( configs );
 					local config = configs[manifestationID];
-					assert( not ::isdeltanil(config) );
+					::assert_notnil( config );
 					return config;
 				},
 				method isStaticLibrary {
@@ -931,11 +998,11 @@ function CProject {
 				},
 				method getOutputName {
 					local name = ::dobj_get(self, #CProject_outputName);
-					assert( ::isdeltastring(name) );
+					::assert_str( name );
 					return name;
 				},
 				method setOutputName(name) {
-					assert( ::isdeltastring(name) );
+					::assert_str( name );
 					::dobj_checked_set(self, ::CProject().stateFields(), #CProject_outputName, name);
 				},
 				method setAPIDirectory(path) {
