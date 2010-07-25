@@ -37,6 +37,15 @@ function list_clone                     (list)
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
+function file_hidden                    (filename)
+//
+function strslice                       (str, start_index, end_index)
+function strsubstr                      (str, start_index ...)
+function strsub                         (string, pattern, replacement)
+function strgsub                        (string, pattern, replacement)
+function strrindex                      (hay, needle)
+function strlength                      (str)
+function strchar                        (str, charindex)
 
 ////////////////////////////////////////////////////////////////////////
 function mixin_state                            (state, mixin)
@@ -135,11 +144,15 @@ function unmixinObject              (instance)
 //               returns this path as a delta string
 //         - IsAbsolute
 //         - IsRelative
-//         - Concatenate(another_relative_path:deltastring)
+//         - Concatenate(another_relative_path:pathable)
 //               returns a Path representing the concatenation of
 //               the two paths.
 //         - Extension
 //               returns the fie extension if this is a file path.
+//         - asWithExtension(ext:deltastring)
+//               returns a new path instance which is the same as
+//               this path instance except for the new path having
+//               as an extension the one to this call.
 //     <^> state fields
 //         - Path_path
 //         - Path_absolute

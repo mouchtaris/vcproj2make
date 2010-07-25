@@ -226,6 +226,14 @@ function file_isabsolutepath(filepath) {
 		result = std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
 	return result;
 }
+function file_hidden(filename) {
+	local result = nil;
+	if (::iswin32())
+		result = "_" + filename;
+	else if (::islinux())
+		result = "." + filename;
+	return result;
+}
 
 /// delta strings utilities
 function strslice(str, start_index, end_index) {
@@ -305,6 +313,9 @@ function strrindex(hay, needle) {
 }
 function strlength(str) {
 	return std::strlen(str);
+}
+function strchar(str, charindex) {
+	return std::strchar(str, charindex);
 }
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
@@ -770,7 +781,18 @@ function Path {
 					local ext = ::strsubstr(path, ::strrindex(path, ".") + 1);
 					::assert_str( ext );
 					return ext;
-				}	
+				},
+				method asWithExtension(newext) {
+					::assert_str(newext);
+					local pathstr = self.deltaString();
+					local extindex = ::strrindex(pathstr, ".");
+					pathstr = ::strsubstr(pathstr, 0, extindex);
+					::assert_eq( extindex + 1 , ::strlength(pathstr) );
+					::assert_eq( ::strchar(pathstr, ::strlength(pathstr) - 1), "." );
+					::assert_eq( ::strsubstr(pathstr, extindex + 1), "" );
+					pathstr = pathstr + newext;
+					return ::Path().createInstance(pathstr, self.IsAbsolute());
+				}
 			],
 			// mixInRequirements
 			[],
@@ -1044,3 +1066,4 @@ function CProject {
 function CProject_isaCProject(obj) {
 	return ::Class_isa(obj, ::CProject());
 }
+

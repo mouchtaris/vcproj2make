@@ -173,6 +173,12 @@ function MakefileManifestation(project, basedir__) {
 			}
 		return result;
 	}
+	function objectNameFromSourceName(src) {
+		assert( ::util.Path_isaPath(src) );
+		local obj = src.asWithExtension("o");
+		assert( ::util.Path_isaPath(obj) );
+		return obj;
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
 			// Utility methods
@@ -263,9 +269,20 @@ function MakefileManifestation(project, basedir__) {
 				std::filewrite(@fh, "\nSOURCES = \\");
 				foreach (local src, @proj.Sources())
 					@writeLine(pathToString(@proj.getLocation().Concatenate(src)));
+				std::filewrite(@fh, ::util.ENDL());
+			},
+			method writeObjectVariables {
+				std::filewrite(@fh, "\nOBJECTS = \\");
+				foreach (local src, @proj.Sources()) {
+					local obj = objectNameFromSourceName(src);
+					local obj_path = @builddir.Concatenate(@proj.getLocation());
+					@writeLine(pathToString(obj_path.Concatenate(obj)));
+				}
+				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeVariables {
 				@writeSourcesVariables();
+				@writeObjectVariables();
 			},
 			// before calling, call init()
 			method writeAll {
@@ -276,7 +293,8 @@ function MakefileManifestation(project, basedir__) {
 					@fh = fh;
 					@writeFlags();
 					@writeVariables();
-					std::filewrite(@fh, "\n\n\nall:\n	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS)\n\n");
+					std::filewrite(@fh, "\n\n\nall:\n	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) "
+							"$(SOURCES) $(OBJECTS)\n\n");
 					std::fileclose(@fh);
 				}
 				else
@@ -285,6 +303,8 @@ function MakefileManifestation(project, basedir__) {
 			method init(basedir, project) {
 				assert( ::util.Path_isaPath(basedir) );
 				@basedir = basedir;
+				@builddir = basedir.Concatenate(::util.file_hidden("build"));
+				assert( ::util.Path_isaPath(@builddir) );
 				//
 				assert( ::util.CProject_isaCProject(project) );
 				@proj = project;
@@ -483,3 +503,4 @@ if (::util.False()) {
 	::util.println("A delegated to c, b: ", a);
 	::util.println("----");
 }
+
