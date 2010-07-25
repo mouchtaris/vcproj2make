@@ -6,6 +6,7 @@ std::vmrun(vc2mk);
 
 
 
+if (::util.False())
 // TODO think about:
 // - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
 //   (if delegators are not collected, then maybe manual reference counting has to be
@@ -69,13 +70,14 @@ std::vmrun(vc2mk);
 			@CXXFLAGS_post: [ "-lute=a_cxx_flag_post" ]
 		]
 	);
-	::vc2mk.MakefileManifestation(proj);
+	::vc2mk.MakefileManifestation(proj, "./");
 	//::util.println(proj);
 	::util.println(::util.strgsub("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"", "#", "\\#"));
 	::util.println(::util.strgsub("Sakhs", "#", "\\#"));
 }
 
 
+if (::util.False())
 {
 	// Checked: string utility functions work correctly
 	local s1 = "The fogx jumps the dog.";
@@ -110,14 +112,6 @@ std::vmrun(vc2mk);
 			nil
 	);
 }
-// Show all classes
-{
-	::util.println("----");
-	local reg = ::util.dobj_get(::util.Class_classRegistry(), #list);
-	foreach (local class, reg)
-		::util.println(class);
-	::util.println("----");
-}
 
 
 if (::util.False()) {
@@ -140,5 +134,118 @@ if (::util.False()) {
 	std::delegate(a, c);
 	std::delegate(a, b);
 	::util.println("A delegated to c, b: ", a);
+	::util.println("----");
+}
+
+
+{
+/////////////// A real project example /////////////////
+//
+// In the future the project instances will be generated automatically
+// by parsing visual studio project files
+
+	local testprojectspathstr  = "vcproj2make_testprojects";
+	local testprojectspath     = ::util.Path_castFromPath(testprojectspathstr);
+	local ProjectTypes         = ::util.ProjectType();
+	local Executable           = ProjectTypes.Executable;
+	local DynamicLibrary       = ProjectTypes.DynamicLibrary;
+	local StaticLibrary        = ProjectTypes.StaticLibrary;
+	local projs                = [];
+	foreach (local proj, [ [#isiapp, Executable] , [#isidll, DynamicLibrary] , [#isistatic, StaticLibrary] ]) {
+		local projname = proj[0];
+		local projtype = proj[1];
+		// projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
+		projs[projname] = ::util.CProject().createInstance(
+			// projectType:ProjectType_*
+			projtype, 
+			// path:Path_fromPath()
+			"../../../" + projname + "/Project/" + projname + "_VS/",
+			// projectName:deltastring
+			projname
+		);
+		projs[projname].setManifestationConfiguration(#Makefile,
+			[
+				@CPPFLAGS_pre : [],
+				@CPPFLAGS_post: [],
+				@LDFLAGS_pre  : [],
+				@LDFLAGS_post : [],
+				@CXXFLAGS_pre : [],
+				@CXXFLAGS_post: []
+			]
+		);
+	}
+	// project-specific tweaks
+	{ // --- isiapp ---
+		local proj = projs.isiapp;
+		proj.addSubproject(projs.isidll);
+		proj.addSubproject(projs.isistatic);
+		//
+		proj.addSource("../../Source/main.cpp");
+		//
+		proj.setOutputDirectory("../../Binaries");
+		proj.setOutputName("app");
+	}
+	{ // --- isidll ---
+		local proj = projs.isidll;
+		proj.setAPIDirectory("../../Include");
+		proj.setOutputDirectory("../../Libraries");
+		proj.setOutputName("isidll");
+		//
+		proj.addSource("../../Source/isi/f.cpp");
+	}
+	{ // --- isistatic ---
+		local proj = projs.isistatic;
+		proj.setAPIDirectory("../../Include");
+		proj.setOutputDirectory("../../Libraries");
+		proj.setOutputName("isistatic");
+		//
+		proj.addIncludeDirectory("../../../isidll/Include");
+		//
+		proj.addSource("../../Source/isi/g.cpp");
+	}
+	
+	
+	// Creating the solution project which includes every other one
+	{
+		local proj = ::util.CProject().createInstance(
+			// projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
+			Executable, testprojectspathstr, "vcproj2make_testprojects_solution"
+		);
+		foreach (local subproj, projs)
+			proj.addSubproject(subproj);
+			
+		proj.setManifestationConfiguration(#Makefile,
+			[
+				@CPPFLAGS_pre : [],
+				@CPPFLAGS_post: [],
+				@LDFLAGS_pre  : [],
+				@LDFLAGS_post : [],
+				@CXXFLAGS_pre : [],
+				@CXXFLAGS_post: []
+			]
+		);
+		::vc2mk.MakefileManifestation(proj, proj.getLocation().deltaString() + "/");
+		::util.CProject_depthFirstForeachSubproject(proj,
+			[
+				method @operator () (subproj) {
+					::vc2mk.MakefileManifestation(subproj,
+							@proj.getLocation().Concatenate(subproj.getLocation()).deltaString() + "/");
+					return true;
+				},
+				@proj: proj
+			]
+		);
+	}
+	
+	
+	::util.println(projs);
+}
+
+// Show all classes
+{
+	::util.println("----");
+	local reg = ::util.dobj_get(::util.Class_classRegistry(), #list);
+	foreach (local class, reg)
+		::util.println(class);
 	::util.println("----");
 }

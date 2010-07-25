@@ -15,3 +15,6 @@ glob:vcproj2make/util.idc
 glob:vcproj2make/Makefile
 glob:.svn
 glob:vcproj2make/BreakpointsConsole.txt
+glob:vcproj2make/main.idc
+glob:vcproj2make/main.dbc
+glob:vcproj2make/main.txt

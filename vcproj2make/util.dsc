@@ -1133,4 +1133,18 @@ function CProject {
 function CProject_isaCProject(obj) {
 	return ::Class_isa(obj, ::CProject());
 }
-
+function CProject_depthFirstForeachSubproject(proj, f) {
+	function impl(proj, f, keep_going) {
+		assert( ::CProject_isaCProject(proj) );
+		if (keep_going.val) {
+			foreach (local subproj, proj.Subprojects()) {
+				@lambda(subproj, f, keep_going);
+				if (keep_going.val and not f(subproj)) {
+					keep_going.val = false;
+					break;
+				}
+			}
+		}
+	}
+	impl(proj, f, [@val: true]);
+}

@@ -5,7 +5,7 @@ assert( util );
 //////////////////////////////
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
-function MakefileManifestation(project) {
+function MakefileManifestation(project, makefile_path_prefix) {
 	function escapeString(str) {
 		if (str == "")
 			return str;
@@ -216,7 +216,10 @@ function MakefileManifestation(project) {
 	}
 	
 	function appendCommandsFromSubprojects(subprojects, commands) {
-		std::list_push_back(commands, "@echo Nothing matters"); // TODO implement
+		foreach (local subproj, subprojects)
+			std::list_push_back(commands,
+					"( cd " + subproj.getLocation().deltaString() + " && ${MAKE} -f Makefile )"
+			);
 	}
 	
 	if (std::isundefined(static makemani))
@@ -383,5 +386,5 @@ function MakefileManifestation(project) {
 		makemani = makemani;
 	assert( ::util.CProject_isaCProject(project) );
 	makemani.init(project);
-	makemani.writeAll("./");
+	makemani.writeAll(makefile_path_prefix);
 }
