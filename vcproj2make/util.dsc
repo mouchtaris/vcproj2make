@@ -226,6 +226,16 @@ function bindback(f ...) {
 		@args: argspopfront(arguments, 1)
 	];
 }
+function fcomposition (f1, f2) {
+	return [
+		method @operator () (...) {
+			return @f1(@f2(...));
+		},
+		@f1: f1,
+		@f2: f2
+	];
+}
+
 //
 // Utilities for iterables
 function iterable_contains(iterable, value) {

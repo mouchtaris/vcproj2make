@@ -13,6 +13,7 @@ function bindfront      (f ...)
 function bindback       (f ...)
 function argspopback    (args, popnum)
 function argspopfront   (args, popnum)
+function fcomposition   (f1, f2)
 
 //
 function isdeltastring  (val)
@@ -209,7 +210,7 @@ function Path_castFromPath(path)    same for "castFromPath" but if passed argume
 //     -----------------------
 //     <^> createInstance( name:string )
 //     <^> Public methods
-//         - get/seName
+//         - get/setName
 //               gets/sets this object's name.
 //     <^> state fields
 //         - Namable_name

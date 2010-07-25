@@ -7,7 +7,7 @@ std::vmrun(util);
 //////////////////////////////
 // *** MakefileManifestation
 //     Produces Makefiles given a Project.
-function MakefileManifestation(project, basedir__) {
+function MakefileManifestation(project) {
 	function escapeString(str) {
 		if (str == "")
 			return str;
@@ -173,6 +173,12 @@ function MakefileManifestation(project, basedir__) {
 			}
 		return result;
 	}
+	function pathToPathWithoutParentAndSelfDirectories(path) {
+		local pathstr = path.deltaString();
+		pathstr = ::util.strgsub(pathstr, "../", "__/");
+		pathstr = ::util.strgsub(pathstr, "./" , "_/" );
+		return ::util.Path_castFromPath(pathstr);
+	}
 	function pathMapping(paths, pathmapf) {
 		return ::util.iterable_map(paths,
 			[
@@ -196,11 +202,12 @@ function MakefileManifestation(project, basedir__) {
 		assert( ::util.CProject_isaCProject(proj) );
 		assert( ::util.Path_isaPath(builddir) );
 		
-		local prefixpath = builddir.Concatenate(proj.getLocation());
+		local prefixpath = builddir;
 		local ext        = proj[transformationExtensionPrefix + #Extension]();
 		local pathmapper = relocateAndReextensionise;
 		pathmapper = ::util.bindfront(pathmapper, prefixpath);
 		pathmapper = ::util.bindback(pathmapper, ext);
+		pathmapper = ::util.fcomposition(pathmapper, pathToPathWithoutParentAndSelfDirectories);
 		return pathMapping(proj.Sources(), pathmapper);
 	}
 	function objectsFromSources(proj, builddir) {
@@ -347,10 +354,12 @@ function MakefileManifestation(project, basedir__) {
 			},
 			
 			// before calling, call init()
-			method writeAll {
-				local pathstr = @basedir.Concatenate("Makefile");
-				::util.println("Writing crap to ", pathstr.deltaString());
-				local fh = std::fileopen(pathstr.deltaString(), "wt");
+			method writeAll(makefile_path_prefix) {
+				::util.assert_str(makefile_path_prefix);
+				local path = ::util.Path_castFromPath(makefile_path_prefix).Concatenate("Makefile");
+				assert( ::util.Path_isaPath(path) );
+				::util.println("Writing crap to ", path.deltaString());
+				local fh = std::fileopen(path.deltaString(), "wt");
 				if (fh) {
 					@fh = fh;
 					@writeFlags();
@@ -359,13 +368,11 @@ function MakefileManifestation(project, basedir__) {
 					std::fileclose(@fh);
 				}
 				else
-					::util.println("Error, could not open file ", pathstr);
+					::util.println("Error, could not open file ", path);
 			},
-			method init(basedir, project) {
-				assert( ::util.Path_isaPath(basedir) );
-				@basedir = basedir;
-				@builddir = basedir.Concatenate(::util.file_hidden("build"));
-				assert( ::util.Path_isaPath(@builddir) );
+			method init(project) {
+				local builddir = @builddir = project.getLocation().Concatenate(::util.file_hidden("build"));
+				assert( ::util.Path_isaPath(builddir) );
 				//
 				assert( ::util.CProject_isaCProject(project) );
 				@proj = project;
@@ -377,9 +384,8 @@ function MakefileManifestation(project, basedir__) {
 	else
 		makemani = makemani;
 	assert( ::util.CProject_isaCProject(project) );
-	local basedir = ::util.Path_castFromPath(basedir__);
-	makemani.init(basedir, project);
-	makemani.writeAll();
+	makemani.init(project);
+	makemani.writeAll("./");
 }
 
 
@@ -491,7 +497,7 @@ function MakefileManifestation(project, basedir__) {
 			@CXXFLAGS_post: [ "-lute=a_cxx_flag_post" ]
 		]
 	);
-	MakefileManifestation(proj, ".");
+	MakefileManifestation(proj);
 	//::util.println(proj);
 	::util.println(::util.strgsub("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"", "#", "\\#"));
 	::util.println(::util.strgsub("Sakhs", "#", "\\#"));
