@@ -9,14 +9,35 @@ function del            (delegator, delegate)
 function loadlibs
 //
 function constantf      (val)
+function bindfront      (f ...)
+function bindback       (f ...)
+function argspopback    (args, popnum)
+function argspopfront   (args, popnum)
+
 //
 function isdeltastring  (val)
 function isdeltaobject  (val)
+function isdeltatable   (val)
 function isdeltanumber  (val)
 function isdeltaboolean (val)
 function isdeltanil     (val)
 function isdeltacallable(val)
 function toboolean      (val)
+//
+function assert_notnil      (val)
+function assert_notundef    (val)
+function assert_str         (val)
+function assert_num         (val)
+function assert_obj         (val)
+function assert_tbl         (val)
+function assert_eq          (val1, val2)
+function assert_lt          (val1, val2)
+function assert_gt          (val1, val2)
+function assert_ge          (val1, val2)
+function assert_or          (cond1, cond2)
+function assert_gt_or_eq    (val1, val2, val3, val4)
+function assert_ge_or_eq    (val1, val2, val3, val4)
+function assert_fail
 //
 function pfield                         (field_name)
 function dobj_get                       (dobj, field_name)
@@ -28,12 +49,15 @@ function dobj_contains_any_key          (dobj, keys)
 function dobj_contains_any_key_from     (dobj, dobj_other)
 function dobj_checked_set               (dobj, validKeys, key, val)
 function dobj_checked_get               (dobj, key)
+function dobj_length                    (dobj)
 //
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
 function iterable_to_deltaobject        (iterable)
 function list_to_deltaobject            (list)
 function list_clone                     (list)
+function iterable_map                   (iterable, mapf)            // returns an iterable with all the contents
+                                                                    // of the original iterable mapped through mapf()
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
@@ -277,6 +301,12 @@ function ProjectType_isValid(type)
 //         - SourceExtension
 //               returns a deltastring with the extension that source files of this project
 //               should have.
+//         - ObjectExtension
+//               returns a deltastring with the extension that produced object files of this
+//               project will have.
+//         - DependencyExtension
+//               returns a deltastring with the extension that produced dependency files of 
+//               this project will have.
 //     <^> state fields
 //         01. CProject_type
 //         02. CProject_manifestationsConfigurations

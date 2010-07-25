@@ -10,6 +10,61 @@ function inspect(arg) {
 	return "[" + ::typeof(arg) + "]{" + arg + "}";
 }
 
+// type games
+function isdeltastring(val) { return ::typeof(val) == "String"; }
+function isdeltaobject(val) { return ::typeof(val) == "Object"; }
+function isdeltatable (val) { return ::typeof(val) == "Table" ; }
+function isdeltanumber(val) { return ::typeof(val) == "Number"; }
+function isdeltaboolean(val){ return ::typeof(val) == "Bool"  ; }
+function isdeltanil   (val) { return ::typeof(val) == "Nil"   ; }
+function isdeltaundefined(val){return std::isundefined(val)   ; }
+function isdeltacallable(va){ return std::iscallable(va)      ; }
+function toboolean    (val) { if (val) return true; else return false; }
+//
+// assertion utils
+function assert_notnil(val) {
+	assert( not ::isdeltanil(val) );
+}
+function assert_notundef(val) {
+	assert( not ::isdeltaundefined(val) );
+}
+function assert_str(val) {
+	assert( ::isdeltastring(val) );
+}
+function assert_num(val) {
+	assert( ::isdeltanumber(val) );
+}
+function assert_obj(val) {
+	assert( ::isdeltaobject(val) );
+}
+function assert_tbl(val) {
+	assert( ::isdeltatable(val) );
+}
+function assert_eq(val1, val2) {
+	assert( val1 == val2 );
+}
+function assert_lt(val1, val2) {
+	assert( val1 < val2 );
+}
+function assert_gt(val1, val2) {
+	assert( val1 > val2 );
+}
+function assert_ge(val1, val2) {
+	assert( val1 >= val2 );
+}
+function assert_or(cond1, cond2) {
+	assert( cond1 or cond2 );
+}
+function assert_gt_or_eq(val1, val2, val3, val4) {
+	assert( val1 > val2 or val3 == val4 );
+}
+function assert_ge_or_eq(val1, val2, val3, val4) {
+	assert( val1 >= val2 or val3 == val4 );
+}
+function assert_fail {
+	assert( not "Assertion-failure requested" );
+}
+
 // printing/inspecting/debugging utils
 const nl = "
 ";
@@ -24,6 +79,7 @@ function foreacharg(args, f) {
 	assert( i == args_end );
 	return i;
 }
+
 function print(...) {
 	::foreacharg(arguments,
 			function(arg){
@@ -84,55 +140,7 @@ function loadlibs {
 		std::error("could not load xml parser lib");
 	return true;
 }
-// Functional games
-function constantf(val) {
-	return [ method @operator () { return @val; }, { #val: val } ];
-}
 
-// type games
-function isdeltastring(val) { return ::typeof(val) == "String"; }
-function isdeltaobject(val) { return ::typeof(val) == "Object"; }
-function isdeltanumber(val) { return ::typeof(val) == "Number"; }
-function isdeltaboolean(val){ return ::typeof(val) == "Bool"  ; }
-function isdeltanil   (val) { return ::typeof(val) == "Nil"   ; }
-function isdeltaundefined(val){return std::isundefined(val)   ; }
-function isdeltacallable(va){ return std::iscallable(va)      ; }
-function toboolean    (val) { if (val) return true; else return false; }
-//
-// assertion utils
-function assert_notnil(val) {
-	assert( not ::isdeltanil(val) );
-}
-function assert_notundef(val) {
-	assert( not ::isdeltaundefined(val) );
-}
-function assert_str(val) {
-	assert( ::isdeltastring(val) );
-}
-function assert_num(val) {
-	assert( ::isdeltanumber(val) );
-}
-function assert_obj(val) {
-	assert( ::isdeltaobject(val) );
-}
-function assert_eq(val1, val2) {
-	assert( val1 == val2 );
-}
-function assert_ge(val1, val2) {
-	assert( val1 >= val2 );
-}
-function assert_or(cond1, cond2) {
-	assert( cond1 or cond2 );
-}
-function assert_gt_or_eq(val1, val2, val3, val4) {
-	assert( val1 > val2 or val3 == val4 );
-}
-function assert_ge_or_eq(val1, val2, val3, val4) {
-	assert( val1 >= val2 or val3 == val4 );
-}
-function assert_fail {
-	assert( not "Assertion-failure requested" );
-}
 //
 // "private field"
 function pfield(field_name) {
@@ -180,6 +188,44 @@ function dobj_checked_get(dobj, key) {
 	::assert_notnil(result);
 	return result;
 }
+function dobj_length(dobj) {
+	return std::tablength(dobj);
+}
+//
+// Functional games
+function constantf(val) {
+	return [ method @operator () { return @val; }, @val: val ];
+}
+function argspopback(args, popnum) {
+	::assert_tbl(args);
+	::assert_num(args.start);
+	::assert_num(args.total);
+	::assert_lt( popnum , ::dobj_length(args) - 2 );
+	args.total -= popnum;
+	return args;
+}
+function argspopfront(args, popnum) {
+	::argspopback(args, popnum).start += popnum;
+	return args;
+}
+function bindfront(f ...) {
+	return [
+		method @operator () (...) {
+			return @f(|@args|, ...);
+		},
+		@f:    f,
+		@args: argspopfront(arguments, 1)
+	];
+}
+function bindback(f ...) {
+	return [
+		method @operator () (...) {
+			return @f(..., |@args|);
+		},
+		@f:    f,
+		@args: argspopfront(arguments, 1)
+	];
+}
 //
 // Utilities for iterables
 function iterable_contains(iterable, value) {
@@ -202,11 +248,16 @@ function iterable_to_deltaobject(iterable) {
 function list_to_deltaobject(list) {
 	return ::iterable_to_deltaobject(list);
 }
-
 function list_clone(iterable) {
 	local result = std::list_new();
 	foreach (local something, iterable)
 		result.push_back(something);
+	return result;
+}
+function iterable_map(iterable, mapf) {
+	local result = std::list_new();
+	foreach (local el, iterable)
+		std::list_push_back(result, mapf(el));
 	return result;
 }
 
@@ -1039,6 +1090,12 @@ function CProject {
 				},
 				method SourceExtension {
 					return "cpp";
+				},
+				method ObjectExtension {
+					return "thingamajig";
+				},
+				method DependencyExtension {
+					return "mannerism";
 				}
 			],
 			// mixInRequirements

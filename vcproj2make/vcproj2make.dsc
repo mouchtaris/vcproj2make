@@ -173,17 +173,24 @@ function MakefileManifestation(project, basedir__) {
 			}
 		return result;
 	}
-	function objectNameFromSourceName(src) {
-		assert( ::util.Path_isaPath(src) );
-		local obj = src.asWithExtension("o");
-		assert( ::util.Path_isaPath(obj) );
-		return obj;
+	function pathMapping(paths, pathmapf) {
+		return ::util.iterable_map(paths,
+			[
+				method @operator ()(path) {
+					assert( ::util.Path_isaPath(path) );
+					local newpath = @pathmapf(path);
+					assert( ::util.Path_isaPath(newpath) );
+					return newpath;
+				},
+				@pathmapf: pathmapf
+			]
+		);
 	}
-	function dependencyNameFromSourceName(src) {
-		assert( ::util.Path_isaPath(src) );
-		local dep = src.asWithExtension("d");
-		assert( ::util.Path_isaPath(dep) );
-		return dep;
+	function relocateAndReextensionise(prefixpath, name, ext) {
+		assert( ::util.Path_isaPath(prefixpath) );
+		assert( ::util.Path_isaPath(name) );
+		::util.assert_str(ext);
+		return prefixpath.Concatenate(name.asWithExtension(ext));
 	}
 	if (std::isundefined(static makemani))
 		makemani = [
@@ -279,20 +286,26 @@ function MakefileManifestation(project, basedir__) {
 			},
 			method writeObjectsVariables {
 				std::filewrite(@fh, ::util.ENDL(), "OBJECTS = \\");
-				foreach (local src, @proj.Sources()) {
-					local obj = objectNameFromSourceName(src);
-					local obj_path = @builddir.Concatenate(@proj.getLocation());
-					@writeLine(pathToString(obj_path.Concatenate(obj)));
-				}
+				local prefixpath = @builddir.Concatenate(@proj.getLocation());
+				local ext        = @proj.ObjectExtension();
+				// relocateAndReextensionise(prefixpath, name, ext)
+				local objpathmapper = relocateAndReextensionise;
+				objpathmapper = ::util.bindfront(objpathmapper, prefixpath);
+				objpathmapper = ::util.bindback(objpathmapper, ext);
+				foreach (local obj, pathMapping(@proj.Sources(), objpathmapper))
+					@writeLine(pathToString(obj));
 				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeDependenciesVariables {
 				std::filewrite(@fh, ::util.ENDL(), "DEPENDENCIES = \\");
-				foreach (local src, @proj.Sources()) {
-					local dep = dependencyNameFromSourceName(src);
-					local dep_path = @builddir.Concatenate(@proj.getLocation());
-					@writeLine(pathToString(dep_path.Concatenate(dep)));
-				}
+				local prefixpath = @builddir.Concatenate(@proj.getLocation());
+				local ext        = @proj.DependencyExtension();
+				// relocateAndReextensionise(prefixpath, name, ext)
+				local objpathmapper = relocateAndReextensionise;
+				objpathmapper = ::util.bindfront(objpathmapper, prefixpath);
+				objpathmapper = ::util.bindback(objpathmapper, ext);
+				foreach (local dep, pathMapping(@proj.Sources(), objpathmapper))
+					@writeLine(pathToString(dep));
 				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeVariables {
