@@ -179,12 +179,18 @@ function MakefileManifestation(project, basedir__) {
 		assert( ::util.Path_isaPath(obj) );
 		return obj;
 	}
+	function dependencyNameFromSourceName(src) {
+		assert( ::util.Path_isaPath(src) );
+		local dep = src.asWithExtension("d");
+		assert( ::util.Path_isaPath(dep) );
+		return dep;
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
 			// Utility methods
 			method writeLine(...) {
 				local fh = @fh;
-				std::filewrite(fh, "\n        ");
+				std::filewrite(fh, ::util.ENDL(), "        ");
 				::util.foreacharg(arguments,
 					[
 						method @operator () (arg) {
@@ -229,36 +235,36 @@ function MakefileManifestation(project, basedir__) {
 				@writePrefixedOptions(options);
 			},
 			method writeCPPFLAGS {
-				std::filewrite(@fh, "\nCPPFLAGS = \\");
+				std::filewrite(@fh, ::util.ENDL(), "CPPFLAGS = \\");
 				@writePre(#CPPFLAGS);
 				@writeSubprojectRelatedCPPFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
 				@writePost(#CPPFLAGS);
-				std::filewrite(@fh, "\n");
+				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeSubprojectRelatedLDFLAGS {
 				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj, @proj.Subprojects());
 				@writePrefixedOptions(subprojGeneratedOptions);
 			},
 			method writeLDFLAGS {
-				std::filewrite(@fh, "\nLDFLAGS = \\");
+				std::filewrite(@fh, ::util.ENDL(), "LDFLAGS = \\");
 				@writePre(#LDFLAGS);
 				@writeSubprojectRelatedLDFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", pathToString));
 				@writePost(#LDFLAGS);
-				std::filewrite(@fh, "\n");
+				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeCXXFLAGS {
-				std::filewrite(@fh, "\nCXXFLAGS = \\");
+				std::filewrite(@fh, ::util.ENDL(), "CXXFLAGS = \\");
 				@writePre(#CXXFLAGS);
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(["pedantic", "Wall", "ansi"], "-", deltastringToString));
 				@writePost(#CXXFLAGS);
-				std::filewrite(@fh, "\n");
+				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeFlags {
-				std::filewrite(@fh, "# Flagspace\nSHELL = /bin/bash\n");
+				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), "SHELL = /bin/bash", ::util.ENDL());
 				@writeCPPFLAGS();
 				@writeLDFLAGS();
 				@writeCXXFLAGS();
@@ -266,13 +272,13 @@ function MakefileManifestation(project, basedir__) {
 			
 			// VARIABLES
 			method writeSourcesVariables {
-				std::filewrite(@fh, "\nSOURCES = \\");
+				std::filewrite(@fh, ::util.ENDL(), "SOURCES = \\");
 				foreach (local src, @proj.Sources())
 					@writeLine(pathToString(@proj.getLocation().Concatenate(src)));
 				std::filewrite(@fh, ::util.ENDL());
 			},
-			method writeObjectVariables {
-				std::filewrite(@fh, "\nOBJECTS = \\");
+			method writeObjectsVariables {
+				std::filewrite(@fh, ::util.ENDL(), "OBJECTS = \\");
 				foreach (local src, @proj.Sources()) {
 					local obj = objectNameFromSourceName(src);
 					local obj_path = @builddir.Concatenate(@proj.getLocation());
@@ -280,9 +286,19 @@ function MakefileManifestation(project, basedir__) {
 				}
 				std::filewrite(@fh, ::util.ENDL());
 			},
+			method writeDependenciesVariables {
+				std::filewrite(@fh, ::util.ENDL(), "DEPENDENCIES = \\");
+				foreach (local src, @proj.Sources()) {
+					local dep = dependencyNameFromSourceName(src);
+					local dep_path = @builddir.Concatenate(@proj.getLocation());
+					@writeLine(pathToString(dep_path.Concatenate(dep)));
+				}
+				std::filewrite(@fh, ::util.ENDL());
+			},
 			method writeVariables {
 				@writeSourcesVariables();
-				@writeObjectVariables();
+				@writeObjectsVariables();
+				@writeDependenciesVariables();
 			},
 			// before calling, call init()
 			method writeAll {
@@ -293,8 +309,10 @@ function MakefileManifestation(project, basedir__) {
 					@fh = fh;
 					@writeFlags();
 					@writeVariables();
-					std::filewrite(@fh, "\n\n\nall:\n	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) "
-							"$(SOURCES) $(OBJECTS)\n\n");
+					std::filewrite(@fh, ::util.ENDL(), ::util.ENDL(), ::util.ENDL(),
+							"all:",::util.ENDL(),
+							"	@echo LOL IT WORKED $(SHELL) $(CPPFLAGS) $(LDFLAGS) $(CXXFLAGS) "
+							"$(SOURCES) $(OBJECTS) $(DEPENDENCIES)", ::util.ENDL(), ::util.ENDL());
 					std::fileclose(@fh);
 				}
 				else

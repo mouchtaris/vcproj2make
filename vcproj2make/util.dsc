@@ -323,7 +323,7 @@ function mixin_state(state, mixin) {
 	local indices = std::tabindices(mixin);
 	foreach (local index, indices)
 		if (std::tabget(state, index))
-			std::error("mixing in overwrites existing state\nstate: " + state + "\nmixin: " + mixin);
+			std::error("mixing in overwrites existing state" + ::nl + "state: " + state + ::nl + "mixin: " + mixin);
 		else
 			std::tabset(state, index, std::tabget(mixin, index));
 }
