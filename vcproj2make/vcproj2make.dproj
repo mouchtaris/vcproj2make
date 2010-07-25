@@ -5,7 +5,7 @@
         <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
         <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
         <symbolic>22 serialization::archive 4 0 0 1 0 52 22 serialization::archive 4 0 0 17 vcproj2make.dproj</symbolic>
-        <startup>22 serialization::archive 4 0 0 1 0 50 22 serialization::archive 4 0 0 15 vcproj2make.dsc</startup>
+        <startup>22 serialization::archive 4 0 0 1 0 42 22 serialization::archive 4 0 0 8 main.dsc</startup>
         <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
         <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
         <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</icode>
@@ -19,4 +19,5 @@
     </ProjectProperties>
     <Child type="Script">vcproj2make.dsc</Child>
     <Child type="Script">util.dsc</Child>
+    <Child type="Script">main.dsc</Child>
 </Project>
