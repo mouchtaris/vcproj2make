@@ -192,6 +192,23 @@ function MakefileManifestation(project, basedir__) {
 		::util.assert_str(ext);
 		return prefixpath.Concatenate(name.asWithExtension(ext));
 	}
+	function transformSources(proj, builddir, transformationExtensionPrefix) {
+		assert( ::util.CProject_isaCProject(proj) );
+		assert( ::util.Path_isaPath(builddir) );
+		
+		local prefixpath = builddir.Concatenate(proj.getLocation());
+		local ext        = proj[transformationExtensionPrefix + #Extension]();
+		local pathmapper = relocateAndReextensionise;
+		pathmapper = ::util.bindfront(pathmapper, prefixpath);
+		pathmapper = ::util.bindback(pathmapper, ext);
+		return pathMapping(proj.Sources(), pathmapper);
+	}
+	function objectsFromSources(proj, builddir) {
+		return transformSources(proj, builddir, #Object);
+	}
+	function dependenciesFromSources(proj, builddir) {
+		return transformSources(proj, builddir, #Dependency);
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
 			// Utility methods
@@ -286,25 +303,13 @@ function MakefileManifestation(project, basedir__) {
 			},
 			method writeObjectsVariables {
 				std::filewrite(@fh, ::util.ENDL(), "OBJECTS = \\");
-				local prefixpath = @builddir.Concatenate(@proj.getLocation());
-				local ext        = @proj.ObjectExtension();
-				// relocateAndReextensionise(prefixpath, name, ext)
-				local objpathmapper = relocateAndReextensionise;
-				objpathmapper = ::util.bindfront(objpathmapper, prefixpath);
-				objpathmapper = ::util.bindback(objpathmapper, ext);
-				foreach (local obj, pathMapping(@proj.Sources(), objpathmapper))
+				foreach (local obj, objectsFromSources(@proj, @builddir))
 					@writeLine(pathToString(obj));
 				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeDependenciesVariables {
 				std::filewrite(@fh, ::util.ENDL(), "DEPENDENCIES = \\");
-				local prefixpath = @builddir.Concatenate(@proj.getLocation());
-				local ext        = @proj.DependencyExtension();
-				// relocateAndReextensionise(prefixpath, name, ext)
-				local objpathmapper = relocateAndReextensionise;
-				objpathmapper = ::util.bindfront(objpathmapper, prefixpath);
-				objpathmapper = ::util.bindback(objpathmapper, ext);
-				foreach (local dep, pathMapping(@proj.Sources(), objpathmapper))
+				foreach (local dep, dependenciesFromSources(@proj, @builddir))
 					@writeLine(pathToString(dep));
 				std::filewrite(@fh, ::util.ENDL());
 			},
