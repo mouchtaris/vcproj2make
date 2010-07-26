@@ -489,7 +489,7 @@ function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, f
 	}
 }
 function Class_isa(obj, a_class) {
-	return ::dobj_contains(obj.getClasses(), a_class);
+	return ::isdeltaobject(obj) and ::dobj_contains(obj.getClasses(), a_class);
 }
 function Class_classRegistry {
 	if (std::isundefined(static classRegistry) )

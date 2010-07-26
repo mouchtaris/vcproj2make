@@ -4,6 +4,10 @@ assert( util );
 //////////////////////////////
 // *** MakefileManifestation
 //     Produces Makefiles given a solution.
+//    _basedirpath_ is a Path instance of the directory
+//    against which the solution's location will be interpreted.
+//    The basedir can be relative or absolute. In case it is relative
+//    it is interpreted against the script's execution directory.
 function MakefileManifestation(basedirpath, solution) {
 	function escapeString(str) {
 		if (str == "")
@@ -48,12 +52,12 @@ function MakefileManifestation(basedirpath, solution) {
 				// prototype
 				[
 					method prefix {
-						local result = ::util.val(::util.dobj_checked_get(self, #Option_prefix));
+						local result = ::util.val(::util.dobj_checked_get(self, Option().stateFields(), #Option_prefix));
 						::util.assert_or( ::util.isdeltastring(result) , ::util.isdeltanil(result) );
 						return result;
 					},
 					method value {
-						local result = ::util.val(::util.dobj_checked_get(self, #Option_value));
+						local result = ::util.val(::util.dobj_checked_get(self, Option().stateFields(), #Option_value));
 						::util.assert_or( ::util.isdeltastring(result) , ::util.isdeltanil(result) );
 						return result;
 					}
@@ -271,7 +275,7 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			method writeDependencyRelatedCPPFLAGS {
 				local options = cppOptionsFromDependencies(
-						@basedir,
+						@basedir_ccat_solution_path,
 						@proj.Dependencies());
 				@writePrefixedOptions(options);
 			},
@@ -358,13 +362,11 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeAllTarget();
 			},
 			
-			// before calling, call init()
-			method writeAll(makefile_path_prefix) {
-				::util.assert_str(makefile_path_prefix);
-				local path = ::util.Path_castFromPath(makefile_path_prefix).Concatenate("Makefile");
-				assert( ::util.Path_isaPath(path) );
-				::util.println("Writing crap to ", path.deltaString());
-				local fh = std::fileopen(path.deltaString(), "wt");
+			// high-level methods (for projects, solutions)
+			method writeAll(makefile_path) {
+				assert( ::util.Path_isaPath(makefile_path) );
+				::util.println("Writing crap to ", makefile_path.deltaString());
+				local fh = std::fileopen(makefile_path.deltaString(), "wt");
 				if (fh) {
 					@fh = fh;
 					@writeFlags();
@@ -373,13 +375,29 @@ function MakefileManifestation(basedirpath, solution) {
 					std::fileclose(@fh);
 				}
 				else
-					::util.println("Error, could not open file ", path.deltaString());
+					::util.println("Error, could not open file ", makefile_path.deltaString());
+			},
+			method writeProjectMakefile(project) {
+				local path = @basedirpath
+						.Concatenate(@solution.getLocation())
+						.Concatenate(project.getLocation())
+						.Concatenate(project.getName() + "Makefile.mk")
+				;
+				@config = project.getManifestationConfiguration(#Makefile);
+				@proj = project;
+				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
+				@writeAll(path);
+			},
+			method writeProjectsMakefiles {
+				foreach (local project, @solution.Projects())
+					@writeProjectMakefile(project);
 			},
 			method writeSolutionMakefileTargets {
 				local commands = std::list_new();
 				appendCommandsFromSubprojects(@solution.Projects(), commands);
 				@writeTarget(#all, [], commands);
 			},
+			// before calling, call init()
 			method writeSolutionMakefile {
 				local makefilepath = @basedirpath
 						.Concatenate(@solution.getLocation())
@@ -391,16 +409,19 @@ function MakefileManifestation(basedirpath, solution) {
 					@writeFlagspaceHeader();
 					@writeSolutionMakefileTargets();
 					std::fileclose(makefile_fh);
+					@fh = nil;
+					@writeProjectsMakefiles();
 				}
 				else
 					::util.error().AddError("Could not open file ", makefilepath.deltaString());
 			},
 			method init(solution, basedirpath) {
-				//
-				@basedirpath = basedirpath;
+				::util.Assert( ::util.CSolution_isaCSolution(solution) );
 				::util.Assert( ::util.Path_isaPath(basedirpath) );
 				//
-				::util.Assert( ::util.CSolution_isaCSolution(solution) );
+				@basedirpath = basedirpath;
+				@basedir_ccat_solution_path = basedirpath.Concatenate(solution.getLocation());
+				//
 				@solution = solution;
 				//
 				@writeSolutionMakefile();
@@ -418,6 +439,7 @@ function MakefileManifestation(basedirpath, solution) {
 	//makemani.writeAll(makefile_path_prefix);
 	
 	::util.Assert( ::util.Path_isaPath(basedirpath) );
+	::util.Assert( basedirpath.IsAbsolute() );
 	::util.Assert( ::util.CSolution_isaCSolution(solution) );
 	makemani.init(solution, basedirpath);
 }
