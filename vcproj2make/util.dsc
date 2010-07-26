@@ -22,47 +22,50 @@ function isdeltacallable(va){ return std::iscallable(va)      ; }
 function toboolean    (val) { if (val) return true; else return false; }
 //
 // assertion utils
+function Assert(cond) {
+	assert( cond );
+}
 function assert_notnil(val) {
-	assert( not ::isdeltanil(val) );
+	::Assert( not ::isdeltanil(val) );
 }
 function assert_notundef(val) {
-	assert( not ::isdeltaundefined(val) );
+	::Assert( not ::isdeltaundefined(val) );
 }
 function assert_str(val) {
-	assert( ::isdeltastring(val) );
+	::Assert( ::isdeltastring(val) );
 }
 function assert_num(val) {
-	assert( ::isdeltanumber(val) );
+	::Assert( ::isdeltanumber(val) );
 }
 function assert_obj(val) {
-	assert( ::isdeltaobject(val) );
+	::Assert( ::isdeltaobject(val) );
 }
 function assert_tbl(val) {
-	assert( ::isdeltatable(val) );
+	::Assert( ::isdeltatable(val) );
 }
 function assert_eq(val1, val2) {
-	assert( val1 == val2 );
+	::Assert( val1 == val2 );
 }
 function assert_lt(val1, val2) {
-	assert( val1 < val2 );
+	::Assert( val1 < val2 );
 }
 function assert_gt(val1, val2) {
-	assert( val1 > val2 );
+	::Assert( val1 > val2 );
 }
 function assert_ge(val1, val2) {
-	assert( val1 >= val2 );
+	::Assert( val1 >= val2 );
 }
 function assert_or(cond1, cond2) {
-	assert( cond1 or cond2 );
+	::Assert( cond1 or cond2 );
 }
 function assert_gt_or_eq(val1, val2, val3, val4) {
-	assert( val1 > val2 or val3 == val4 );
+	::Assert( val1 > val2 or val3 == val4 );
 }
 function assert_ge_or_eq(val1, val2, val3, val4) {
-	assert( val1 >= val2 or val3 == val4 );
+	::Assert( val1 >= val2 or val3 == val4 );
 }
 function assert_fail {
-	assert( not "Assertion-failure requested" );
+	::Assert( not "Assertion-failure requested" );
 }
 
 // printing/inspecting/debugging utils
@@ -76,7 +79,7 @@ function foreacharg(args, f) {
 	local cont       = true;
 	for (local i = args_start; cont and i < args_end; ++i)
 		cont = f(args[i]);
-	assert( i == args_end );
+	::Assert( i == args_end );
 	return i;
 }
 
@@ -200,11 +203,11 @@ function dobj_contains_any_key_from(dobj, dobj_other) {
 }
 //
 function dobj_checked_set(dobj, validKeys, key, val) {
-	assert( ::dobj_contains(validKeys, key) );
+	::Assert( ::dobj_contains(validKeys, key) );
 	return ::dobj_set(dobj, key, val);
 }
 function dobj_checked_get(dobj, validKeys, key) {
-	assert( ::dobj_contains(validKeys, key) );
+	::Assert( ::dobj_contains(validKeys, key) );
 	local result = ::dobj_get(dobj, key);
 	::assert_notnil(result);
 	return result;
@@ -475,7 +478,7 @@ function Class_classRegistry {
 		classRegistry = [
 			{ ::pfield(#list) : std::list_new() },
 			method add(class) {
-				assert( not ::list_contains(::dobj_get(self, #list), class) );
+				::Assert( not ::list_contains(::dobj_get(self, #list), class) );
 				::dobj_get(self, #list).push_back(class);
 			}
 		];
@@ -520,9 +523,9 @@ function Object_mixinRequirements {
 }
 function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) {
 	// manually mix-in the object class (by default)
-	assert( not ::stateFieldsClash( Object_stateFields(), newInstanceStateFields ) );
-	assert( not ::prototypesClash( Object_prototype(), newInstancePrototype ) );
-	assert(     ::mixinRequirementsFulfilled(newInstancePrototype, Object_mixinRequirements()) );
+	::Assert( not ::stateFieldsClash( Object_stateFields(), newInstanceStateFields ) );
+	::Assert( not ::prototypesClash( Object_prototype(), newInstancePrototype ) );
+	::Assert(     ::mixinRequirementsFulfilled(newInstancePrototype, Object_mixinRequirements()) );
 	objectInstance = [];
 	Object_stateInitialiser()(objectInstance);
 	std::delegate(objectInstance, Object_prototype());
@@ -570,9 +573,9 @@ function Class {
 					// We can perform assertions concerning clashes, since _newInstanceState_
 					// is a fully functioning object and classes can be registered as its mixins,
 					// as well as be queried about what classes are mixed-into it.
-					assert( not ::stateFieldsClashForAnyMixIn( newInstanceState, mixin.stateFields() ) );
-					assert( not ::prototypesClashForAnyMixIn( newInstanceState, mixin.getPrototype()) );
-					assert(     ::mixinRequirementsFulfilledByAnyMixIn(newInstanceState, mixin.mixInRequirements()) );
+					::Assert( not ::stateFieldsClashForAnyMixIn( newInstanceState, mixin.stateFields() ) );
+					::Assert( not ::prototypesClashForAnyMixIn( newInstanceState, mixin.getPrototype()) );
+					::Assert(     ::mixinRequirementsFulfilledByAnyMixIn(newInstanceState, mixin.mixInRequirements()) );
 					// remove Object-state from the mixin_instance
 					::unmixinObject(mixin_instance);
 					::mixin(newInstanceState, mixin_instance, mixin.getPrototype());
@@ -587,7 +590,7 @@ function Class {
 				return ::dobj_get(self, #mixInRequirements);
 			},
 			method fulfillsRequirements(a_mixin) {
-				assert( ::Class_isa(a_mixin, Class()) ); // assert tha a_mixin is a class
+				::Assert( ::Class_isa(a_mixin, Class()) ); // assert tha a_mixin is a class
 				local myPrototype = self.getPrototype();
 				local mixInRequirements = a_mixin.mixInRequirements();
 				local mixInRegistry = ::dobj_get(self, #mixInRegistry);
@@ -616,7 +619,7 @@ function Class {
 			},
 			method mixIn(another_class, createInstanceArguments) {
 				// assert that given class is a class indeed
-				assert( ::Class_isa(another_class, ::Class()) );
+				::Assert( ::Class_isa(another_class, ::Class()) );
 				// Make sure that we fulfil the requirements to mix in the other_class
 				// and that the another_class' state does not interfer with ours
 				if (self.fulfillsRequirements(another_class))
@@ -862,8 +865,8 @@ function Path {
 					if ( ::isdeltastring(another_relative_path) )
 						result = self.Concatenate( fromPath(another_relative_path) );
 					else {
-						assert( isaPath(another_relative_path) );
-						assert( another_relative_path.IsRelative() );
+						::Assert( isaPath(another_relative_path) );
+						::Assert( another_relative_path.IsRelative() );
 						result = fromPath(self.deltaString() + "/" + another_relative_path.deltaString());
 					}
 					return result;
@@ -910,7 +913,7 @@ function Locatable {
 			// stateInitialiser
 			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, path) {
 				local p = ::Path_fromPath(path);
-				assert( p );
+				::Assert( p );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
@@ -921,12 +924,12 @@ function Locatable {
 			[
 				method getLocation {
 					local path = ::dobj_get(self, #Locatable_path);
-					assert( ::Path_isaPath(path) );
+					::Assert( ::Path_isaPath(path) );
 					return path;
 				},
 				method setLocation(path) {
 					local p = ::Path_fromPath(path);
-					assert( p );
+					::Assert( p );
 					return ::dobj_set(self, #Locatable_path, p);
 				}
 			],
@@ -1003,7 +1006,7 @@ function CProject {
 		CProject_class = ::Class().createInstance(
 			// stateInitialiser
 			function CProject_stateInitialiser(newInstance, validStateFieldsNames, projectType, path, projectName) {
-				assert( ::ProjectType_isValid(projectType) );
+				::Assert( ::ProjectType_isValid(projectType) );
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
@@ -1026,7 +1029,7 @@ function CProject {
 			[
 				method addSource(path) {
 					local p = ::Path_castFromPath(path);
-					assert( ::Path_isaPath(p) );
+					::Assert( ::Path_isaPath(p) );
 					::assert_eq( p.Extension(), self.SourceExtension() );
 					::dobj_get(self, #CProject_sources).push_back(p);
 				},
@@ -1035,14 +1038,14 @@ function CProject {
 				},
 				method addIncludeDirectory(path) {
 					local p = ::Path_castFromPath(path);
-					assert( ::Path_isaPath(p) );
+					::Assert( ::Path_isaPath(p) );
 					::dobj_get(self, #CProject_includes).push_back(p);
 				},
 				method IncludeDirectories {
 					return ::list_clone(::dobj_get(self, #CProject_includes));
 				},
 				method addDependency(project) {
-					assert( ::Class_isa(project, ::CProject()) );
+					::Assert( ::Class_isa(project, ::CProject()) );
 					::dobj_get(self, #CProject_dependencies).push_back(project);
 				},
 				method Dependencies {
@@ -1057,7 +1060,7 @@ function CProject {
 				},
 				method addLibraryPath(path) {
 					local p = ::Path_castFromPath(path);
-					assert( ::Path_isaPath(p) );
+					::Assert( ::Path_isaPath(p) );
 					::dobj_get(self, #CProject_librariesPaths).push_back(p);
 				},
 				method LibrariesPaths {
@@ -1086,29 +1089,29 @@ function CProject {
 				},
 				method isStaticLibrary {
 					local type = ::dobj_get(self, #CProject_type);
-					assert( ::ProjectType_isValid(type));
+					::Assert( ::ProjectType_isValid(type));
 					return type == ProjectType_StaticLibrary;
 				},
 				method isDynamicLibrary {
 					local type = ::dobj_get(self, #CProject_type);
-					assert( ::ProjectType_isValid(type));
+					::Assert( ::ProjectType_isValid(type));
 					return type == ProjectType_DynamicLibrary;
 				},
 				method isExecutable {
 					local type = ::dobj_get(self, #CProject_type);
-					assert( ::ProjectType_isValid(type));
+					::Assert( ::ProjectType_isValid(type));
 				},
 				method isLibrary {
 					return self.isDynamicLibrary() or self.isStaticLibrary();
 				},
 				method getOutputDirectory {
 					local outputDirectory = ::dobj_get(self, #CProject_outputDirectory);
-					assert( ::Path().isaPath(outputDirectory) );
+					::Assert( ::Path().isaPath(outputDirectory) );
 					return outputDirectory;
 				},
 				method setOutputDirectory(pathable) {
 					local path = ::Path().fromPath(pathable);
-					assert( ::Path().isaPath(path) );
+					::Assert( ::Path().isaPath(path) );
 					::dobj_set(self, #CProject_outputDirectory, path);
 				},
 				method getOutputName {
@@ -1122,12 +1125,12 @@ function CProject {
 				},
 				method setAPIDirectory(path) {
 					local p = ::Path_fromPath(path);
-					assert( ::Path_isaPath(p) );
+					::Assert( ::Path_isaPath(p) );
 					::dobj_set(self, #CProject_apidir, p);
 				},
 				method getAPIDirectory {
 					local apidir = ::dobj_get(self, #CProject_apidir);
-					assert( ::Path_isaPath(apidir) );
+					::Assert( ::Path_isaPath(apidir) );
 					return apidir;
 				},
 				method SourceExtension {
@@ -1167,7 +1170,7 @@ function CProject_isaCProject(obj) {
 }
 function CProject_depthFirstForeachSubproject(proj, f) {
 	function impl(proj, f, keep_going) {
-		assert( ::CProject_isaCProject(proj) );
+		::Assert( ::CProject_isaCProject(proj) );
 		if (keep_going.val) {
 			foreach (local subproj, proj.Subprojects()) {
 				@lambda(subproj, f, keep_going);
@@ -1200,7 +1203,7 @@ function CSolution {
 			// prototype
 			[
 				method addProject(project) {
-					assert( ::CProject_isaCProject(project) );
+					::Assert( ::CProject_isaCProject(project) );
 					::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
 							.push_back(project);
 				},
