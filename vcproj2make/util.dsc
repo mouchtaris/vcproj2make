@@ -140,6 +140,26 @@ function loadlibs {
 		std::error("could not load xml parser lib");
 	return true;
 }
+function argstostring(...) {
+	::foreacharg(arguments, local stringtor = [
+		@str: "",
+		method @operator () (arg) {
+			@str += arg;
+			return true;
+		}
+	]);
+	return stringtor.str;
+}
+function error {
+	if (std::isundefined(static error))
+		error = [
+			@AddError: function AddError(...) {
+				// just err and die
+				std::error(::argstostring(...));
+			}
+		];
+	return error;
+}
 
 //
 // "private field"
@@ -183,7 +203,8 @@ function dobj_checked_set(dobj, validKeys, key, val) {
 	assert( ::dobj_contains(validKeys, key) );
 	return ::dobj_set(dobj, key, val);
 }
-function dobj_checked_get(dobj, key) {
+function dobj_checked_get(dobj, validKeys, key) {
+	assert( ::dobj_contains(validKeys, key) );
 	local result = ::dobj_get(dobj, key);
 	::assert_notnil(result);
 	return result;
@@ -426,10 +447,21 @@ function mixin(newInstanceState, mixin_instance, mixin_prototype) {
 // Class class utility (static) methods
 //
 function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) {
-	local number_of_fields = std::tablength(validFieldsNames);
-	::assert_eq( std::tablength(fields), number_of_fields );
+	local number_of_fields = ::dobj_length(validFieldsNames);
+	local fields_len = ::dobj_length(fields);
+	if ( fields_len != number_of_fields ) {
+		::error().AddError("Invalid number of fields: ", fields_len, ". Should be: ", number_of_fields);
+		return;
+	}
+	::assert_eq( fields_len , number_of_fields );
 	foreach (local validFieldName, validFieldsNames) {
 		local value = std::tabget(fields, validFieldName);
+		if ( ::isdeltanil(value) or ::isdeltaundefined(value) ) {
+			::error().AddError("Field name \"", validFieldName,
+					"\" has not been found in the "
+					"provided field names initialisations");
+			break;
+		}
 		::assert_notundef( value );
 		::assert_notnil( value );
 		::dobj_set(newObjectInstance, validFieldName, value);
@@ -965,6 +997,7 @@ function ProjectType {
 	return projectTypeEnum;
 }
 
+// CProject
 function CProject {
 	if (std::isundefined(static CProject_class)) {
 		CProject_class = ::Class().createInstance(
@@ -979,7 +1012,7 @@ function CProject {
 						{ #CProject_manifestationsConfigurations: []              },
 						{ #CProject_sources                     : std::list_new() },
 						{ #CProject_includes                    : std::list_new() },
-						{ #CProject_subprojects                 : std::list_new() },
+						{ #CProject_dependencies                : std::list_new() },
 						{ #CProject_definitions                 : std::list_new() },
 						{ #CProject_librariesPaths              : std::list_new() },
 						{ #CProject_libraries                   : std::list_new() },
@@ -1008,12 +1041,12 @@ function CProject {
 				method IncludeDirectories {
 					return ::list_clone(::dobj_get(self, #CProject_includes));
 				},
-				method addSubproject(project) {
+				method addDependency(project) {
 					assert( ::Class_isa(project, ::CProject()) );
-					::dobj_get(self, #CProject_subprojects).push_back(project);
+					::dobj_get(self, #CProject_dependencies).push_back(project);
 				},
-				method Subprojects {
-					return ::list_clone(::dobj_get(self, #CProject_subprojects));
+				method Dependencies {
+					return ::list_clone(::dobj_get(self, #CProject_dependencies));
 				},
 				method addPreprocessorDefinition(definition) {
 					::assert_str( definition );
@@ -1030,9 +1063,8 @@ function CProject {
 				method LibrariesPaths {
 					return ::list_clone(::dobj_get(self, #CProject_librariesPaths));
 				},
-				method addLibrary(path) {
-					local p = ::Path_castFromPath(path);
-					assert( ::Path_isaPath(p) );
+				method addLibrary(libname) {
+					::assert_str( libname );
 					::dobj_get(self, #CProject_libraries).push_back(p);
 				},
 				method Libraries {
@@ -1112,13 +1144,13 @@ function CProject {
 			[],
 			// stateFields
 			[ #CProject_type, #CProject_manifestationsConfigurations, #CProject_sources, #CProject_includes,
-			  #CProject_subprojects, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
+			  #CProject_dependencies, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
 			  #CProject_outputDirectory, #CProject_outputName, #CProject_apidir],
 			// className
 			#CProject
 		);
 		CProject_class.mixIn(::Locatable(), [
-			method @operator () (newInstance, validStateFieldsNames, projectType, path) {
+			method @operator () (newInstance, validStateFieldsNames, projectType, path, projectName) {
 				return [path];
 			}
 		]);
@@ -1147,4 +1179,54 @@ function CProject_depthFirstForeachSubproject(proj, f) {
 		}
 	}
 	impl(proj, f, [@val: true]);
+}
+
+
+// CSolution
+function CSolution {
+	if (std::isundefined(static CSolution_class)) {
+		// createInstance( solutionPath:Path_fromPath(), solutionName:deltastring )
+		CSolution_class = ::Class().createInstance(
+			// stateInitialiser
+			function CSolution_stateInitialiser(newInstance, validStateFieldsNames, solutionPath, solutionName) {
+				Class_checkedStateInitialisation(
+					newInstance,
+					validStateFieldsNames,
+					[
+						{ #CSolution_projects: std::list_new() }
+					]
+				);
+			},
+			// prototype
+			[
+				method addProject(project) {
+					assert( ::CProject_isaCProject(project) );
+					::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
+							.push_back(project);
+				},
+				method Projects {
+					return ::list_clone(
+						::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
+					);
+				}
+			],
+			// mixInRequirements
+			[],
+			// stateFields
+			[ #CSolution_projects],
+			// className
+			#CSolution
+		);
+		CSolution_class.mixIn(::Locatable(), [
+			method @operator () (newInstance, validStateFieldsNames, solutionPath, solutionName) {
+				return [solutionPath];
+			}
+		]);
+		CSolution_class.mixIn(::Namable()  , [
+			method @operator () (newInstance, validStateFieldsNames, solutionPath, solutionName) {
+				return [solutionName];
+			}
+		]);
+	}
+	return CSolution_class;
 }

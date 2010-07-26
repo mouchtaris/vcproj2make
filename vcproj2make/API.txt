@@ -7,6 +7,13 @@ function iswin32
 function islinux
 function del            (delegator, delegate)
 function loadlibs
+function argstostring   (...)
+//
+// Object Error
+// ------------
+// - AddError(...)
+//   adds an error. The arguments are concatenated into a single error
+//   message string. Currently this causes execution abortion.
 //
 function constantf      (val)
 function bindfront      (f ...)
@@ -224,11 +231,9 @@ function ProjectType_isValid(type)
 ////////////////////////////////////////////////////////////////////////
 //////////////////////////////
 // *** CProject class
-//       A programming project, containing source fileds, include directories, subprojects.
+//       A programming project, containing source fileds, include directories, and
+//     dependency subprojects.
 //     Subproject's location is interpreted as relative to this project's location.
-//     The building order (for the various generated project files) is as follows:
-//         - building every subproject, in order of addition to this project
-//         - building this project
 //       "Project manifestation" (or simply "manifestation") is the concept of this 
 //     projet object manifesting as a series of files on the filesystem which
 //     represent "project files" of a building system or another. Manifestations are
@@ -236,13 +241,12 @@ function ProjectType_isValid(type)
 //       Each project object can hold an arbitrary object which represents
 //     manifestation-specific extra options or configuration. These are understanble only by
 //     the specific manifestation they refer to.
-//       Subprojects referred to by this project are automtically added to this project's
-//     dependencies according to the manifestation. They are also automatically included in
-//     this project's building process, according to their type. Executable projects are generally
-//     ignored in the building process (they are still built before this project though).
+//       Dependency-subprojects referred to by this project are automtically added to this project's
+//     dependencies according to the manifestation. They are NOT automatically included in
+//     this project's building process.
 //     -----------------------
 //     <^> createInstance( projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
-//     <^> Mixs in: Locatable, Namable
+//     <^> Mixes in: Locatable, Namable
 //     <^> Public methods
 //         - addSource(path:Path-castable)
 //               adds a source file to this project. The filepath is relative to
@@ -254,11 +258,11 @@ function ProjectType_isValid(type)
 //               the project's location.
 //         - IndluceDirectories
 //               returns an std::list with all the include directories of this project.
-//         - addSubproject(subproject:Project)
-//               adds a project as a subproject of this projet. The subproject's
+//         - addDependency(subproject:Project)
+//               adds a project as a dependency of this projet. The subproject's
 //               paths is interpreted as relative to this project's path.
-//         - Subprojects
-//               return an std::list with the subprojects' objects' instances.
+//         - Dependencies
+//               return an std::list with the dependency-projects of this project.
 //         - addPreprocessorDefinition(def:deltastring)
 //               adds a preprocessor definition to be defined in all compilation units
 //               for this project.
@@ -268,7 +272,7 @@ function ProjectType_isValid(type)
 //               adds a library-search path for this project's building.
 //         - LibrariesPaths
 //               returns an std::list with the library search paths for this project's building.
-//         - addLibrary(path:Path-castable)
+//         - addLibrary(libname:deltastring)
 //               adds an extra library file name to be included in this project's building
 //               process.
 //         - Libraries
@@ -313,10 +317,29 @@ function ProjectType_isValid(type)
 //         02. CProject_manifestationsConfigurations
 //         03. CProject_sources
 //         04. CProject_includes
-//         05. CProject_subprojects
+//         05. CProject_dependencies
 //         06. CProject_definitions
 //         07. CProject_librariesPaths
 //         08. CProject_libraries
 //         09. CProject_outputName
 //         10. CProject_outputDirectory
 //         11. CProject_apidir
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** CSolution class
+//       A programming solution (in C, C++) which includes various
+//     projects (CProject).
+//       A solution can resolve the building order of the projects it contains.
+//     Thus, a manifestation will be aware of what order it should build the
+//     projects contained by this solution in.
+//     -----------------------
+//     <^> createInstance( solutionPath:Path_fromPath(), solutionName:deltastring )
+//     <^> Mixes in: Locatable, Namable
+//     <^> Public methods
+//         - addProject(project:CProject)
+//               adds a project as a part of this solution.
+//         - Projects
+//               returns an std::list with all the projects that belong to this solution.
+//     <^> state fields
+//         01. CSolution_projects
