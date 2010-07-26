@@ -146,6 +146,7 @@ if (::util.False()) {
 
 	local testprojectspathstr  = "vcproj2make_testprojects";
 	local testprojectspath     = ::util.Path_castFromPath(testprojectspathstr);
+	local currentDirPath       = ::util.Path_castFromPath(".");
 	local ProjectTypes         = ::util.ProjectType();
 	local Executable           = ProjectTypes.Executable;
 	local DynamicLibrary       = ProjectTypes.DynamicLibrary;
@@ -159,7 +160,7 @@ if (::util.False()) {
 			// projectType:ProjectType_*
 			projtype, 
 			// path:Path_fromPath()
-			"../../../" + projname + "/Project/" + projname + "_VS/",
+			projname + "/Project/" + projname + "_VS/",
 			// projectName:deltastring
 			projname
 		);
@@ -177,8 +178,8 @@ if (::util.False()) {
 	// project-specific tweaks
 	{ // --- isiapp ---
 		local proj = projs.isiapp;
-		proj.addSubproject(projs.isidll);
-		proj.addSubproject(projs.isistatic);
+		proj.addDependency(projs.isidll);
+		proj.addDependency(projs.isistatic);
 		//
 		proj.addSource("../../Source/main.cpp");
 		//
@@ -204,41 +205,19 @@ if (::util.False()) {
 		proj.addSource("../../Source/isi/g.cpp");
 	}
 	
-	
-	// Creating the solution project which includes every other one
-	{
-		local proj = ::util.CProject().createInstance(
-			// projectType:ProjectType_*, path:Path_fromPath(), projectName:deltastring )
-			Executable, testprojectspathstr, "vcproj2make_testprojects_solution"
+	{ // --- solution ---
+		local solution = ::util.CSolution().createInstance(
+			// solutionPath:Path_fromPath()
+			testprojectspath,
+			// solutionName:deltastring
+			"vcproj2make test solution"
 		);
-		foreach (local subproj, projs)
-			proj.addSubproject(subproj);
-			
-		proj.setManifestationConfiguration(#Makefile,
-			[
-				@CPPFLAGS_pre : [],
-				@CPPFLAGS_post: [],
-				@LDFLAGS_pre  : [],
-				@LDFLAGS_post : [],
-				@CXXFLAGS_pre : [],
-				@CXXFLAGS_post: []
-			]
-		);
-		::vc2mk.MakefileManifestation(proj, proj.getLocation().deltaString() + "/");
-		::util.CProject_depthFirstForeachSubproject(proj,
-			[
-				method @operator () (subproj) {
-					::vc2mk.MakefileManifestation(subproj,
-							@proj.getLocation().Concatenate(subproj.getLocation()).deltaString() + "/");
-					return true;
-				},
-				@proj: proj
-			]
-		);
+		foreach (local proj, projs)
+			solution.addProject(proj);
+		
+		::vc2mk.MakefileManifestation(currentDirPath, solution);
 	}
 	
-	
-	::util.println(projs);
 }
 
 // Show all classes

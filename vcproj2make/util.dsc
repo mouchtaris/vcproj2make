@@ -259,6 +259,15 @@ function fcomposition (f1, f2) {
 		@f2: f2
 	];
 }
+function membercalltransformation(object, membername, args) {
+	return object[membername](|args|);
+}
+function equals(val1, val2) {
+	return val1 == val2;
+}
+function equalitypredicate(val) {
+	return ::bindfront(::equals, val);
+}
 
 //
 // Utilities for iterables
@@ -292,6 +301,15 @@ function iterable_map(iterable, mapf) {
 	local result = std::list_new();
 	foreach (local el, iterable)
 		std::list_push_back(result, mapf(el));
+	return result;
+}
+function iterable_find(iterable, predicate) {
+	local result = nil;
+	foreach (local val, iterable)
+		if (predicate(val)) {
+			result = val;
+			break;
+		}
 	return result;
 }
 
@@ -1202,10 +1220,28 @@ function CSolution {
 			},
 			// prototype
 			[
+				method findProject(projectName) {
+					::assert_str( projectName );
+					local projects = ::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects);
+					local result = ::iterable_find(
+							projects,
+							fcomposition(
+									::equalitypredicate(projectName),
+									::bindback(::membercalltransformation, #getName, [])
+							)
+						)
+					;
+					return result;
+				},
 				method addProject(project) {
 					::Assert( ::CProject_isaCProject(project) );
-					::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
-							.push_back(project);
+					local projects = ::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects);
+					if (self.findProject(project.getName())) {
+						::error().AddError("Project with name ", project.getName(), " already exists "
+								"in solution ", self.getName());
+						return;
+					}
+					std::list_push_back(projects, project);
 				},
 				method Projects {
 					return ::list_clone(
@@ -1232,4 +1268,7 @@ function CSolution {
 		]);
 	}
 	return CSolution_class;
+}
+function CSolution_isaCSolution(object) {
+	return ::Class_isa(object, ::CSolution());
 }

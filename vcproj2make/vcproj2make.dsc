@@ -1,11 +1,10 @@
 util = std::vmget("util");
 assert( util );
 
-
 //////////////////////////////
 // *** MakefileManifestation
-//     Produces Makefiles given a Project.
-function MakefileManifestation(project, makefile_path_prefix) {
+//     Produces Makefiles given a solution.
+function MakefileManifestation(basedirpath, solution) {
 	function escapeString(str) {
 		if (str == "")
 			return str;
@@ -82,33 +81,33 @@ function MakefileManifestation(project, makefile_path_prefix) {
 		}
 		return result;
 	}
-	function cppOptionsFromSubprojects(parent_project, subprojects) {
+	function cppOptionsFromDependencies(basedir, dependencies) {
 		local result = std::list_new();
-		foreach (local subproj, subprojects)
-			if (subproj.isLibrary())
+		foreach (local dep, dependencies)
+			if (dep.isLibrary())
 				result.push_back(optionPair(
 					// prefix getter functor
 					[
 						method @operator () {
-							assert( @subproj.isLibrary() );
+							assert( @dep.isLibrary() );
 							return "-I";
 						},
-						@subproj: subproj
+						@dep: dep
 					],
 					// value getter functor
 					[
 						method @operator () {
-							local subproj = @subproj;
-							local parentproj = @parentproj;
-							assert( subproj.isLibrary() );
+							local dep = @dep;
+							local basedir = @basedir;
+							assert( dep.isLibrary() );
 							return pathToString(
-									parentproj.getLocation()
-											.Concatenate(subproj.getLocation())
-											.Concatenate(subproj.getAPIDirectory())
+									basedir
+											.Concatenate(dep.getLocation())
+											.Concatenate(dep.getAPIDirectory())
 							);
 						},
-						@subproj   : subproj,
-						@parentproj: parent_project
+						@dep       : dep     ,
+						@basedir   : basedir
 					]
 				));
 		return result;
@@ -218,7 +217,7 @@ function MakefileManifestation(project, makefile_path_prefix) {
 	function appendCommandsFromSubprojects(subprojects, commands) {
 		foreach (local subproj, subprojects)
 			std::list_push_back(commands,
-					"( cd " + subproj.getLocation().deltaString() + " && ${MAKE} -f Makefile )"
+					"( cd " + subproj.getLocation().deltaString() + " && ${MAKE} -f " + subproj.getName() + "Makefile.mk )"
 			);
 	}
 	
@@ -267,21 +266,26 @@ function MakefileManifestation(project, makefile_path_prefix) {
 
 			// FLAGS
 			// Specific flag methods
-			method writeSubprojectRelatedCPPFLAGS {
-				local options = cppOptionsFromSubprojects(@proj, @proj.Subprojects());
+			method writeFlagspaceHeader {
+				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), "SHELL = /bin/bash", ::util.ENDL());
+			},
+			method writeDependencyRelatedCPPFLAGS {
+				local options = cppOptionsFromDependencies(
+						@basedir,
+						@proj.Dependencies());
 				@writePrefixedOptions(options);
 			},
 			method writeCPPFLAGS {
 				std::filewrite(@fh, "CPPFLAGS = \\");
 				@writePre(#CPPFLAGS);
-				@writeSubprojectRelatedCPPFLAGS();
+				@writeDependencyRelatedCPPFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
 				@writePost(#CPPFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeSubprojectRelatedLDFLAGS {
-				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj, @proj.Subprojects());
+				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj, @proj.Dependencies());
 				@writePrefixedOptions(subprojGeneratedOptions);
 			},
 			method writeLDFLAGS {
@@ -301,7 +305,7 @@ function MakefileManifestation(project, makefile_path_prefix) {
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeFlags {
-				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), "SHELL = /bin/bash", ::util.ENDL());
+				@writeFlagspaceHeader();
 				@writeCPPFLAGS();
 				@writeLDFLAGS();
 				@writeCXXFLAGS();
@@ -343,7 +347,7 @@ function MakefileManifestation(project, makefile_path_prefix) {
 			},
 			method writeAllTarget {
 				local commands = std::list_new();
-				appendCommandsFromSubprojects(@proj.Subprojects(), commands);
+				appendCommandsFromSubprojects(@proj.Dependencies(), commands);
 				@writeTarget(
 						#all,
 						[],
@@ -371,20 +375,49 @@ function MakefileManifestation(project, makefile_path_prefix) {
 				else
 					::util.println("Error, could not open file ", path.deltaString());
 			},
-			method init(project) {
-				local builddir = @builddir = project.getLocation().Concatenate(::util.file_hidden("build"));
-				assert( ::util.Path_isaPath(builddir) );
+			method writeSolutionMakefileTargets {
+				local commands = std::list_new();
+				appendCommandsFromSubprojects(@solution.Projects(), commands);
+				@writeTarget(#all, [], commands);
+			},
+			method writeSolutionMakefile {
+				local makefilepath = @basedirpath
+						.Concatenate(@solution.getLocation())
+						.Concatenate(@solution.getName() + "Makefile.mk");
+				local makefile_fh = std::fileopen(makefilepath.deltaString(), "wt");
+				if (makefile_fh) {
+					::util.println("Writing solution makefile: ", makefilepath.deltaString());
+					@fh = makefile_fh;
+					@writeFlagspaceHeader();
+					@writeSolutionMakefileTargets();
+					std::fileclose(makefile_fh);
+				}
+				else
+					::util.error().AddError("Could not open file ", makefilepath.deltaString());
+			},
+			method init(solution, basedirpath) {
 				//
-				assert( ::util.CProject_isaCProject(project) );
-				@proj = project;
+				@basedirpath = basedirpath;
+				::util.Assert( ::util.Path_isaPath(basedirpath) );
 				//
-				@config = @proj.getManifestationConfiguration(#Makefile);
-				::util.assert_obj( @config );
+				::util.Assert( ::util.CSolution_isaCSolution(solution) );
+				@solution = solution;
+				//
+				@writeSolutionMakefile();
 			}
 		];
 	else
 		makemani = makemani;
-	assert( ::util.CProject_isaCProject(project) );
-	makemani.init(project);
-	makemani.writeAll(makefile_path_prefix);
+
+	// Per project manifestation
+	// args -> (project, makefile_path_prefix, basedir)
+	// ---
+	//assert( ::util.CProject_isaCProject(project) );
+	//assert( ::util.Path_isaPath(basedir) );
+	//makemani.init(project, basedir);
+	//makemani.writeAll(makefile_path_prefix);
+	
+	::util.Assert( ::util.Path_isaPath(basedirpath) );
+	::util.Assert( ::util.CSolution_isaCSolution(solution) );
+	makemani.init(solution, basedirpath);
 }

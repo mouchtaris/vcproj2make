@@ -15,13 +15,16 @@ function argstostring   (...)
 //   adds an error. The arguments are concatenated into a single error
 //   message string. Currently this causes execution abortion.
 //
-function constantf      (val)
-function bindfront      (f ...)
-function bindback       (f ...)
-function argspopback    (args, popnum)
-function argspopfront   (args, popnum)
-function fcomposition   (f1, f2)
-
+function constantf                      (val)
+function bindfront                      (f ...)
+function bindback                       (f ...)
+function argspopback                    (args, popnum)
+function argspopfront                   (args, popnum)
+function fcomposition                   (f1, f2)
+function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
+                                                                        // in the slot with the given membername, passing to it the expanded args
+function equals                         (val1, val2)
+function equalitypredicate              (val)
 //
 function isdeltastring  (val)
 function isdeltaobject  (val)
@@ -66,6 +69,7 @@ function list_to_deltaobject            (list)
 function list_clone                     (list)
 function iterable_map                   (iterable, mapf)            // returns an iterable with all the contents
                                                                     // of the original iterable mapped through mapf()
+function iterable_find                  (iterable, predicate)
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
@@ -337,6 +341,9 @@ function ProjectType_isValid(type)
 //     <^> createInstance( solutionPath:Path_fromPath(), solutionName:deltastring )
 //     <^> Mixes in: Locatable, Namable
 //     <^> Public methods
+//         - findProject(projectName:deltastring)
+//               searches for a project with the given name and returns it, if found.
+//               returns nil otherwise.
 //         - addProject(project:CProject)
 //               adds a project as a part of this solution.
 //         - Projects
