@@ -369,7 +369,7 @@ function MakefileManifestation(project, makefile_path_prefix) {
 					std::fileclose(@fh);
 				}
 				else
-					::util.println("Error, could not open file ", path);
+					::util.println("Error, could not open file ", path.deltaString());
 			},
 			method init(project) {
 				local builddir = @builddir = project.getLocation().Concatenate(::util.file_hidden("build"));
