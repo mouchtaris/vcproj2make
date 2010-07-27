@@ -455,10 +455,14 @@ function file_separator {
 }
 function file_basename(filepath) {
 	::assert_str( filepath );
-	local last_index = ::strrindex(filepath, ::file_separator());
-	::assert_ge( last_index , 0 );
-	::assert_lt( last_index, ::strlength(filepath) );
-	local result = ::strsubstr(filepath, 0, last_index);
+	local result = nil;
+	foreach (local separator, [ "\\", "/" ]) {
+		local last_index = ::strrindex(filepath, separator);
+		if (last_index >= 0)
+			break;
+	}
+	if (last_index >= 0)
+		result = ::strsubstr(filepath, 0, last_index);
 	return result;
 }
 

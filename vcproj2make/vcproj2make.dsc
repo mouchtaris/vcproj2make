@@ -124,6 +124,9 @@ function MakefileManifestation(basedirpath, solution) {
 		local result = std::list_new();
 		foreach (local dep, dependencies)
 			if (dep.isLibrary()) {
+				local libLocation = basedir
+						.Concatenate(dep.getLocation())
+						.Concatenate(dep.getOutputDirectory());
 				// Add a library path option (-L)
 				result.push_back(
 					optionPair(
@@ -140,14 +143,11 @@ function MakefileManifestation(basedirpath, solution) {
 							method @operator () {
 								local dep = @dep;
 								::util.Assert( dep.isLibrary() );
-								return pathToString(
-										@basedir
-												.Concatenate(dep.getLocation())
-												.Concatenate(dep.getOutputDirectory())
-								);
+								return pathToString(@libLocation);
 							},
-							@dep     : dep,
-							@basedir : basedir
+							@dep         : dep,
+							@basedir     : basedir,
+							@libLocation : libLocation
 						]
 					)
 				);
@@ -170,6 +170,24 @@ function MakefileManifestation(basedirpath, solution) {
 								return deltastringToString(dep.getOutputName());
 							},
 							@dep: dep
+						]
+					)
+				);
+				// Add the runtime library location information (--rpath)
+				result.push_back(
+					optionPair(
+						lambda { "-Xlinker " },
+						lambda { "--rpath"  }
+					)
+				);
+				result.push_back(
+					optionPair(
+						lambda { "-Xlinker " },
+						[
+							method @operator () {
+								return pathToString(@libLocation);
+							},
+							@libLocation : libLocation
 						]
 					)
 				);
@@ -450,6 +468,14 @@ function MakefileManifestation(basedirpath, solution) {
 				}
 				std::filewrite(@fh, ::util.ENDL());
 			},
+			method writeDirectoryTarget(dir_path_str) {
+				::util.assert_str( dir_path_str );
+				@writeTarget(
+					dir_path_str,
+					[],
+					[ "mkdir -p -v " + squote(dir_path_str) ]
+				);
+			},
 			method writeAllTarget {
 				local commands = std::list_new();
 				@writeTarget(
@@ -477,9 +503,8 @@ function MakefileManifestation(basedirpath, solution) {
 					static suffix;
 					if (std::isundefined(static static_variables_initialised)) {
 						static_variables_initialised = true;
-						prefix = MKVAR(VAR_MKCXX) + " -o";
-						suffix = " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS) +
-								" " + MKVAR(VAR_OBJECTS);
+						prefix = MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_OBJECTS) + " -o";
+						suffix = " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS);
 					}
 					local pathstr = pathToString(outputPathname(project));
 					local result = prefix + pathstr + suffix;
@@ -506,19 +531,20 @@ function MakefileManifestation(basedirpath, solution) {
 					static suffix;
 					if (std::isundefined(static static_variables_initialised)) {
 						static_variables_initialised = true;
-						prefix = MKVAR(VAR_MKCXX) + " -o" ;
-						suffix = " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS) + " -shared ";
+						prefix = MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS) + " -shared -o" ;
+						suffix = " " + MKVAR(VAR_OBJECTS) ;
 					}
 					local pathstr = pathToString(outputPathname(project));
 					local result = prefix + pathstr + suffix;
 					return [ result ];
 				}
 				//
-				function DependenciesGeneratorForAll(basedir_ccat_solution_path, project) {
+				function DependenciesGeneratorForAll(basedir_ccat_solution_path, project, basename_path_str) {
 					::util.Assert( ::util.CProject_isaCProject(project) );
 					::util.Assert( ::util.Path_isaPath(basedir_ccat_solution_path) );
 					local deps = std::list_new();
 					std::list_push_back(deps, MKVAR(VAR_OBJECTS));
+					std::list_push_back(deps, basename_path_str);
 					// real dependencies are also the static libs
 					foreach (local dep, project.Dependencies())
 						if (dep.isStaticLibrary())
@@ -553,7 +579,9 @@ function MakefileManifestation(basedirpath, solution) {
 				else
 					::util.assert_fail();
 				::util.assert_clb( commandsGenerator );
-				local output_pathname_str = pathToString(outputPathname(proj));
+				local output_pathname     = outputPathname(proj);
+				local output_pathname_str = pathToString(output_pathname);
+				local output_basename_str = deltastringToString(output_pathname.basename());
 				@writeTarget(
 						TARGET_TARGET,
 						[ output_pathname_str ],
@@ -561,9 +589,11 @@ function MakefileManifestation(basedirpath, solution) {
 				);
 				@writeTarget(
 					output_pathname_str,
-					dependenciesGenerator(@basedir_ccat_solution_path, proj),
+					dependenciesGenerator(@basedir_ccat_solution_path, proj, output_basename_str),
 					commandsGenerator(proj)
 				);
+				@writeDirectoryTarget(output_basename_str);
+					
 			},
 			method writePhonyTarget {
 				if (std::isundefined(static deps))
@@ -602,11 +632,7 @@ function MakefileManifestation(basedirpath, solution) {
 						[ srcpath_str, objbasename_str ],
 						[ build_command ]
 					);
-					@writeTarget(
-						objbasename_str,
-						[],
-						[ "mkdir -p -v " + squote(objbasename_str) ]
-					);
+					@writeDirectoryTarget(objbasename_str);
 				}
 			},
 			method writeRules {

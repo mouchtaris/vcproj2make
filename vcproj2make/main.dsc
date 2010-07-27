@@ -188,7 +188,7 @@ if (::util.False() or RunReal)
 		//
 		proj.addSource("../../Source/main.cpp");
 		//
-		proj.addPreprocessorDefinition("ISIAPP_VERSION=Mironeus_Miraculum_Malefocarus_334.22212");
+		proj.addPreprocessorDefinition("ISIAPP_VERSION=\"Mironeus_Miraculum_Malefocarus_334.22212\"");
 		//
 		proj.setOutputDirectory("../../Binaries");
 		proj.setOutputName("app");
