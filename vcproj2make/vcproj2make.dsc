@@ -9,7 +9,7 @@ assert( util );
 //    The basedir can be relative or absolute. In case it is relative
 //    it is interpreted against the script's execution directory.
 function MakefileManifestation(basedirpath, solution) {
-	function singleQuote(str) {
+	function squote(str) {
 		::util.assert_str( str );
 		return "'" + str + "'";
 	}
@@ -363,6 +363,9 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeDependencyRelatedCPPFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
+				// Include own API dir in include paths
+				if (@proj.isLibrary())
+					@writePrefixedOptions([optionPair("-I", pathToString(@proj.getAPIDirectory()))]);
 				@writePost(VAR_MKCPPFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
@@ -588,11 +591,11 @@ function MakefileManifestation(basedirpath, solution) {
 				local sourceTransformer = makeSourceTransformer(@proj, @builddir, #Object);
 				foreach (local src, @proj.Sources()) {
 					local obj = sourceTransformer(src);
-					local objpath_str = singleQuote(pathToString(obj));
-					local srcpath_str = singleQuote(pathToString(src));
+					local objpath_str = pathToString(obj);
+					local srcpath_str = pathToString(src);
 					local build_command =
 							MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCPPFLAGS) + " " + MKVAR(VAR_MKCXXFLAGS) +
-							" -o" + objpath_str + " " + srcpath_str;
+							" -o" + squote(objpath_str) + " " + squote(srcpath_str);
 					@writeTarget(
 						objpath_str,
 						[ srcpath_str ],
