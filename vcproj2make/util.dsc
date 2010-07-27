@@ -336,7 +336,11 @@ function file_isabsolutepath(filepath) {
 	if (::islinux())
 		result = std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "/";
 	else if (::iswin32())
-		result = std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\";
+		result =
+				(std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\")
+				or
+				(std::strlen(filepath) > 1 and std::strchar(filepath, 0) == "\\")
+		;
 	return result;
 }
 function file_hidden(filename) {
