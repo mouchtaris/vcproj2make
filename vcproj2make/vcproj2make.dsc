@@ -217,13 +217,26 @@ function MakefileManifestation(basedirpath, solution) {
 		return transformSources(proj, builddir, #Dependency);
 	}
 	
-	function appendCommandsFromSubprojects(subprojects, commands) {
+	function appendCommandsFromSubprojects(commands, subprojects) {
 		foreach (local subproj, subprojects)
 			std::list_push_back(commands,
 					"( cd " + subproj.getLocation().deltaString() + " && ${MAKE} -f " + subproj.getName() + "Makefile.mk )"
 			);
 	}
-	
+
+	const VAR_MKSHELL      = #SHELL       ;
+	const VAR_OBJECTS      = #OBJECTS     ;
+	const VAR_SOURCES      = #SOURCES     ;
+	const VAR_DEPENDENCIES = #DEPENDENCIES;
+	const TARGET_ALL       = #all         ;
+	const TARGET_OBJECTS   = #objects     ;
+	const TARGET_TARGET    = #target      ;
+	const TARGET_PHONY     = ".PHONY"     ;
+	function MKVAR(varname_or_f) {
+		local varname = ::util.val(varname_or_f);
+		::util.assert_str( varname );
+		return "$(" + varname + ")";
+	}
 	if (std::isundefined(static makemani))
 		makemani = [
 			// Utility methods
@@ -270,7 +283,7 @@ function MakefileManifestation(basedirpath, solution) {
 			// FLAGS
 			// Specific flag methods
 			method writeFlagspaceHeader {
-				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), "SHELL = /bin/bash", ::util.ENDL());
+				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), VAR_MKSHELL, " = /bin/bash", ::util.ENDL());
 			},
 			method writeDependencyRelatedCPPFLAGS {
 				local dependenciesGeneratedOptions = cppOptionsFromDependencies(
@@ -318,19 +331,19 @@ function MakefileManifestation(basedirpath, solution) {
 			
 			// VARIABLES
 			method writeSourcesVariables {
-				std::filewrite(@fh, "SOURCES = \\");
+				std::filewrite(@fh, VAR_SOURCES, " = \\");
 				foreach (local src, @proj.Sources())
 					@writeLine(pathToString(src));
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeObjectsVariables {
-				std::filewrite(@fh, "OBJECTS = \\");
+				std::filewrite(@fh, VAR_OBJECTS, " = \\");
 				foreach (local obj, objectsFromSources(@proj, @builddir))
 					@writeLine(pathToString(obj));
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeDependenciesVariables {
-				std::filewrite(@fh, "DEPENDENCIES = \\");
+				std::filewrite(@fh, VAR_DEPENDENCIES, " = \\");
 				foreach (local dep, dependenciesFromSources(@proj, @builddir))
 					@writeLine(pathToString(dep));
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
@@ -345,22 +358,66 @@ function MakefileManifestation(basedirpath, solution) {
 			method writeTarget(target, deps, commands) {
 				::util.assert_str( target );
 				std::filewrite(@fh, target, ": ");
-				foreach (local dep, deps)
-					std::filewrite(@fh, " ", ::util.val(dep));
-				foreach (local command, commands)
-					std::filewrite(@fh, ::util.ENDL(), "	", ::util.val(command));
+				foreach (local dep, deps) {
+					local val = ::util.val(dep);
+					::util.assert_str( val );
+					std::filewrite(@fh, " ", val);
+				}
+				foreach (local command, commands) {
+					local val = ::util.val(command);
+					std::filewrite(@fh, ::util.ENDL(), "	", val);
+				}
+				std::filewrite(@fh, ::util.ENDL());
 			},
 			method writeAllTarget {
 				local commands = std::list_new();
-				appendCommandsFromSubprojects(@proj.Dependencies(), commands);
 				@writeTarget(
-						#all,
-						[],
+						TARGET_ALL,
+						[ TARGET_OBJECTS, TARGET_TARGET ],
 						commands
+				);
+			},
+			method writeObjectsTarget {
+				if (std::isundefined(static deps))
+					deps = [ MKVAR(VAR_OBJECTS) ];
+				if (std::isundefined(static commands))
+					commands = [];
+				@writeTarget(
+						TARGET_OBJECTS,
+						deps,
+						commands
+				);
+			},
+			method writeTargetTarget {
+				// TODO make all const deps static vars
+				local commands = std::list_new();
+				@writeTarget(
+						TARGET_TARGET,
+						[], //  TODO fix according project type
+						commands
+				);
+			},
+			method writePhonyTarget {
+				if (std::isundefined(static deps))
+					deps = [
+						TARGET_ALL, TARGET_OBJECTS, TARGET_TARGET
+					];
+				local commands = [];
+				@writeTarget(
+					TARGET_PHONY,
+					deps,
+					commands
 				);
 			},
 			method writeTargets {
 				@writeAllTarget();
+				@writeObjectsTarget();
+				@writeTargetTarget();
+				@writePhonyTarget();
+			},
+			
+			// RULES
+			method writeRules {
 			},
 			
 			// high-level methods (for projects, solutions)
@@ -373,6 +430,7 @@ function MakefileManifestation(basedirpath, solution) {
 					@writeFlags();
 					@writeVariables();
 					@writeTargets();
+					@writeRules();
 					std::fileclose(@fh);
 				}
 				else
@@ -395,7 +453,7 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			method writeSolutionMakefileTargets {
 				local commands = std::list_new();
-				appendCommandsFromSubprojects(@solution.Projects(), commands);
+				appendCommandsFromSubprojects(commands, @solution.Projects());
 				@writeTarget(#all, [], commands);
 			},
 			// before calling, call init()

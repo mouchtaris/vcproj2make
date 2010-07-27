@@ -12,7 +12,7 @@ if (::util.False())
 // TODO think about:
 // - is delegator-reference a reason to stay alive (not be collected)? Does this happen?
 //   (if delegators are not collected, then maybe manual reference counting has to be
-//    implemented -- and the global assignment operatator overloading should be user)
+//    implemented -- and the global assignment operatator overloading should be used)
 // Bug-reports
 // - When a function returns nothing, the error message is confusing
 //   Illegal use of '::Locatable()' as an object (type is ').
