@@ -297,7 +297,7 @@ function MakefileManifestation(basedirpath, solution) {
 				@writePre(#LDFLAGS);
 				@writeDependenyRelatedLDFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
-				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", pathToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", deltastringToString));
 				@writePost(#LDFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
