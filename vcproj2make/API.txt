@@ -256,7 +256,7 @@ function ProjectType_isValid(type)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
 //         - Sources
-//               returns an std::list with all the sources that belong to this project.
+//               returns an std::list with all the sources that belong to this project (as Path instances).
 //         - addIncludeDirectory(path:Path-castable)
 //               adds an include path to this project. The filepath is relative to
 //               the project's location.

@@ -4,7 +4,9 @@ std::vmrun(util);
 vc2mk = std::vmload("vcproj2make.dbc", "vc2mk");
 std::vmrun(vc2mk);
 
-
+RunReal = 
+		not
+		false;
 
 if (::util.False())
 // TODO think about:
@@ -138,7 +140,7 @@ if (::util.False()) {
 }
 
 
-if (::util.False() or true)
+if (::util.False() or RunReal)
 {
 /////////////// A real project example /////////////////
 //
@@ -238,4 +240,11 @@ if (::util.False() or true)
 	foreach (local class, reg)
 		::util.println(class);
 	::util.println("----");
+}
+
+{
+//	local libfunc = "std::print";
+//	libfunc("hello \n");
+//	"std::print"(libfun);
+//	#std::print(libfunc);
 }

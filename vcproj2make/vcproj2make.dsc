@@ -201,11 +201,12 @@ function MakefileManifestation(basedirpath, solution) {
 		assert( ::util.CProject_isaCProject(proj) );
 		assert( ::util.Path_isaPath(builddir) );
 		
-		local prefixpath = builddir;
+		// relocateAndReextensionise(prefixpath, name, ext)
+		local prefixpath = builddir.Concatenate(proj.getName());
 		local ext        = proj[transformationExtensionPrefix + #Extension]();
 		local pathmapper = relocateAndReextensionise;
-		pathmapper = ::util.bindfront(pathmapper, prefixpath);
-		pathmapper = ::util.bindback(pathmapper, ext);
+		pathmapper = ::util.bindfront   (pathmapper, prefixpath                               );
+		pathmapper = ::util.bindback    (pathmapper, ext                                      );
 		pathmapper = ::util.fcomposition(pathmapper, pathToPathWithoutParentAndSelfDirectories);
 		return pathMapping(proj.Sources(), pathmapper);
 	}
@@ -319,7 +320,7 @@ function MakefileManifestation(basedirpath, solution) {
 			method writeSourcesVariables {
 				std::filewrite(@fh, "SOURCES = \\");
 				foreach (local src, @proj.Sources())
-					@writeLine(pathToString(@proj.getLocation().Concatenate(src)));
+					@writeLine(pathToString(src));
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeObjectsVariables {
