@@ -82,6 +82,26 @@ function foreacharg(args, f) {
 	::Assert( i == args_end );
 	return i;
 }
+function argstostring(...) {
+	::foreacharg(arguments, local stringtor = [
+		@str: "",
+		method @operator () (arg) {
+			@str += arg;
+			return true;
+		}
+	]);
+	return stringtor.str;
+}
+function error {
+	if (std::isundefined(static error))
+		error = [
+			@AddError: function AddError(...) {
+				// just err and die
+				std::error(::argstostring(...));
+			}
+		];
+	return error;
+}
 
 function print(...) {
 	::foreacharg(arguments,
@@ -118,13 +138,13 @@ function val(const_or_f) {
 
 function printsec(...) { std::print(pref, ..., ::nl); }
 function platform {
-	local result = nil;
 	if (local platform = std::libfuncget("std::platform"))
-		result = platform();
+		;
 	else if (platform = std::libfuncget("isi::platform"))
-		result = platform();
+		;
 	else
-		std::error("could not find a *::platform() libfunc");
+		::error().AddError("could not find a *::platform() libfunc");
+	local result = platform();
 	return result;
 }
 function iswin32  { return ::platform() == "win32"; }
@@ -143,25 +163,15 @@ function loadlibs {
 		std::error("could not load xml parser lib");
 	return true;
 }
-function argstostring(...) {
-	::foreacharg(arguments, local stringtor = [
-		@str: "",
-		method @operator () (arg) {
-			@str += arg;
-			return true;
-		}
-	]);
-	return stringtor.str;
-}
-function error {
-	if (std::isundefined(static error))
-		error = [
-			@AddError: function AddError(...) {
-				// just err and die
-				std::error(::argstostring(...));
-			}
-		];
-	return error;
+function getcwd {
+	if (local getcwd = std::libfuncget("isi::getcwd"))
+		;
+	else if (getcwd = std::libfuncget("std::getcwd"))
+		;
+	else
+		::error().AddError("Could not find a *::getcwd() libfunc");
+	local result = getcwd();
+	return result;
 }
 
 //
