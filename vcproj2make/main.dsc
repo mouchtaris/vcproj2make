@@ -184,6 +184,8 @@ if (::util.False() or true)
 		//
 		proj.addSource("../../Source/main.cpp");
 		//
+		proj.addPreprocessorDefinition("ISIAPP_VERSION=Mironeus_Miraculum_Malefocarus_334.22212");
+		//
 		proj.setOutputDirectory("../../Binaries");
 		proj.setOutputName("app");
 	}
@@ -192,6 +194,8 @@ if (::util.False() or true)
 		proj.setAPIDirectory("../../Include");
 		proj.setOutputDirectory("../../Libraries");
 		proj.setOutputName("isidll");
+		//
+		proj.addPreprocessorDefinition("ISIDLL_F_ADJ=5");
 		//
 		proj.addSource("../../Source/isi/f.cpp");
 	}
@@ -202,6 +206,12 @@ if (::util.False() or true)
 		proj.setOutputName("isistatic");
 		//
 		proj.addIncludeDirectory("../../../isidll/Include");
+		//
+		proj.addPreprocessorDefinition("ISISTATIC_G_MUL=4");
+		//
+		proj.addLibraryPath("../../../isidll/Libraries");
+		//
+		proj.addLibrary("isidll");
 		//
 		proj.addSource("../../Source/isi/g.cpp");
 	}

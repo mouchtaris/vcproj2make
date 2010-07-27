@@ -1100,7 +1100,7 @@ function CProject {
 				},
 				method addLibrary(libname) {
 					::assert_str( libname );
-					::dobj_get(self, #CProject_libraries).push_back(p);
+					::dobj_get(self, #CProject_libraries).push_back(libname);
 				},
 				method Libraries {
 					return ::list_clone(::dobj_get(self, #CProject_libraries));
