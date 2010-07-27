@@ -332,35 +332,6 @@ function iterable_get(iterable, index) {
 	return nil;
 }
 
-/// File utilities
-function file_isreadable(filepath) {
-	local fh = std::fileopen(filepath, "rt");
-	local result = ::toboolean(fh);
-	if (result)
-		std::fileclose(fh);
-	return result;
-}
-function file_isabsolutepath(filepath) {
-	local result = nil;
-	if (::islinux())
-		result = std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "/";
-	else if (::iswin32())
-		result =
-				(std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\")
-				or
-				(std::strlen(filepath) > 1 and std::strchar(filepath, 0) == "\\")
-		;
-	return result;
-}
-function file_hidden(filename) {
-	local result = nil;
-	if (::iswin32())
-		result = "_" + filename;
-	else if (::islinux())
-		result = "." + filename;
-	return result;
-}
-
 /// delta strings utilities
 function strslice(str, start_index, end_index) {
 	local result = nil;
@@ -443,6 +414,54 @@ function strlength(str) {
 function strchar(str, charindex) {
 	return std::strchar(str, charindex);
 }
+
+/// File utilities
+function file_isreadable(filepath) {
+	local fh = std::fileopen(filepath, "rt");
+	local result = ::toboolean(fh);
+	if (result)
+		std::fileclose(fh);
+	return result;
+}
+function file_isabsolutepath(filepath) {
+	local result = nil;
+	if (::islinux())
+		result = std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "/";
+	else if (::iswin32())
+		result =
+				(std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\")
+				or
+				(std::strlen(filepath) > 1 and std::strchar(filepath, 0) == "\\")
+		;
+	return result;
+}
+function file_hidden(filename) {
+	local result = nil;
+	if (::iswin32())
+		result = "_" + filename;
+	else if (::islinux())
+		result = "." + filename;
+	return result;
+}
+function file_separator {
+	local result = nil;
+	if (::iswin32())
+		result = "\\";
+	else if (::islinux())
+		result = "/";
+	else
+		::error().AddError("unknown platform: ", ::platform());
+	return result;
+}
+function file_basename(filepath) {
+	::assert_str( filepath );
+	local last_index = ::strrindex(filepath, ::file_separator());
+	::assert_ge( last_index , 0 );
+	::assert_lt( last_index, ::strlength(filepath) );
+	local result = ::strsubstr(filepath, 0, last_index);
+	return result;
+}
+
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -929,6 +948,9 @@ function Path {
 					::assert_eq( ::strsubstr(pathstr, extindex + 1), "" );
 					pathstr = pathstr + newext;
 					return ::Path().createInstance(pathstr, self.IsAbsolute());
+				},
+				method basename {
+					return ::file_basename(self.deltaString());
 				}
 			],
 			// mixInRequirements

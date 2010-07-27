@@ -590,16 +590,22 @@ function MakefileManifestation(basedirpath, solution) {
 			method writeObjectsRules {
 				local sourceTransformer = makeSourceTransformer(@proj, @builddir, #Object);
 				foreach (local src, @proj.Sources()) {
-					local obj = sourceTransformer(src);
-					local objpath_str = pathToString(obj);
-					local srcpath_str = pathToString(src);
+					local obj             = sourceTransformer(src);
+					local objpath_str     = pathToString(obj);
+					local objbasename_str = obj.basename();
+					local srcpath_str     = pathToString(src);
 					local build_command =
 							MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCPPFLAGS) + " " + MKVAR(VAR_MKCXXFLAGS) +
 							" -o" + squote(objpath_str) + " " + squote(srcpath_str);
 					@writeTarget(
 						objpath_str,
-						[ srcpath_str ],
+						[ srcpath_str, objbasename_str ],
 						[ build_command ]
+					);
+					@writeTarget(
+						objbasename_str,
+						[],
+						[ "mkdir -p -v " + squote(objbasename_str) ]
 					);
 				}
 			},

@@ -75,6 +75,8 @@ function iterable_get                   (iterable, index)           // index beg
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
 function file_hidden                    (filename)
+function file_separator                                             // platform-dependent file separator (returned as a deltastring)
+function file_basename                  (filepath)
 //
 function strslice                       (str, start_index, end_index)
 function strsubstr                      (str, start_index ...)
@@ -190,6 +192,10 @@ function unmixinObject              (instance)
 //               returns a new path instance which is the same as
 //               this path instance except for the new path having
 //               as an extension the one to this call.
+//         - basename
+//               returns a deltastring with the basename of this path
+//               (the path up to the last "/" [for linux] or up to the last
+//               "\" [for windows]).
 //     <^> state fields
 //         - Path_path
 //         - Path_absolute
