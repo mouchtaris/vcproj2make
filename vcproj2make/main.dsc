@@ -174,7 +174,9 @@ if (::util.False() or RunReal)
 				@LDFLAGS_pre  : [],
 				@LDFLAGS_post : [],
 				@CXXFLAGS_pre : [],
-				@CXXFLAGS_post: []
+				@CXXFLAGS_post: [],
+				@ARFLAGS_pre  : [],
+				@ARFLAGS_post : []
 			]
 		);
 	}

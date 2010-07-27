@@ -224,14 +224,67 @@ function MakefileManifestation(basedirpath, solution) {
 			);
 	}
 
+	function outputPathname(project) {
+		function executableOutputTransformer(project) {
+			local path = project.getOutputDirectory()
+					.Concatenate(project.getOutputName());
+			return path;
+		}
+		function LibraryOutputTransformer(project) {
+			local path = project.getOutputDirectory()
+					.Concatenate("lib" + project.getOutputName());
+			return path;
+		}
+		function staticLibraryOutputTransformer(project) {
+			local path = LibraryOutputTransformer(project)
+					.Concatenate(".a");
+			return path;
+		}
+		function dynamicLibraryOutputTransformer(project) {
+			local path = LibraryOutputTransformer(project)
+					.Concatenate(".so");
+			return path;
+		}
+		if (std::isundefined( outputTransformers ))
+			outputTransformers = [
+				@executable     :  executableOutputTransformer    ,
+				@staticLibrary  :  staticLibraryOutputTransformer ,
+				@dynamicLibrary :  dynamicLibraryOutputTransformer
+			];
+		else
+			outputTransformers = outputTransformers;
+
+		::util.Assert( ::util.CProject_isaCProject(project) );
+		local result = nil;
+		if (project.isExecutable())
+			result = outputTransformers.executable(project);
+		else if (project.isStaticLibrary())
+			result = outputTransformers.staticLibrary(project);
+		else if (project.isDynamicLibrary())
+			result = outputTransformers.dynamicLibrary(project);
+		else
+			::util.assert_fail();
+		return result;
+	}
+	
 	const VAR_MKSHELL      = #SHELL       ;
+	const VAR_MKCXX        = #CXX         ;
+	const VAR_MKAR         = #AR          ;
+	const VAR_MKCPPFLAGS   = #CPPFLAGS    ;
+	const VAR_MKCXXFLAGS   = #CXXFLAGS    ;
+	const VAR_MKLDFLAGS    = #LDFLAGS     ;
+	const VAR_MKARFLAGS    = #ARFLAGS     ;
+	
+	//
+	const TARGET_MKPHONY   = ".PHONY"     ;
+	//
 	const VAR_OBJECTS      = #OBJECTS     ;
 	const VAR_SOURCES      = #SOURCES     ;
 	const VAR_DEPENDENCIES = #DEPENDENCIES;
+	//
 	const TARGET_ALL       = #all         ;
 	const TARGET_OBJECTS   = #objects     ;
 	const TARGET_TARGET    = #target      ;
-	const TARGET_PHONY     = ".PHONY"     ;
 	function MKVAR(varname_or_f) {
 		local varname = ::util.val(varname_or_f);
 		::util.assert_str( varname );
@@ -254,6 +307,7 @@ function MakefileManifestation(basedirpath, solution) {
 				std::filewrite(fh, " \\");
 			},
 			method writePre(ID) {
+				::util.assert_str( ID );
 				if (local pres = @config[ID + "_pre"])
 					foreach (local preflag, pres)
 						@writeLine(preflag);
@@ -261,6 +315,7 @@ function MakefileManifestation(basedirpath, solution) {
 					std::error("No iterable given for Manifestation Configuration \"Makefile\" for option " + ID + "_pre");
 			},
 			method writePost(ID) {
+				::util.assert_str( ID );
 				if (local posts = @config[ ID + "_post"])
 					foreach (local postflag, posts)
 						@writeLine(postflag);
@@ -272,7 +327,7 @@ function MakefileManifestation(basedirpath, solution) {
 				foreach (local pair, iterable) {
 					local prefix = pair.prefix();
 					local value  = pair.value();
-					if (prefix) {
+					if (not (::util.isdeltanil(prefix) or ::util.isdeltaundefined(prefix) )) {
 						::util.assert_str( prefix );
 						::util.assert_str( value );
 						@writeLine(prefix, "'", value, "'");
@@ -280,7 +335,7 @@ function MakefileManifestation(basedirpath, solution) {
 				}
 			},
 
-			// FLAGS
+			// FLAGS --------------------------------------
 			// Specific flag methods
 			method writeFlagspaceHeader {
 				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), VAR_MKSHELL, " = /bin/bash", ::util.ENDL());
@@ -292,12 +347,12 @@ function MakefileManifestation(basedirpath, solution) {
 				@writePrefixedOptions(dependenciesGeneratedOptions);
 			},
 			method writeCPPFLAGS {
-				std::filewrite(@fh, "CPPFLAGS = \\");
-				@writePre(#CPPFLAGS);
+				std::filewrite(@fh, VAR_MKCPPFLAGS + " = \\");
+				@writePre(VAR_MKCPPFLAGS);
 				@writeDependencyRelatedCPPFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
-				@writePost(#CPPFLAGS);
+				@writePost(VAR_MKCPPFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeDependenyRelatedLDFLAGS {
@@ -307,19 +362,26 @@ function MakefileManifestation(basedirpath, solution) {
 				@writePrefixedOptions(dependenciesGeneratedOptions);
 			},
 			method writeLDFLAGS {
-				std::filewrite(@fh, "LDFLAGS = \\");
-				@writePre(#LDFLAGS);
+				std::filewrite(@fh, VAR_MKLDFLAGS + " = \\");
+				@writePre(VAR_MKLDFLAGS);
 				@writeDependenyRelatedLDFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", deltastringToString));
-				@writePost(#LDFLAGS);
+				@writePost(VAR_MKLDFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeCXXFLAGS {
-				std::filewrite(@fh, "CXXFLAGS = \\");
-				@writePre(#CXXFLAGS);
+				std::filewrite(@fh, VAR_MKCXXFLAGS + " = \\");
+				@writePre(VAR_MKCXXFLAGS);
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(["pedantic", "Wall", "ansi"], "-", deltastringToString));
-				@writePost(#CXXFLAGS);
+				@writePost(VAR_MKCXXFLAGS);
+				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
+			},
+			method writeARFLAGS {
+				std::filewrite(@fh, VAR_MKARFLAGS + " = \\");
+				@writePre(VAR_MKARFLAGS);
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(["crv"], "", deltastringToString));
+				@writePost(VAR_MKARFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
 			method writeFlags {
@@ -327,9 +389,10 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeCPPFLAGS();
 				@writeLDFLAGS();
 				@writeCXXFLAGS();
+				@writeARFLAGS();
 			},
 			
-			// VARIABLES
+			// VARIABLES --------------------------------------
 			method writeSourcesVariables {
 				std::filewrite(@fh, VAR_SOURCES, " = \\");
 				foreach (local src, @proj.Sources())
@@ -354,7 +417,7 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeDependenciesVariables();
 			},
 			
-			// TARGETS
+			// TARGETS --------------------------------------
 			method writeTarget(target, deps, commands) {
 				::util.assert_str( target );
 				std::filewrite(@fh, target, ": ");
@@ -389,12 +452,99 @@ function MakefileManifestation(basedirpath, solution) {
 				);
 			},
 			method writeTargetTarget {
-				// TODO make all const deps static vars
-				local commands = std::list_new();
+				function ExecutableCommandsGenerator(project) {
+					::util.Assert( ::util.CProject_isaCProject(project) );
+					::util.Assert( project.isExecutable() );
+					static prefix;
+					static suffix;
+					if (std::isundefined(static static_variables_initialised)) {
+						static_variables_initialised = true;
+						prefix = MKVAR(VAR_MKCXX) + " -o";
+						suffix = " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS) +
+								" " + MKVAR(VAR_OBJECTS);
+					}
+					local pathstr = pathToString(outputPathname(project));
+					local result = prefix + pathstr + suffix;
+					return [ result ];
+				}
+				function StaticLibraryCommandsGenerator(project) {
+					::util.Assert( ::util.CProject_isaCProject(project) );
+					::util.Assert( project.isStaticLibrary() );
+					static prefix;
+					static suffix;
+					if (std::isundefined(static static_variables_initialised)) {
+						static_variables_initialised = true;
+						prefix = MKVAR(VAR_MKAR) + " " + MKVAR(VAR_MKARFLAGS) + " " ;
+						suffix = " " + MKVAR(VAR_OBJECTS);
+					}
+					local pathstr = pathToString(outputPathname(project));
+					local result = prefix + pathstr + suffix;
+					return [ result ];
+				}
+				function DynamicLibraryCommandsGenerator(project) {
+					::util.Assert( ::util.CProject_isaCProject(project) );
+					::util.Assert( project.isDynamicLibrary() );
+					static prefix;
+					static suffix;
+					if (std::isundefined(static static_variables_initialised)) {
+						static_variables_initialised = true;
+						prefix = MKVAR(VAR_MKCXX) + " -o" ;
+						suffix = " " + MKVAR(VAR_MKCXXFLAGS) + " " + MKVAR(VAR_MKLDFLAGS) + " -shared ";
+					}
+					local pathstr = pathToString(outputPathname(project));
+					local result = prefix + pathstr + suffix;
+					return [ result ];
+				}
+				//
+				function DependenciesGeneratorForAll(basedir_ccat_solution_path, project) {
+					::util.Assert( ::util.CProject_isaCProject(project) );
+					::util.Assert( ::util.Path_isaPath(basedir_ccat_solution_path) );
+					local deps = std::list_new();
+					std::list_push_back(deps, MKVAR(VAR_OBJECTS));
+					// real dependencies are also the static libs
+					foreach (local dep, project.Dependencies())
+						if (dep.isStaticLibrary())
+							std::list_push_back(deps, basedir_ccat_solution_path
+									.Concatenate(dep.getLocation())
+									.Concatenate(outputPathname(dep))
+									.deltaString()
+							);
+					return deps;
+				}
+				const ExecutableDependenciesGenerator     = DependenciesGeneratorForAll;
+				const StaticLibraryDependenciesGenerator  = DependenciesGeneratorForAll;
+				const DynamicLibraryDependenciesGenerator = DependenciesGeneratorForAll;
+				::util.assert_clb( ExecutableCommandsGenerator );
+				::util.assert_clb( StaticLibraryCommandsGenerator );
+				::util.assert_clb( DynamicLibraryCommandsGenerator );
+				local commandsGenerator = nil;
+				local dependenciesGenerator = nil;
+				local proj = @proj;
+				if (proj.isExecutable()) {
+					commandsGenerator = ExecutableCommandsGenerator;
+					dependenciesGenerator = ExecutableDependenciesGenerator;
+				}
+				else if (proj.isStaticLibrary()) {
+					commandsGenerator = StaticLibraryCommandsGenerator;
+					dependenciesGenerator = StaticLibraryDependenciesGenerator;
+				}
+				else if (proj.isDynamicLibrary) {
+					commandsGenerator = DynamicLibraryCommandsGenerator;
+					dependenciesGenerator = DynamicLibraryDependenciesGenerator;
+				}
+				else
+					::util.assert_fail();
+				::util.assert_clb( commandsGenerator );
+				local output_pathname_str = pathToString(outputPathname(proj));
 				@writeTarget(
 						TARGET_TARGET,
-						[], //  TODO fix according project type
-						commands
+						[ output_pathname_str ],
+						[]
+				);
+				@writeTarget(
+					output_pathname_str,
+					dependenciesGenerator(@basedir_ccat_solution_path, proj),
+					commandsGenerator(proj)
 				);
 			},
 			method writePhonyTarget {
@@ -404,7 +554,7 @@ function MakefileManifestation(basedirpath, solution) {
 					];
 				local commands = [];
 				@writeTarget(
-					TARGET_PHONY,
+					TARGET_MKPHONY,
 					deps,
 					commands
 				);

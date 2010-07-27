@@ -43,6 +43,9 @@ function assert_obj(val) {
 function assert_tbl(val) {
 	::Assert( ::isdeltatable(val) );
 }
+function assert_clb(val) {
+	::Assert( ::isdeltacallable(val) );
+}
 function assert_eq(val1, val2) {
 	::Assert( val1 == val2 );
 }
@@ -1132,6 +1135,7 @@ function CProject {
 				method isExecutable {
 					local type = ::dobj_get(self, #CProject_type);
 					::Assert( ::ProjectType_isValid(type));
+					return type == ProjectType_Executable;
 				},
 				method isLibrary {
 					return self.isDynamicLibrary() or self.isStaticLibrary();
