@@ -70,6 +70,7 @@ function list_clone                     (list)
 function iterable_map                   (iterable, mapf)            // returns an iterable with all the contents
                                                                     // of the original iterable mapped through mapf()
 function iterable_find                  (iterable, predicate)
+function iterable_get                   (iterable, index)           // index begins at 0
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)

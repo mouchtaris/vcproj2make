@@ -9,6 +9,10 @@ assert( util );
 //    The basedir can be relative or absolute. In case it is relative
 //    it is interpreted against the script's execution directory.
 function MakefileManifestation(basedirpath, solution) {
+	function singleQuote(str) {
+		::util.assert_str( str );
+		return "'" + str + "'";
+	}
 	function escapeString(str) {
 		if (str == "")
 			return str;
@@ -197,18 +201,21 @@ function MakefileManifestation(basedirpath, solution) {
 		::util.assert_str(ext);
 		return prefixpath.Concatenate(name.asWithExtension(ext));
 	}
+	function makeSourceTransformer(proj, builddir, transformTo) {
+		// relocateAndReextensionise(prefixpath, name, ext)
+		local prefixpath = builddir.Concatenate(proj.getName());
+		local ext        = proj[transformTo + #Extension]();
+		local sourceTransformer = relocateAndReextensionise;
+		sourceTransformer = ::util.bindfront   (sourceTransformer, prefixpath                               );
+		sourceTransformer = ::util.bindback    (sourceTransformer, ext                                      );
+		sourceTransformer = ::util.fcomposition(sourceTransformer, pathToPathWithoutParentAndSelfDirectories);
+		return sourceTransformer;
+	}
 	function transformSources(proj, builddir, transformationExtensionPrefix) {
 		assert( ::util.CProject_isaCProject(proj) );
 		assert( ::util.Path_isaPath(builddir) );
-		
-		// relocateAndReextensionise(prefixpath, name, ext)
-		local prefixpath = builddir.Concatenate(proj.getName());
-		local ext        = proj[transformationExtensionPrefix + #Extension]();
-		local pathmapper = relocateAndReextensionise;
-		pathmapper = ::util.bindfront   (pathmapper, prefixpath                               );
-		pathmapper = ::util.bindback    (pathmapper, ext                                      );
-		pathmapper = ::util.fcomposition(pathmapper, pathToPathWithoutParentAndSelfDirectories);
-		return pathMapping(proj.Sources(), pathmapper);
+
+		return pathMapping(proj.Sources(), makeSourceTransformer(proj, builddir, transformationExtensionPrefix));
 	}
 	function objectsFromSources(proj, builddir) {
 		return transformSources(proj, builddir, #Object);
@@ -292,7 +299,9 @@ function MakefileManifestation(basedirpath, solution) {
 	}
 	if (std::isundefined(static makemani))
 		makemani = [
-			// Utility methods
+			// --------------------------------------
+			// Utility methods --------------------------------------
+			// --------------------------------------
 			method writeLine(...) {
 				local fh = @fh;
 				std::filewrite(fh, ::util.ENDL(), "        ");
@@ -335,7 +344,9 @@ function MakefileManifestation(basedirpath, solution) {
 				}
 			},
 
+			// --------------------------------------
 			// FLAGS --------------------------------------
+			// --------------------------------------
 			// Specific flag methods
 			method writeFlagspaceHeader {
 				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), VAR_MKSHELL, " = /bin/bash", ::util.ENDL());
@@ -392,7 +403,9 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeARFLAGS();
 			},
 			
+			// --------------------------------------
 			// VARIABLES --------------------------------------
+			// --------------------------------------
 			method writeSourcesVariables {
 				std::filewrite(@fh, VAR_SOURCES, " = \\");
 				foreach (local src, @proj.Sources())
@@ -417,7 +430,9 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeDependenciesVariables();
 			},
 			
+			// --------------------------------------
 			// TARGETS --------------------------------------
+			// --------------------------------------
 			method writeTarget(target, deps, commands) {
 				::util.assert_str( target );
 				std::filewrite(@fh, target, ": ");
@@ -566,8 +581,27 @@ function MakefileManifestation(basedirpath, solution) {
 				@writePhonyTarget();
 			},
 			
-			// RULES
+			// --------------------------------------
+			// RULES --------------------------------------
+			// --------------------------------------
+			method writeObjectsRules {
+				local sourceTransformer = makeSourceTransformer(@proj, @builddir, #Object);
+				foreach (local src, @proj.Sources()) {
+					local obj = sourceTransformer(src);
+					local objpath_str = singleQuote(pathToString(obj));
+					local srcpath_str = singleQuote(pathToString(src));
+					local build_command =
+							MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCPPFLAGS) + " " + MKVAR(VAR_MKCXXFLAGS) +
+							" -o" + objpath_str + " " + srcpath_str;
+					@writeTarget(
+						objpath_str,
+						[ srcpath_str ],
+						[ build_command ]
+					);
+				}
+			},
 			method writeRules {
+				@writeObjectsRules();
 			},
 			
 			// high-level methods (for projects, solutions)

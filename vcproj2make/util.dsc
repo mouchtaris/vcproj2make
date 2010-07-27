@@ -325,6 +325,12 @@ function iterable_find(iterable, predicate) {
 		}
 	return result;
 }
+function iterable_get(iterable, index) {
+	foreach (local el, iterable)
+		if (not index--)
+			return el;
+	return nil;
+}
 
 /// File utilities
 function file_isreadable(filepath) {
