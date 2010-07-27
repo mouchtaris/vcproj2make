@@ -174,23 +174,26 @@ function MakefileManifestation(basedirpath, solution) {
 					)
 				);
 				// Add the runtime library location information (--rpath)
-				result.push_back(
-					optionPair(
-						lambda { "-Xlinker " },
-						lambda { "--rpath"  }
-					)
-				);
-				result.push_back(
-					optionPair(
-						lambda { "-Xlinker " },
-						[
-							method @operator () {
-								return pathToString(@libLocation);
-							},
-							@libLocation : libLocation
-						]
-					)
-				);
+				// for dynamic libraries
+				if (dep.isDynamicLibrary()) {
+					result.push_back(
+						optionPair(
+							lambda { "-Xlinker " },
+							lambda { "--rpath"  }
+						)
+					);
+					result.push_back(
+						optionPair(
+							lambda { "-Xlinker " },
+							[
+								method @operator () {
+									return pathToString(@libLocation);
+								},
+								@libLocation : libLocation
+							]
+						)
+					);
+				}
 			}
 		return result;
 	}
