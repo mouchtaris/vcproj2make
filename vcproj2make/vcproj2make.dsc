@@ -244,12 +244,12 @@ function MakefileManifestation(basedirpath, solution) {
 		}
 		function staticLibraryOutputTransformer(project) {
 			local path = LibraryOutputTransformer(project)
-					.Concatenate(".a");
+					.Append(".a");
 			return path;
 		}
 		function dynamicLibraryOutputTransformer(project) {
 			local path = LibraryOutputTransformer(project)
-					.Concatenate(".so");
+					.Append(".so");
 			return path;
 		}
 		if (std::isundefined( outputTransformers ))
@@ -596,7 +596,7 @@ function MakefileManifestation(basedirpath, solution) {
 					local srcpath_str     = pathToString(src);
 					local build_command =
 							MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCPPFLAGS) + " " + MKVAR(VAR_MKCXXFLAGS) +
-							" -o" + squote(objpath_str) + " " + squote(srcpath_str);
+							"-c -o" + squote(objpath_str) + " " + squote(srcpath_str);
 					@writeTarget(
 						objpath_str,
 						[ srcpath_str, objbasename_str ],

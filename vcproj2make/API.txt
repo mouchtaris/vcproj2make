@@ -192,6 +192,8 @@ function unmixinObject              (instance)
 //               returns a new path instance which is the same as
 //               this path instance except for the new path having
 //               as an extension the one to this call.
+//         - Append !!! (str:deltastring)
+//               appends the given string to THIS path, and returns it.
 //         - basename
 //               returns a deltastring with the basename of this path
 //               (the path up to the last "/" [for linux] or up to the last

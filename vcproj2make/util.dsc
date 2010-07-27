@@ -951,6 +951,12 @@ function Path {
 				},
 				method basename {
 					return ::file_basename(self.deltaString());
+				},
+				method Append(str) {
+					::assert_str( str );
+					local pathstr = self.deltaString();
+					::dobj_checked_set(self, ::Path().stateFields(), #Path_path, pathstr + str);
+					return self;
 				}
 			],
 			// mixInRequirements
