@@ -138,6 +138,7 @@ if (::util.False()) {
 }
 
 
+if (::util.False() or true)
 {
 /////////////// A real project example /////////////////
 //
@@ -146,7 +147,7 @@ if (::util.False()) {
 
 	local testprojectspathstr  = "vcproj2make_testprojects";
 	local testprojectspath     = ::util.Path_castFromPath(testprojectspathstr);
-	local currentDirPath       = ::util.Path_castFromPath(".");
+	local currentDirPath       = ::util.Path_castFromPath(::util.getcwd());
 	local ProjectTypes         = ::util.ProjectType();
 	local Executable           = ProjectTypes.Executable;
 	local DynamicLibrary       = ProjectTypes.DynamicLibrary;

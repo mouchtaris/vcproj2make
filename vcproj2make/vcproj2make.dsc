@@ -116,35 +116,34 @@ function MakefileManifestation(basedirpath, solution) {
 				));
 		return result;
 	}
-	function ldOptionsFromSubprojects(parent_project, subprojects) {
+	function ldOptionsFromDependencies(basedir, dependencies) {
 		local result = std::list_new();
-		foreach (local subproj, subprojects)
-			if (subproj.isLibrary()) {
+		foreach (local dep, dependencies)
+			if (dep.isLibrary()) {
 				// Add a library path option (-L)
 				result.push_back(
 					optionPair(
 						// prefix getter
 						[
 							method @operator () {
-								assert( @subproj.isLibrary() );
+								::util.Assert( @dep.isLibrary() );
 								return "-L";
 							},
-							@subproj: subproj
+							@dep: dep
 						],
 						// value getter
 						[
 							method @operator () {
-								local subproj = @subproj;
-								local parentproj = @parentproj;
-								assert( subproj.isLibrary() );
+								local dep = @dep;
+								::util.Assert( dep.isLibrary() );
 								return pathToString(
-									parentproj.getLocation()
-											.Concatenate(subproj.getLocation())
-											.Concatenate(subproj.getOutputDirectory())
+										@basedir
+												.Concatenate(dep.getLocation())
+												.Concatenate(dep.getOutputDirectory())
 								);
 							},
-							@subproj   : subproj,
-							@parentproj: parent_project
+							@dep     : dep,
+							@basedir : basedir
 						]
 					)
 				);
@@ -154,20 +153,19 @@ function MakefileManifestation(basedirpath, solution) {
 						// prefix getter
 						[
 							method @operator () {
-								assert( @subproj.isLibrary() );
+								::util.Assert( @dep.isLibrary() );
 								return "-l";
 							},
-							@subproj: subproj
+							@dep: dep
 						],
 						// value getter
 						[
 							method @operator () {
-								local subproj = @subproj;
-								assert( subproj.isLibrary() );
-								local parentproj = @parentproj;
-								return deltastringToString(subproj.getOutputName());
+								local dep = @dep;
+								::util.Assert( dep.isLibrary() );
+								return deltastringToString(dep.getOutputName());
 							},
-							@subproj: subproj
+							@dep: dep
 						]
 					)
 				);
@@ -274,10 +272,10 @@ function MakefileManifestation(basedirpath, solution) {
 				std::filewrite(@fh, "# Flagspace", ::util.ENDL(), "SHELL = /bin/bash", ::util.ENDL());
 			},
 			method writeDependencyRelatedCPPFLAGS {
-				local options = cppOptionsFromDependencies(
+				local dependenciesGeneratedOptions = cppOptionsFromDependencies(
 						@basedir_ccat_solution_path,
 						@proj.Dependencies());
-				@writePrefixedOptions(options);
+				@writePrefixedOptions(dependenciesGeneratedOptions);
 			},
 			method writeCPPFLAGS {
 				std::filewrite(@fh, "CPPFLAGS = \\");
@@ -288,14 +286,16 @@ function MakefileManifestation(basedirpath, solution) {
 				@writePost(#CPPFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
-			method writeSubprojectRelatedLDFLAGS {
-				local subprojGeneratedOptions = ldOptionsFromSubprojects(@proj, @proj.Dependencies());
-				@writePrefixedOptions(subprojGeneratedOptions);
+			method writeDependenyRelatedLDFLAGS {
+				local dependenciesGeneratedOptions = ldOptionsFromDependencies(
+						@basedir_ccat_solution_path,
+						@proj.Dependencies());
+				@writePrefixedOptions(dependenciesGeneratedOptions);
 			},
 			method writeLDFLAGS {
 				std::filewrite(@fh, "LDFLAGS = \\");
 				@writePre(#LDFLAGS);
-				@writeSubprojectRelatedLDFLAGS();
+				@writeDependenyRelatedLDFLAGS();
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
 				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", pathToString));
 				@writePost(#LDFLAGS);
