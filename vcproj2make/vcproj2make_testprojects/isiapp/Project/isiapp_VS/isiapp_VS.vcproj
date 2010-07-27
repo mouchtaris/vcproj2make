@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="ISIAPP_VERSION=\&quot;Mironeus_Miraculum_Malefocarus_334.22212\&quot;;_DEBUG;WIN32;_CONSOLE;ISIDLL_VS_IMPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -115,7 +115,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="ISIAPP_VERSION=\&quot;Mironeus_Miraculum_Malefocarus_334.22212\&quot;;WIN32;NDEBUG;_CONSOLE;ISIDLL_VS_IMPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"

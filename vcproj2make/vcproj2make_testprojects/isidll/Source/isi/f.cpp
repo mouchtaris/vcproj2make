@@ -3,7 +3,11 @@
 namespace isi {
 
     int f(int x) throw() {
-        return x + 2;
+        return x + ISIDLL_F_ADJ;
+    }
+
+    int fadj(void) throw() {
+        return ISIDLL_F_ADJ;
     }
 
 } // namespace isi
