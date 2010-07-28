@@ -1,4 +1,8 @@
 util = std::vmget("util");
+if ( not util ) {
+	util = std::vmload("util.dbc", "util");
+	std::vmrun(util);
+}
 assert( util );
 
 //////////////////////////////
@@ -8,6 +12,9 @@ assert( util );
 //    against which the solution's location will be interpreted.
 //    The basedir can be relative or absolute. In case it is relative
 //    it is interpreted against the script's execution directory.
+//
+// TODO:
+//    add clean targets
 function MakefileManifestation(basedirpath, solution) {
 	function squote(str) {
 		::util.assert_str( str );
@@ -245,10 +252,13 @@ function MakefileManifestation(basedirpath, solution) {
 		return transformSources(proj, builddir, #Dependency);
 	}
 	
-	function appendCommandsFromSubprojects(commands, subprojects) {
-		foreach (local subproj, subprojects)
+	function appendCommandsFromSubprojects(commands, projects, makefileTarget) {
+		::util.assert_str( makefileTarget );
+		local makefileTarget_str = deltastringToString(makefileTarget);
+		foreach (local proj, projects)
 			std::list_push_back(commands,
-					"( cd " + subproj.getLocation().deltaString() + " && ${MAKE} -f " + subproj.getName() + "Makefile.mk )"
+					"( cd " + proj.getLocation().deltaString() + " && ${MAKE} -f " +
+					proj.getName() + "Makefile.mk " + makefileTarget_str + ")"
 			);
 	}
 
@@ -302,7 +312,6 @@ function MakefileManifestation(basedirpath, solution) {
 	const VAR_MKCXXFLAGS   = #CXXFLAGS    ;
 	const VAR_MKLDFLAGS    = #LDFLAGS     ;
 	const VAR_MKARFLAGS    = #ARFLAGS     ;
-	
 	//
 	const TARGET_MKPHONY   = ".PHONY"     ;
 	//
@@ -313,6 +322,9 @@ function MakefileManifestation(basedirpath, solution) {
 	const TARGET_ALL       = #all         ;
 	const TARGET_OBJECTS   = #objects     ;
 	const TARGET_TARGET    = #target      ;
+	const TARGET_CLEAN     = #clean       ;
+	//
+	local MK_PHONY_TARGETS = [ TARGET_ALL, TARGET_OBJECTS, TARGET_TARGET, TARGET_CLEAN ];
 	function MKVAR(varname_or_f) {
 		local varname = ::util.val(varname_or_f);
 		::util.assert_str( varname );
@@ -598,15 +610,32 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeDirectoryTarget(output_basename_str);
 					
 			},
+			method writeCleanTarget {
+				const objvarname = "haris";
+				static deps, static commands;
+				if (std::isundefined(static static_vars_initialised)) {
+					static_vars_initialised = true;
+					deps = [];
+					objvarname_str = deltastringToString("\"$" + objvarname + "\"");
+					commands = [ 
+								"@for " + objvarname + " in " + MKVAR(VAR_OBJECTS) + " " +
+								pathToString(outputPathname(@proj)) + " " + MKVAR(VAR_DEPENDENCIES) +
+								" ; do if [ -e " + objvarname_str + " ] ; then rm -v " + objvarname_str + 
+								" ; else printf 'File \"%s\" does not exist, not deleting\\n' " + 
+								objvarname_str + " ; fi ; done" ];
+				}
+				@writeTarget(
+					TARGET_CLEAN,
+					deps,
+					commands
+				);
+			},
 			method writePhonyTarget {
-				if (std::isundefined(static deps))
-					deps = [
-						TARGET_ALL, TARGET_OBJECTS, TARGET_TARGET
-					];
-				local commands = [];
+				if (std::isundefined(static commands))
+					commands = [];
 				@writeTarget(
 					TARGET_MKPHONY,
-					deps,
+					@MK_PHONY_TARGETS,
 					commands
 				);
 			},
@@ -614,6 +643,7 @@ function MakefileManifestation(basedirpath, solution) {
 				@writeAllTarget();
 				@writeObjectsTarget();
 				@writeTargetTarget();
+				@writeCleanTarget();
 				@writePhonyTarget();
 			},
 			
@@ -666,7 +696,6 @@ function MakefileManifestation(basedirpath, solution) {
 				;
 				@config = project.getManifestationConfiguration(#Makefile);
 				@proj = project;
-				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
 				@writeAll(path);
 			},
 			method writeProjectsMakefiles {
@@ -675,8 +704,15 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			method writeSolutionMakefileTargets {
 				local commands = std::list_new();
-				appendCommandsFromSubprojects(commands, @solution.Projects());
-				@writeTarget(#all, [], commands);
+				local projects = @solution.Projects();
+				appendCommandsFromSubprojects(commands, projects, TARGET_ALL);
+				@writeTarget(TARGET_ALL, [], commands);
+				std::list_clear(commands);
+				appendCommandsFromSubprojects(commands, projects, TARGET_CLEAN);
+				// also recursively delete the build directory
+				std::list_push_back(commands, "@ if [ -e " + @builddir_str + " ] ; then rm -r -v " + @builddir_str +
+						" ; else printf 'Build dir \"%s\" already missing\\n' \"" + @builddir_str + "\" ; fi");
+				@writeTarget(TARGET_CLEAN, [], commands);
 			},
 			// before calling, call init()
 			method writeSolutionMakefile {
@@ -702,11 +738,14 @@ function MakefileManifestation(basedirpath, solution) {
 				//
 				@basedirpath = basedirpath;
 				@basedir_ccat_solution_path = basedirpath.Concatenate(solution.getLocation());
+				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
+				@builddir_str = pathToString(@builddir);
 				//
 				@solution = solution;
 				//
 				@writeSolutionMakefile();
-			}
+			},
+			@MK_PHONY_TARGETS: MK_PHONY_TARGETS
 		];
 	else
 		makemani = makemani;
