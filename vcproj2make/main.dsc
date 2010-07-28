@@ -10,6 +10,12 @@ vc2pr = std::vmload("vcproj2proj.dbc", "vc2pr");
 std::vmrun(vc2pr);
 assert( vc2pr );
 
+libs_loaded_successfully = ::util.loadlibs();
+if (not libs_loaded_successfully) {
+	::util.error().AddError("Could not load required libs");
+	::util.assert_fail();
+}
+
 RunReal = 
 //		not
 		false;
