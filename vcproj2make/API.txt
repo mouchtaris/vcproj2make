@@ -23,6 +23,7 @@ function argspopfront                   (args, popnum)
 function fcomposition                   (f1, f2)
 function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
                                                                         // in the slot with the given membername, passing to it the expanded args
+function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
 function equals                         (val1, val2)
 function equalitypredicate              (val)
 //

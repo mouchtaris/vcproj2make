@@ -227,8 +227,10 @@ if (::util.False() or RunReal)
 			// solutionName:deltastring
 			"vcproj2make test solution"
 		);
-		foreach (local proj, projs)
-			solution.addProject(proj);
+		// Add on purpose in inverse order of dependance
+		solution.addProject(projs.isiapp);
+		solution.addProject(projs.isistatic);
+		solution.addProject(projs.isidll);
 		
 		::vc2mk.MakefileManifestation(currentDirPath, solution);
 	}
@@ -245,8 +247,8 @@ if (::util.False() or RunReal)
 }
 
 {
-//	local libfunc = "std::print";
-//	libfunc("hello \n");
-//	"std::print"(libfun);
-//	#std::print(libfunc);
+	local libfunc = "std::print";
+	libfunc("hello \n");
+	// "std::print"(libfun);
+	#std::print(libfunc);
 }

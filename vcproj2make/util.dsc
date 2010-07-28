@@ -275,6 +275,16 @@ function fcomposition (f1, f2) {
 function membercalltransformation(object, membername, args) {
 	return object[membername](|args|);
 }
+function membercalltransformer(membername, args) {
+	::assert_str( membername );
+	return [
+		method @operator () (obj){
+			return obj[@membername](|@args|);
+		},
+		@membername : membername,
+		@args       : args
+	];
+}
 function equals(val1, val2) {
 	return val1 == val2;
 }

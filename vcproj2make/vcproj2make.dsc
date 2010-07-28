@@ -252,14 +252,19 @@ function MakefileManifestation(basedirpath, solution) {
 		return transformSources(proj, builddir, #Dependency);
 	}
 	
+	function projectTargetNameForProject(project) {
+		return "proj_" + project.getName();
+	}
+	function subbuildCommandForSubproject(project, makefileTarget_str) {
+		return "( cd " + pathToString(project.getLocation()) + " && ${MAKE} -f " +
+					deltastringToString(project.getName() + "Makefile.mk") + " " +
+					makefileTarget_str + ")";
+	}
 	function appendCommandsFromSubprojects(commands, projects, makefileTarget) {
 		::util.assert_str( makefileTarget );
 		local makefileTarget_str = deltastringToString(makefileTarget);
 		foreach (local proj, projects)
-			std::list_push_back(commands,
-					"( cd " + proj.getLocation().deltaString() + " && ${MAKE} -f " +
-					proj.getName() + "Makefile.mk " + makefileTarget_str + ")"
-			);
+			std::list_push_back(commands, subbuildCommandForSubproject(proj, makefileTarget_str));
 	}
 
 	function outputPathname(project) {
@@ -703,16 +708,36 @@ function MakefileManifestation(basedirpath, solution) {
 					@writeProjectMakefile(project);
 			},
 			method writeSolutionMakefileTargets {
-				local commands = std::list_new();
 				local projects = @solution.Projects();
-				appendCommandsFromSubprojects(commands, projects, TARGET_ALL);
-				@writeTarget(TARGET_ALL, [], commands);
-				std::list_clear(commands);
+				local projects_targets_names = ::util.iterable_map(projects, projectTargetNameForProject);
+				local commands = std::list_new();
+				// all: proj1 proj2 ...
+				@writeTarget(TARGET_ALL, projects_targets_names, commands);
+				// projn: projk projl porjm ...
+				foreach (local project, projects)
+					@writeTarget(
+						projectTargetNameForProject(project),
+						::util.iterable_map(project.Dependencies(), projectTargetNameForProject),
+						[ subbuildCommandForSubproject(project, TARGET_ALL) ]
+					);
+				
+				// clean:
 				appendCommandsFromSubprojects(commands, projects, TARGET_CLEAN);
-				// also recursively delete the build directory
+				//     also recursively delete the build directory
 				std::list_push_back(commands, "@ if [ -e " + @builddir_str + " ] ; then rm -r -v " + @builddir_str +
 						" ; else printf 'Build dir \"%s\" already missing\\n' \"" + @builddir_str + "\" ; fi");
 				@writeTarget(TARGET_CLEAN, [], commands);
+
+				std::list_clear(commands);
+				local deps = projects_targets_names;
+				std::list_push_back(deps, TARGET_ALL);
+				std::list_push_back(deps, TARGET_CLEAN);
+				// .PHONY
+				@writeTarget(
+					TARGET_MKPHONY,
+					deps,
+					commands
+				);	
 			},
 			// before calling, call init()
 			method writeSolutionMakefile {
