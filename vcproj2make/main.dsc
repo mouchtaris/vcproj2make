@@ -1,11 +1,17 @@
 util = std::vmload("util.dbc", "util");
 std::vmrun(util);
+assert( util );
 
-vc2mk = std::vmload("vcproj2make.dbc", "vc2mk");
-std::vmrun(vc2mk);
+pr2mk = std::vmload("proj2make.dbc", "pr2mk");
+std::vmrun(pr2mk);
+assert( pr2mk );
+
+vc2pr = std::vmload("vcproj2proj.dbc", "vc2pr");
+std::vmrun(vc2pr);
+assert( vc2pr );
 
 RunReal = 
-		not
+//		not
 		false;
 
 if (::util.False())
@@ -72,7 +78,7 @@ if (::util.False())
 			@CXXFLAGS_post: [ "-lute=a_cxx_flag_post" ]
 		]
 	);
-	::vc2mk.MakefileManifestation(proj, "./");
+	::pr2mk.MakefileManifestation(proj, "./");
 	//::util.println(proj);
 	::util.println(::util.strgsub("../../../../../../../../../32423423423424234@#%*@*#%@%@%@?:\"<>,.|\\}{[]:;\\|`~!@#$%^&*()_+=-\"Hello guys. This is margert's nice inch tails mock.'''''\"\"''|\"", "#", "\\#"));
 	::util.println(::util.strgsub("Sakhs", "#", "\\#"));
@@ -232,7 +238,7 @@ if (::util.False() or RunReal)
 		solution.addProject(projs.isistatic);
 		solution.addProject(projs.isidll);
 		
-		::vc2mk.MakefileManifestation(currentDirPath, solution);
+		::pr2mk.MakefileManifestation(currentDirPath, solution);
 	}
 	
 }
@@ -251,4 +257,8 @@ if (::util.False() or RunReal)
 	libfunc("hello \n");
 	// "std::print"(libfun);
 	#std::print(libfunc);
+}
+
+{
+	
 }
