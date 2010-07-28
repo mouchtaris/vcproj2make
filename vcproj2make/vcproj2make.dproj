@@ -17,7 +17,8 @@
         <argsd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </argsd>
         <args>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </args>
     </ProjectProperties>
-    <Child type="Script">vcproj2make.dsc</Child>
     <Child type="Script">util.dsc</Child>
     <Child type="Script">main.dsc</Child>
+    <Child type="Script">proj2make.dsc</Child>
+    <Child type="Script">vcproj2proj.dsc</Child>
 </Project>
