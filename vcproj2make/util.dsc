@@ -153,6 +153,7 @@ function platform {
 function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
 function del(delegator, delegate) { std::delegate(delegator, delegate); }
+private__loadlibsStaticData = [];
 function loadlibs {
 	local xmldll = nil;
 	if (::iswin32())
@@ -164,7 +165,10 @@ function loadlibs {
 
 	if (not xmldll)
 		std::error("could not load xml parser lib");
-	return true;
+	return ::private__loadlibsStaticData.libsloaded = true;
+}
+function libsloaded {
+	return ::private__loadlibsStaticData.libsloaded;
 }
 function getcwd {
 	if (local getcwd = std::libfuncget("isi::getcwd"))
@@ -476,6 +480,17 @@ function file_basename(filepath) {
 	return result;
 }
 
+//////////////////////
+// flow/program structure utilities
+// ---------
+function orval(val1, val2) {
+	local result = nil;
+	if (val1)
+		result = val1;
+	else
+		result = val2;
+	return result;
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -1337,4 +1352,26 @@ function CSolution {
 }
 function CSolution_isaCSolution(object) {
 	return ::Class_isa(object, ::CSolution());
+}
+
+
+////////////////////////
+// xml utilities
+////////////////////////
+xmlload_LibFunc         = #xmlload;
+xmlloadgeterror_LibFunc = #xmlloadgeterror;
+function xmlload(filename_str) {
+	::assert_str( filename_str );
+	::Assert( ::libsloaded() );
+	local xmlload = std::libfuncget(::xmlload_LibFunc);
+	::Assert( xmlload );
+	local result = xmlload(filename_str);
+	return result;
+}
+function xmlloadgeterror {
+	local xmlloadgeterror = std::libfuncget(::xmlloadgeterror_LibFunc);
+	::Assert( ::libsloaded() );
+	::Assert( xmlloadgeterror );
+	local result = xmlloadgeterror();
+	return result;
 }

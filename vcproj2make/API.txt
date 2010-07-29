@@ -7,6 +7,7 @@ function iswin32
 function islinux
 function del            (delegator, delegate)
 function loadlibs
+function libsloaded
 function argstostring   (...)
 //
 // Object Error
@@ -87,6 +88,12 @@ function strrindex                      (hay, needle)
 function strlength                      (str)
 function strchar                        (str, charindex)
 
+// program flow/control utilities
+function orval  (val1, val2)        // val1? val1 : val2
+
+// xml utilities
+function xmlload            (filename_str)
+function xmlloadgeterror
 ////////////////////////////////////////////////////////////////////////
 function mixin_state                            (state, mixin)
 function stateFieldsClash                       (fields1, fields2)
