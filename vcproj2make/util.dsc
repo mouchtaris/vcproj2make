@@ -154,18 +154,38 @@ function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
 function del(delegator, delegate) { std::delegate(delegator, delegate); }
 private__loadlibsStaticData = [];
+const private__DELTA_DLL_INSTALLATION_FUNCTION_NAME = "Install";
 function loadlibs {
-	local xmldll = nil;
-	if (::iswin32())
-		xmldll = std::dllimport("XMLParser.dll", "Install");
-	else if (::islinux())
-		xmldll = std::dllimport("libXMLParser-linux.so", "Install");
-	else
-		std::error("unknown platform: " + ::platform());
-
-	if (not xmldll)
-		std::error("could not load xml parser lib");
-	return ::private__loadlibsStaticData.libsloaded = true;
+	function loadlib(basename) {
+		::assert_str( basename );
+		local libname = nil;
+		local have_error = false;
+		if (::iswin32())
+			libname = basename + ".dll";
+		else if (::islinux())
+			libname = "lib" + basename + ".so";
+		else {
+			::error().AddError("Unknown platform: " + ::platform());
+			have_error = true;
+		}
+		
+		local result = nil;
+		if (not have_error) {
+			dll = std::dllimport(libname, private__DELTA_DLL_INSTALLATION_FUNCTION_NAME);
+			if (dll)
+				result = true;
+			else {
+				::error().AddError("Could not load library: " + libname);
+				have_error = true;
+			}
+		}
+		return result;
+	}
+	return ::private__loadlibsStaticData.libsloaded = 
+			loadlib("XMLParser")        and
+			loadlib("VCSolutionParser") and
+			true
+	;
 }
 function libsloaded {
 	return ::private__loadlibsStaticData.libsloaded;

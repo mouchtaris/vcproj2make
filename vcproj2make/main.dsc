@@ -272,5 +272,9 @@ if (::util.False() or RunReal)
 {
 	
 	::vc2pr.VisualStudioProjectAdaptor("TestProject.vcproj");
+	local api = std_getapi();
+	::util.println(api);
 	
+	local obj = #vc::solload();
+	::util.println(obj);
 }
