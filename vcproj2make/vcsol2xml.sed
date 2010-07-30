@@ -67,7 +67,7 @@
 	d
 }
 /^((\t|[ ])*)EndGlobal *\x0d?$/{
-	s,,\1</EndGlobal>,gp
+	s,,\1</Global>,gp
 	d
 }
 ### GlobalSection
