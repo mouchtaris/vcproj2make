@@ -19,5 +19,9 @@ function xmlloadgeterror {
 function VisualStudioProjectAdaptor(vcproj_filepath_str) {
 	local vcproj_data = xmlload(vcproj_filepath_str);
 	local vcproj_loaderror = xmlloadgeterror();
-	::util.println(::util.orval(vcproj_data, vcproj_loaderror));
+	if (vcproj_data) {
+		::util.Assert( not vcproj_loaderror );
+		::util.println( ::util.dobj_keys(vcproj_data) );
+	}
+	
 }

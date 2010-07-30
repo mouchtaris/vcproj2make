@@ -183,7 +183,7 @@ function loadlibs {
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
 			loadlib("XMLParser")        and
-			loadlib("VCSolutionParser") and
+//			loadlib("VCSolutionParser") and
 			true
 	;
 }
@@ -251,6 +251,9 @@ function dobj_checked_get(dobj, validKeys, key) {
 }
 function dobj_length(dobj) {
 	return std::tablength(dobj);
+}
+function dobj_keys(dobj) {
+	return std::tabindices(dobj);
 }
 //
 // Functional games
