@@ -31,6 +31,22 @@ function VisualStudioProjectAdaptor(vcproj_filepath_str) {
 		::util.Assert( not vcproj_loaderror );
 		::util.println( ::util.dobj_keys(vcproj_data) );
 	}
+	else {
+		::util.Assert( vcproj_loaderror );
+		::util.p(vcproj_loaderror);
+	}
+}
+///////////////////////////////////////////////////////////////////////
+}
+
+function CSolutionFromVCSolution(solutionFilePath_str, solutionName) {
+	function loadSolutionDataFromSolutionFile(solutionFilePath_str) {
+		::util.assert_str( solutionFilePath_str );
+		local data = xmlload(solutionFilePath_str);
+		if (not data)
+			::util.error().AddError(::xmlloaderror());
+		return data;
+	}
 	
 	local result = nil;
 	::util.assert_str( solutionFilePath_str );
