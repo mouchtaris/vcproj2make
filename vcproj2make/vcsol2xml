@@ -6,5 +6,5 @@ if [ -z "$filename" ]
 	then printf 'Please provide a filename'
 fi
 
-sed --posix --regexp-extended --quiet --file 'vcsol2xml.sed' "$filename"
+sed --posix --regexp-extended --file 'vcsol2xml.sed' "$filename"
 

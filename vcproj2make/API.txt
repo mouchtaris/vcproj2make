@@ -63,6 +63,7 @@ function dobj_contains_any_key_from     (dobj, dobj_other)
 function dobj_checked_set               (dobj, validKeys, key, val)
 function dobj_checked_get               (dobj, key)
 function dobj_length                    (dobj)
+function dobj_keys                      (dobj)
 //
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
