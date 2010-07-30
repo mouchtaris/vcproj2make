@@ -153,21 +153,23 @@ function platform {
 function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
 function del(delegator, delegate) { std::delegate(delegator, delegate); }
+function libifyname(filename) {
+	local result = nil;
+	if (::iswin32())
+		result = filename + ".dll";
+	else if (::islinux())
+		result = "lib" + filename + ".so";
+	else
+		::error().AddError("Unknown platform for libifyname(): " + ::platform());
+	return result;
+}
 private__loadlibsStaticData = [];
 const private__DELTA_DLL_INSTALLATION_FUNCTION_NAME = "Install";
 function loadlibs {
 	function loadlib(basename) {
 		::assert_str( basename );
-		local libname = nil;
-		local have_error = false;
-		if (::iswin32())
-			libname = basename + ".dll";
-		else if (::islinux())
-			libname = "lib" + basename + ".so";
-		else {
-			::error().AddError("Unknown platform: " + ::platform());
-			have_error = true;
-		}
+		local libname = libifyname(basename);
+		local have_error = not libname;
 		
 		local result = nil;
 		if (not have_error) {
@@ -451,6 +453,9 @@ function strlength(str) {
 function strchar(str, charindex) {
 	return std::strchar(str, charindex);
 }
+function strmul(str, times) {
+	return std::strrep(str, times);
+}
 
 /// File utilities
 function file_isreadable(filepath) {
@@ -490,6 +495,19 @@ function file_separator {
 		::error().AddError("unknown platform: ", ::platform());
 	return result;
 }
+function file_pathconcatenate(...) {
+	::foreacharg(arguments, local path_concatenator = [
+		@sep : ::file_separator(),
+		@path: "",
+		method @operator () (arg) {
+			::assert_str( arg );
+			@path += arg;
+			@path += @sep;
+			return true;
+		}
+	]);
+	return path_concatenator.path;
+}
 function file_basename(filepath) {
 	::assert_str( filepath );
 	local result = nil;
@@ -500,6 +518,49 @@ function file_basename(filepath) {
 	}
 	if (last_index >= 0)
 		result = ::strsubstr(filepath, 0, last_index);
+	return result;
+}
+function file_copy(src, dst) {
+	local result = nil;
+	if (local fin = std::fileopen(src, "rb")) {
+		if (local fout = std::fileopen(dst, "wb")) {
+			local reader = std::reader_fromfile(fin);
+			local writer = std::writer_fromfile(fout);
+			local feof = false;
+			while ( not feof ) {
+				feof = true;
+				local eof = false;
+				local inbuf = std::reader_read_buffer(reader);
+				local buffedreader = std::reader_frominputbuffer(inbuf);
+				while ( not (eof = std::inputbuffer_eof(inbuf)) ) {
+					feof = false;
+					local deltastring = std::reader_read_string(buffedreader);
+					assert( deltastring );
+					std::writer_write_string(writer, deltastring);
+				}
+			}
+			std::fileclose(fin);
+			std::fileclose(fout);
+			result = true;
+		}
+		else
+			::error().AddError("Could not open file \"" + dst + "\" for writing.");
+	}
+	else
+		::error().AddError("Could not open file \"" + src + "\" for reading.");
+
+	return result;
+}
+function shell(command) {
+	return std::fileexecute(command);
+}
+function shellcopy(srcpath, destpath) {
+	if (::iswin32())
+		result = ::shell("copy \"" + srcpath + "\" \"" + destpath + "\"");
+	else if (::islinux())
+		result = ::shell("cp '" + srcpath + "' '" + destpath + "'");
+	else
+		::error().AddError("Unknown platform: " + ::platform());
 	return result;
 }
 
@@ -1391,7 +1452,7 @@ function xmlload(filename_str) {
 	local result = xmlload(filename_str);
 	return result;
 }
-function xmlloadgeterror {
+function xmlloaderror {
 	local xmlloadgeterror = std::libfuncget(::xmlloadgeterror_LibFunc);
 	::Assert( ::libsloaded() );
 	::Assert( xmlloadgeterror );

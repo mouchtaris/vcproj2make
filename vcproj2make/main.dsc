@@ -13,8 +13,30 @@ assert( vc2pr );
 RunReal = 
 //		not
 		false;
-LoadLibs = not false;
+LoadLibs = 
+		not
+		false;
 if (LoadLibs) {
+	// Copy libs first
+	(function copylibs {
+		function xmllibpathcomponents(configuration) {
+			return ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
+					"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
+		}
+		function makexmllibpath(configuration, basename) {
+			local result = ::util.file_pathconcatenate(|xmllibpathcomponents(configuration)|) + ::util.libifyname(basename);
+			return result;
+		}
+		local xmllibbasename = "XMLParser";
+		foreach (local libconfignamepair, [ ["release", xmllibbasename], ["debug", xmllibbasename + "D"] ]) {
+			local configuration = libconfignamepair[0];
+			local libbasename = libconfignamepair[1];
+			local src = makexmllibpath(configuration, libbasename);
+			local dst = libbasename;
+			::util.println("Copying " + src + " to " + dst);
+			::util.shellcopy(src, dst);
+		}
+	})();
 	libs_loaded_successfully = ::util.loadlibs();
 	if (not libs_loaded_successfully) {
 		::util.error().AddError("Could not load required libs");
@@ -262,19 +284,32 @@ if (::util.False() or RunReal)
 }
 
 {
-	local libfunc = "std::print";
-	libfunc("hello \n");
-	// "std::print"(libfun);
-	#std::print(libfunc);
-	libfunc(::util.ENDL());
+	//local satan = ::util.xmlload("C:\\Users\\TURBO_X\\Documents\\My Dropbox\\Delta\\BIG_GRAPH.xml");
+	//(lambda(x){ x })(satan);
 }
 
 {
-	
-	::vc2pr.VisualStudioProjectAdaptor("TestProject.vcproj");
-//	local api = std_getapi();
-//	::util.println(api);
-	
-//	local obj = #vc::solload();
-//	::util.println(obj);
+//	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParserD.dll", "XMLParserD.dll");
+//	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParser.dll", "XMLParser.dll");
+
+//	local doFirst = true;
+//	if (doFirst) {
+//		::util.println("DOING FIRST");
+//		reader = 8;
+//		std::reader_read_buffer(reader);
+//	}
+//	else {
+//		fh = std::fileopen("main.dsc", "rt");
+//		if (fh) {
+//			reader = std::reader_fromfile(fh);
+//			std::reader_read_buffer(reader);
+//			std::fileclose(fh);
+//		}
+//	}
+}
+
+
+
+{
+	::vc2pr.CSolutionFromVCSolution("TestSolution.xml", "IDE");
 }

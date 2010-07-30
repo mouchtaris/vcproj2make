@@ -5,6 +5,7 @@ function printsec       (...)
 function platform
 function iswin32
 function islinux
+function libifyname     (filename) 
 function del            (delegator, delegate)
 function loadlibs
 function libsloaded
@@ -79,7 +80,12 @@ function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
 function file_hidden                    (filename)
 function file_separator                                             // platform-dependent file separator (returned as a deltastring)
+function file_pathconcatenate           (...)
 function file_basename                  (filepath)
+function file_copy                      (src, dst)
+//
+function shell                          (command)
+function shellcopy                      (srcpath, destpath)
 //
 function strslice                       (str, start_index, end_index)
 function strsubstr                      (str, start_index ...)
@@ -88,13 +94,14 @@ function strgsub                        (string, pattern, replacement)
 function strrindex                      (hay, needle)
 function strlength                      (str)
 function strchar                        (str, charindex)
+function strmul                         (str, num)
 
 // program flow/control utilities
 function orval  (val1, val2)        // val1? val1 : val2
 
 // xml utilities
 function xmlload            (filename_str)
-function xmlloadgeterror
+function xmlloaderror
 ////////////////////////////////////////////////////////////////////////
 function mixin_state                            (state, mixin)
 function stateFieldsClash                       (fields1, fields2)
