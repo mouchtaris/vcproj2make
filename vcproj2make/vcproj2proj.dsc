@@ -38,6 +38,6 @@ function VisualStudioProjectAdaptor(vcproj_filepath_str) {
 	
 	if (not local solutionData = loadSolutionDataFromSolutionFile(solutionFilePath_str))
 		return nil;
-	
+	result = solutionData;
 	return result;
 }

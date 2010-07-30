@@ -1,3 +1,8 @@
+// Flag for classic delta compatibility
+ASsafe = 
+//		not 
+		false;
+
 function False {
 	return false;
 }
@@ -140,6 +145,8 @@ function val(const_or_f) {
 }
 
 function printsec(...) { std::print(pref, ..., ::nl); }
+// NOT an as-safe function
+if (not ASsafe)
 function platform {
 	if (local platform = std::libfuncget("std::platform"))
 		;
@@ -192,6 +199,8 @@ function loadlibs {
 function libsloaded {
 	return ::private__loadlibsStaticData.libsloaded;
 }
+// NOT as-safe
+if (not ASsafe)
 function getcwd {
 	if (local getcwd = std::libfuncget("isi::getcwd"))
 		;
