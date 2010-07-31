@@ -16,16 +16,18 @@ RunReal =
 LoadLibs = 
 		not
 		false;
+local libs_loaded_successfully = false;
 if (LoadLibs) {
 	// Copy libs first
-	(function copylibs {
+	(method copylibs {
 		function xmllibpathcomponents(configuration) {
 			local result = nil;
 			if (::util.iswin32())
 				result = ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
 						"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
 			else if (::util.islinux())
-				assert( not "xmllibpathcomponents not configured for linux yet" );
+				result = ["..", "..", "..", "deltux", "psp", "projects", "Tools", 
+					"Delta", "DeltaExtraLibraries", "XMLParserPSP", "Project"];
 			else
 				::util.error().UnknownPlatform();
 			return result;
@@ -36,7 +38,7 @@ if (LoadLibs) {
 				result = ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
 						"Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
 			else if (::util.islinux())
-				assert( not "vcsplibpathcomponents not configured for linux yet" );
+				result = [ "." ]; // dummy lib
 			else
 				::util.error().UnknownPlatform();
 			return result;
@@ -67,7 +69,7 @@ if (LoadLibs) {
 			::util.shellcopy(src, dst);
 		}
 	})();
-	libs_loaded_successfully = ::util.loadlibs();
+	::libs_loaded_successfully = ::util.loadlibs();
 	if (not libs_loaded_successfully) {
 		::util.error().AddError("Could not load required libs");
 		::util.assert_fail();
@@ -313,35 +315,38 @@ if (::util.False() or RunReal)
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParserD.dll", "XMLParserD.dll");
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParser.dll", "XMLParser.dll");
 
-//	local doFirst = true;
-//	if (doFirst) {
-//		::util.println("DOING FIRST");
-//		reader = 8;
-//		std::reader_read_buffer(reader);
-//	}
-//	else {
-//		fh = std::fileopen("main.dsc", "rt");
-//		if (fh) {
-//			reader = std::reader_fromfile(fh);
-//			std::reader_read_buffer(reader);
-//			std::fileclose(fh);
-//		}
-//	}
+	local doFirst = true;
+	if (doFirst) {
+		::util.println("DOING FIRST");
+		reader = 8;
+		std::reader_read_buffer(reader);
+	}
+	else {
+		fh = std::fileopen("main.dsc", "rt");
+		if (fh) {
+			reader = std::reader_fromfile(fh);
+			std::reader_read_buffer(reader);
+			std::fileclose(fh);
+		}
+	}
 }
 
 
 
+if (libs_loaded_successfully)
 {
 	// Libs tests
 	::util.printsec("Lib test XML");
 	::util.println(::util.xmlparse("<XML><MENINGEN via=\"SOAP!\">VIA SOAP!</MENINGEN></XML>"));
 	::util.printsec("Lib test VcSolutionParse");
-	local vcsp = #vc::solload;
+	local vcsp = std::libfuncget(#vc::solload);
+	if (not vcsp)
+		vcsp = lambda { "VCSP not loaded" };
 	::util.println(vcsp());
 }
 
+//if (libs_loaded_successfully)
 {
-	
 	::vc2pr.CSolutionFromVCSolution("TestSolution.xml", "IDE");
 }
 

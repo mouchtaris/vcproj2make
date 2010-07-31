@@ -1,11 +1,48 @@
+const plat_win32 = "win32";
+const plat_linux = "linux";
+const conf_debug = "debug";
+const conf_release = "release";
+ManualConfiguration =
+		[ plat_win32, conf_debug   ]
+//		[ plat_win32, conf_release ]
+//		[ plat_linux, conf_debug   ]
+//		[ plat_linux, conf_release ]
+;
 // Flag for classic delta compatibility
 ASsafe = 
 //	false;
 [
 	{ "NotSafe" : (function Asafe_NotSafe(funcname) {
-		local error = std::vmfuncaddr(std::vmthis(), #error);
-		error().AddError("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
+		// No error, just warn
+		local warning = std::vmfuncaddr(std::vmthis(), #warning);
+		warning().Important("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
 	})}
+];
+ASsafeAlternatives = [
+	{plat_win32: [
+		{conf_debug: [
+			{#platform        : lambda { plat_win32   }},
+			{#getcwd          : lambda { "."          }},
+			{#getconfiguration: lambda { conf_debug   }}
+		]},
+		{conf_release: [
+			{#platform        : lambda { plat_win32   }},
+			{#getcwd          : lambda { "."          }},
+			{#getconfiguration: lambda { conf_release }}
+		]}
+	]},
+	{plat_linux: [
+		{conf_debug: [
+			{#platform        : lambda { plat_linux   }},
+			{#getcwd          : lambda { "."          }},
+			{#getconfiguration: lambda { conf_debug }}
+		]},
+		{conf_release: [
+			{#platform        : lambda { plat_linux   }},
+			{#getcwd          : lambda { "."          }},
+			{#getconfiguration: lambda { conf_release }}
+		]}
+	]}
 ];
 
 function False {
@@ -115,7 +152,9 @@ function error {
 			@UnknownPlatform: function error_UnknownPlatform
 				{ error_AddError("Unknown platform: " + std::vmfuncaddr(std::vmthis(), #platform)()); },
 			@UnfoundLibFunc: function error_UnfoundLibFunc(libfuncname, extraerrmsg)
-				{ error_AddError("Could not find a *::" + libfuncname + " libfunc. " + extraerrmsg); }
+				{ error_AddError("Could not find a *::" + libfuncname + " libfunc. " + extraerrmsg); },
+			@UnknownConfiguration: function error_UnknownConfiguration
+				{ error_AddError("Unknown configuration: " + std::vmfuncaddr(std::vmthis(), #deltaconfiguration)()); }
 		];
 	return error;
 }
@@ -155,10 +194,27 @@ function val(const_or_f) {
 
 function printsec(...) { std::print(pref, ..., ::nl); }
 
+function warning {
+	if (std::isundefined(static warning))
+		warning = [
+			@Important: function warning_Important(msg) {
+				::println("[WARNING]: " + msg);
+			}
+		];
+	return warning;
+}
+
+//
+
 local p__DoNotASsafeCall = (method(funcname, ns1, ns2, args, extraerrmsg) {
 	local result = nil;
-	if (::ASsafe)
+	if (::ASsafe) {
 		::ASsafe.NotSafe(funcname);
+		// Perform alternative according to manual configuration
+		local conf = ManualConfiguration;
+		local alt = ::ASsafeAlternatives[ conf[0] ][ conf[1] ][ funcname ];
+		result = alt(args);
+	}
 	else
 		if ((local func = std::libfuncget(ns1 + "::" + funcname)) or func = std::libfuncget(ns2 + "::" + funcname))
 			result = func(|args|);
@@ -171,8 +227,14 @@ local p__DoNotASsafeCall = (method(funcname, ns1, ns2, args, extraerrmsg) {
 function platform {
 	return ::p__DoNotASsafeCall(#platform, #isi, #std, [], "");
 }
+// NOT an as-safe function
+function deltaconfiguration {
+	return ::p__DoNotASsafeCall(#getconfiguration, #isi, #std, [], "");
+}
 function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
+function isdebug  { return ::deltaconfiguration() == "debug"  ; }
+function isrelease{ return ::deltaconfiguration() == "release"; }
 function del(delegator, delegate) { std::delegate(delegator, delegate); }
 function libifyname(filename) {
 	local result = nil;
@@ -189,7 +251,21 @@ const private__DELTA_DLL_INSTALLATION_FUNCTION_NAME = "Install";
 function loadlibs {
 	function loadlib(basename) {
 		::assert_str( basename );
-		local libname = libifyname(basename);
+		local configuration_basename = ( method (basename) {
+			local suffix = nil;
+			if (::isdebug())
+				suffix = "D";
+			else if (::isrelease())
+				suffix = "";
+			else
+				::error().UnknownConfiguration();
+			local result = nil;
+			if ( ::isdeltastring(suffix) )
+				result = basename + suffix;
+			return result;
+		})(basename);
+		::assert_str( configuration_basename );
+		local libname = libifyname(configuration_basename);
 		local have_error = not libname;
 		
 		local result = nil;
@@ -206,7 +282,7 @@ function loadlibs {
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
 			loadlib("XMLParser")        and
-			loadlib("VCSolutionParser") and
+//			loadlib("VCSolutionParser") and
 			true
 	;
 }

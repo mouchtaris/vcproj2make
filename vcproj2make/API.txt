@@ -5,6 +5,9 @@ function printsec       (...)
 function platform
 function iswin32
 function islinux
+function deltaconfiguration
+function isdebug
+function islinux
 function libifyname     (filename) 
 function del            (delegator, delegate)
 function loadlibs
@@ -23,7 +26,19 @@ function argstostring   (...)
 // - UnfoundLibFunc
 //   adds an error with a default error message if a required library
 //   function is not found.
+// - UnknownConfiguration
+//   adds an error with a default error message if running on an unknown
+//   configuration.
 //
+
+//
+// Object Warning
+// ------------
+// - Important(msg)
+//   prints an important warning to standard output.
+//
+
+
 function constantf                      (val)
 function bindfront                      (f ...)
 function bindback                       (f ...)

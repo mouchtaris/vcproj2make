@@ -40,6 +40,7 @@ function VisualStudioProjectAdaptor(vcproj_filepath_str) {
 }
 
 function CSolutionFromVCSolution(solutionFilePath_str, solutionName) {
+	
 	function loadSolutionDataFromSolutionFile(solutionFilePath_str) {
 		::util.assert_str( solutionFilePath_str );
 		local data = xmlload(solutionFilePath_str);
@@ -48,12 +49,75 @@ function CSolutionFromVCSolution(solutionFilePath_str, solutionName) {
 		return data;
 	}
 	
+	/////////////////////////////////////////////////////////////////
+	// Various constants
+	// --------------------------------------------------------------
+	const SolutionConfigurationPlatforms_TypeAttributeValue = "SolutionConfigurationPlatforms";
+	const ProjectConfigurationPlatforms_TypeAttributeValue  = "ProjectConfigurationPlatforms";
+	
+	/////////////////////////////////////////////////////////////////
+	// Errors, error messages, error reporting
+	// --------------------------------------------------------------
+	function E_NoSolutionConfigurationPlatformsElementFound(SolConfPlats) {
+		::util.error().AddError("No /Global/GlobalSection/ with type=\"" + SolConfPlats + "\"");
+	}
+	
+	
+	/////////////////////////////////////////////////////////////////
+	// XML data (pre)processing
+	// --------------------------------------------------------------
+	function xppRemoveUninterestingFields(solutionXML) {
+		local keys_to_die = std::list_new();
+		local interesting_global_section_types = [
+				SolutionConfigurationPlatforms_TypeAttributeValue,
+				ProjectConfigurationPlatforms_TypeAttributeValue];
+		// Remove useless "GlobalSection"s
+		foreach (local key, ::util.dobj_keys(local gsects = solutionXML.Global.GlobalSection)) {
+			local gsect = gsects[key];
+			if ( not ::util.dobj_contains(interesting_global_section_types, gsect.type) )
+				gsects[key] = nil;
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////
+	// Utilities for quick access to standard XPATHs
+	// --------------------------------------------------------------
+	function xGlobalSectionWithType(solutionXML, type) {
+		foreach (local xGlobalSection, solutionXML.Global.GlobalSection)
+			if (xGlobalSection.type == type)
+				return xGlobalSection;
+		return nil;
+	}
+	function xSolutionConfigurationPlatforms(solutionXML) {
+		if (not local result = xGlobalSectionWithType(solutionXML, SolutionConfigurationPlatforms_TypeAttributeValue))
+			E_NoSolutionConfigurationPlatformsElementFound(SolutionConfigurationPlatforms_TypeAttributeValue);
+		return result;
+	}
+	
+	/////////////////////////////////////////////////////////////////
+	// Data extraction from XML elements
+	// --------------------------------------------------------------
+	function dexSolutionConfigurations(configurations_element) {
+		::util.Assert( configurations_element.type == SolutionConfigurationPlatforms_TypeAttributeValue );
+		local configurations = [];
+		foreach (local pair, configurations_element.Pair) {
+			::util.Assert( pair.left == pair.right );
+			configurations[pair.left] = pair.right;
+		}
+		return configurations;
+	}
+	
 	local result = nil;
 	::util.assert_str( solutionFilePath_str );
 	::util.assert_str( solutionName );
 	
 	if (not local solutionData = loadSolutionDataFromSolutionFile(solutionFilePath_str))
 		return nil;
-	result = solutionData;
-	return result;
+		
+	// Test code
+	xppRemoveUninterestingFields(solutionData);
+	local xsolconfplats = xSolutionConfigurationPlatforms(solutionData);
+	local confsdata     = dexSolutionConfigurations(xsolconfplats);
+	
+	return result = solutionData;
 }
