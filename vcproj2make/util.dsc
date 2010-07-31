@@ -1,7 +1,12 @@
 // Flag for classic delta compatibility
 ASsafe = 
-//		not 
-		false;
+//	false;
+[
+	{ "NotSafe" : (function Asafe_NotSafe(funcname) {
+		local error = std::vmfuncaddr(std::vmthis(), #error);
+		error().AddError("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
+	})}
+];
 
 function False {
 	return false;
@@ -103,10 +108,14 @@ function argstostring(...) {
 function error {
 	if (std::isundefined(static error))
 		error = [
-			@AddError: function AddError(...) {
+			@AddError: function error_AddError(...) {
 				// just err and die
 				std::error(::argstostring(...));
-			}
+			},
+			@UnknownPlatform: function error_UnknownPlatform
+				{ error_AddError("Unknown platform: " + std::vmfuncaddr(std::vmthis(), #platform)()); },
+			@UnfoundLibFunc: function error_UnfoundLibFunc(libfuncname, extraerrmsg)
+				{ error_AddError("Could not find a *::" + libfuncname + " libfunc. " + extraerrmsg); }
 		];
 	return error;
 }
@@ -145,17 +154,22 @@ function val(const_or_f) {
 }
 
 function printsec(...) { std::print(pref, ..., ::nl); }
-// NOT an as-safe function
-if (not ASsafe)
-function platform {
-	if (local platform = std::libfuncget("std::platform"))
-		;
-	else if (platform = std::libfuncget("isi::platform"))
-		;
+
+local p__DoNotASsafeCall = (method(funcname, ns1, ns2, args, extraerrmsg) {
+	local result = nil;
+	if (::ASsafe)
+		::ASsafe.NotSafe(funcname);
 	else
-		::error().AddError("could not find a *::platform() libfunc");
-	local result = platform();
+		if ((local func = std::libfuncget(ns1 + "::" + funcname)) or func = std::libfuncget(ns2 + "::" + funcname))
+			result = func(|args|);
+		else
+			::error().UnfoundLibFunc(funcname, extraerrmsg);
 	return result;
+});
+
+// NOT an as-safe function
+function platform {
+	return ::p__DoNotASsafeCall(#platform, #isi, #std, [], "");
 }
 function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
@@ -192,24 +206,16 @@ function loadlibs {
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
 			loadlib("XMLParser")        and
-//			loadlib("VCSolutionParser") and
+			loadlib("VCSolutionParser") and
 			true
 	;
 }
 function libsloaded {
 	return ::private__loadlibsStaticData.libsloaded;
 }
-// NOT as-safe
-if (not ASsafe)
+// NOT an as-safe function
 function getcwd {
-	if (local getcwd = std::libfuncget("isi::getcwd"))
-		;
-	else if (getcwd = std::libfuncget("std::getcwd"))
-		;
-	else
-		::error().AddError("Could not find a *::getcwd() libfunc");
-	local result = getcwd();
-	return result;
+	return p__DoNotASsafeCall(#getcwd, #isi, #std, [], "");
 }
 
 //
@@ -1452,19 +1458,30 @@ function CSolution_isaCSolution(object) {
 // xml utilities
 ////////////////////////
 xmlload_LibFunc         = #xmlload;
+xmlparse_LibFunc        = #xmlparse;
 xmlloadgeterror_LibFunc = #xmlloadgeterror;
+xmlparsegeterror_LibFunc= #xmlloadgeterror;
 function xmlload(filename_str) {
-	::assert_str( filename_str );
 	::Assert( ::libsloaded() );
 	local xmlload = std::libfuncget(::xmlload_LibFunc);
-	::Assert( xmlload );
 	local result = xmlload(filename_str);
 	return result;
 }
 function xmlloaderror {
-	local xmlloadgeterror = std::libfuncget(::xmlloadgeterror_LibFunc);
 	::Assert( ::libsloaded() );
-	::Assert( xmlloadgeterror );
+	local xmlloadgeterror = std::libfuncget(::xmlloadgeterror_LibFunc);
 	local result = xmlloadgeterror();
+	return result;
+}
+function xmlparse(str) {
+	::Assert( ::libsloaded() );
+	local xmlparse = std::libfuncget(::xmlparse_LibFunc);
+	local result = xmlparse(str);
+	return result;
+}
+function xmlparseerror {
+	::Assert( ::libsloaded() );
+	local xmlparsegeterror = std::libfuncget(::xmlparsegeterror_LibFunc);
+	local result = xmlparsegeterror();
 	return result;
 }

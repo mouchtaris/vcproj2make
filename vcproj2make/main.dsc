@@ -20,19 +20,49 @@ if (LoadLibs) {
 	// Copy libs first
 	(function copylibs {
 		function xmllibpathcomponents(configuration) {
-			return ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
-					"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
-		}
-		function makexmllibpath(configuration, basename) {
-			local result = ::util.file_pathconcatenate(|xmllibpathcomponents(configuration)|) + ::util.libifyname(basename);
+			local result = nil;
+			if (::util.iswin32())
+				result = ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
+						"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
+			else if (::util.islinux())
+				assert( not "xmllibpathcomponents not configured for linux yet" );
+			else
+				::util.error().UnknownPlatform();
 			return result;
 		}
-		local xmllibbasename = "XMLParser";
-		foreach (local libconfignamepair, [ ["release", xmllibbasename], ["debug", xmllibbasename + "D"] ]) {
-			local configuration = libconfignamepair[0];
-			local libbasename = libconfignamepair[1];
-			local src = makexmllibpath(configuration, libbasename);
-			local dst = libbasename;
+		function vcsplibpathcomponents(configuration) {
+			local result = nil;
+			if (::util.iswin32())
+				result = ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
+						"Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
+			else if (::util.islinux())
+				assert( not "vcsplibpathcomponents not configured for linux yet" );
+			else
+				::util.error().UnknownPlatform();
+			return result;
+		}
+		function makelibpath(libid, configuration, basename) {
+			local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "libpathcomponents");
+			local result = ::util.file_pathconcatenate(|libpathcomponents(configuration)|) + ::util.libifyname(basename);
+			return result;
+		}
+		// Libs basenames
+		const xmllibbasename           = "XMLParser";
+		const vcsolutionparserbasename = "VCSolutionParser";
+		// Libs info
+		libsinfo = [
+			["release", "xml" , xmllibbasename                ],
+			["debug"  , "xml" , xmllibbasename + "D"          ],
+			["."      , "vcsp", vcsolutionparserbasename      ],
+			["."      , "vcsp", vcsolutionparserbasename + "D"]
+		];
+		foreach (local libinfo, libsinfo) {
+			local configuration = libinfo[0];
+			local libid         = libinfo[1];
+			local libbasename   = libinfo[2];
+			//
+			local src           = makelibpath(libid, configuration, libbasename);
+			local dst           = ::util.libifyname(libbasename);
 			::util.println("Copying " + src + " to " + dst);
 			::util.shellcopy(src, dst);
 		}
@@ -274,15 +304,6 @@ if (::util.False() or RunReal)
 	
 }
 
-// Show all classes
-{
-	::util.println("----");
-	local reg = ::util.dobj_get(::util.Class_classRegistry(), #list);
-	foreach (local class, reg)
-		::util.println(class);
-	::util.println("----");
-}
-
 {
 	//local satan = ::util.xmlload("C:\\Users\\TURBO_X\\Documents\\My Dropbox\\Delta\\BIG_GRAPH.xml");
 	//(lambda(x){ x })(satan);
@@ -311,5 +332,24 @@ if (::util.False() or RunReal)
 
 
 {
+	// Libs tests
+	::util.printsec("Lib test XML");
+	::util.println(::util.xmlparse("<XML><MENINGEN via=\"SOAP!\">VIA SOAP!</MENINGEN></XML>"));
+	::util.printsec("Lib test VcSolutionParse");
+	local vcsp = #vc::solload;
+	::util.println(vcsp());
+}
+
+{
+	
 	::vc2pr.CSolutionFromVCSolution("TestSolution.xml", "IDE");
+}
+
+// Show all classes
+{
+	::util.println("---- Classes ----");
+	local reg = ::util.dobj_get(::util.Class_classRegistry(), #list);
+	foreach (local class, reg)
+		::util.println(class);
+	::util.println("----");
 }

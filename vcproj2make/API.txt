@@ -15,7 +15,14 @@ function argstostring   (...)
 // ------------
 // - AddError(...)
 //   adds an error. The arguments are concatenated into a single error
-//   message string. Currently this causes execution abortion.
+//   message string. Currently this causes execution abortion but this
+//   should not be considered granded.
+// - UnknownPlatform()
+//   adds an error with a default error message if running on an unknown
+//   platform (as returned by function platform()).
+// - UnfoundLibFunc
+//   adds an error with a default error message if a required library
+//   function is not found.
 //
 function constantf                      (val)
 function bindfront                      (f ...)
@@ -102,6 +109,8 @@ function orval  (val1, val2)        // val1? val1 : val2
 // xml utilities
 function xmlload            (filename_str)
 function xmlloaderror
+function xmlparse			(string)
+function xmlparseerror
 ////////////////////////////////////////////////////////////////////////
 function mixin_state                            (state, mixin)
 function stateFieldsClash                       (fields1, fields2)
