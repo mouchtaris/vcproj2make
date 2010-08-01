@@ -13,6 +13,8 @@ assert( util );
 //    The basedir can be relative or absolute. In case it is relative
 //    it is interpreted against the script's execution directory.
 //
+//    TODO
+//    - add generation/inclusion of dependency files in makefiles
 function MakefileManifestation(basedirpath, solution) {
 	function squote(str) {
 		::util.assert_str( str );

@@ -311,6 +311,7 @@ if (::util.False() or RunReal)
 	//(lambda(x){ x })(satan);
 }
 
+if (::util.False())
 {
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParserD.dll", "XMLParserD.dll");
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParser.dll", "XMLParser.dll");
@@ -346,6 +347,23 @@ if (libs_loaded_successfully)
 }
 
 //if (libs_loaded_successfully)
+{
+	local v1 = false;
+	local v2 = nil;
+	tobool = lambda(v) { not not v };
+	assert( not v1 );
+	assert( not v2 );
+	assert( not (not not v1) );
+	assert( not (not not v2) );
+	assert( not (v1 or v2) );
+	assert( not (not not v1 or not not v2) );
+	assert( tobool(v1) == tobool(v2) );
+	(function (v1, v2) { assert( v1 == v2 ); })(not not v1, not not v2);
+	assert( (local v3 = not not v1) == (local v4 = not not v2) );
+	// VM bug
+	//assert( (not not v1) == (not not v2) );
+}
+
 {
 	::vc2pr.CSolutionFromVCSolution("TestSolution.xml", "IDE");
 }

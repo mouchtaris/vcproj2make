@@ -71,6 +71,7 @@ function assert_lt          (val1, val2)
 function assert_gt          (val1, val2)
 function assert_ge          (val1, val2)
 function assert_or          (cond1, cond2)
+function assert_and			(cond1, cond2)
 function assert_gt_or_eq    (val1, val2, val3, val4)
 function assert_ge_or_eq    (val1, val2, val3, val4)
 function assert_fail
@@ -113,6 +114,7 @@ function strslice                       (str, start_index, end_index)
 function strsubstr                      (str, start_index ...)
 function strsub                         (string, pattern, replacement)
 function strgsub                        (string, pattern, replacement)
+function strindex						(hay, needle)
 function strrindex                      (hay, needle)
 function strlength                      (str)
 function strchar                        (str, charindex)
@@ -276,6 +278,18 @@ function Path_castFromPath(path)    same for "castFromPath" but if passed argume
 //         - Namable_name
 
 ////////////////////////////////////////////////////////////////////////
+//////////////////////////////
+// *** IDable class
+//     A mix-in so that objects have IDs.
+//     -----------------------
+//     <^> createInstance( id:string )
+//     <^> Public methods
+//         - get/setID
+//               gets/sets this object's ID.
+//     <^> state fields
+//         - IDable_id
+
+////////////////////////////////////////////////////////////////////////
 enum ProjectType: StaticLibrary
                   DynamicLibrary
                   Executable 
@@ -399,3 +413,21 @@ function ProjectType_isValid(type)
 //               returns an std::list with all the projects that belong to this solution.
 //     <^> state fields
 //         01. CSolution_projects
+
+
+/////////////////////////////////////////////////////////////////
+// Class ProjectData
+// A temporary project data holder. It also provides crossing
+// information to and from IDs.
+// --------------------------------------------------------------
+//     <^> createInstance( )
+//     <^> Mixes in: 
+//     <^> Public methods
+//         - addProjectConfiguration(projectID:deltastring, configurationID:deltastring)
+//               adds the given configuration to the given project.
+//               If the project does not exist, it is created.
+//         - getProjectConfigurations
+//               retuns a deltaobject with all the configurations of the given object
+//               (indexed by themselves), or nil if this project does not exist.
+//     <^> state fields
+//         01. ProjectData_projects
