@@ -16,6 +16,10 @@ function xmlloaderror {
 	return error_message;
 }
 
+function log(...) {
+	::util.println("[VCPROJ2PROJ]: ", ...);
+}
+
 ///////////// TODO temporary code, for reference //////////////////////
 function{
 // Adaptors to CProject and CSolution
@@ -108,16 +112,24 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				::util.strchar(id, ::util.strlength(id) - 1) == "}" and
 		true;
 	}
-	function ProjectData {
+	function classy_ProjectData {
 		if (std::isundefined(static ProjectData_stateFields))
-			ProjectData_stateFields = [ #ProjectData_parentReference ];
+			ProjectData_stateFields = [ #ProjectData_parentReference, #ProjectData_dependencies ];
 		
 		if (std::isundefined(static ProjectData_class)) {
+			// private methods
+			function deps(projdata) {
+				return ::util.dobj_checked_get(projdata, ProjectData_stateFields, #ProjectData_dependencies);
+			}
+			
 			ProjectData_class = ::util.Class().createInstance(
 				// stateInitialiser
 				function ProjectData_stateInitialiser (new, validFieldsNames) {
 					::util.Class_checkedStateInitialisation(new, validFieldsNames,
-						[ { #ProjectData_parentReference: "" } ]);
+						[
+							{ #ProjectData_parentReference: ""              },
+							{ #ProjectData_dependencies   : std::list_new() }
+						]);
 				},
 				// prototype
 				[
@@ -128,6 +140,16 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 					method getParentReference {
 						local result = ::util.dobj_checked_get(self, ProjectData_stateFields, #ProjectData_parentReference);
 						return result;
+					},
+					method addDependency (projID) {
+						::util.Assert( ProjectData_validProjectID(projID) );
+						local dops = deps(self);
+						local deps = dops;
+						::util.Assert( ::util.iterable_contains(deps, projID) ); // TODO should add a not
+						std::list_push_back(deps, projID);
+					},
+					method Dependencies {
+						return ::util.list_clone(deps(self));
 					}
 				],
 				// mixInRequirements
@@ -152,6 +174,26 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 			ProjectData_class.mixIn(::util.IDable   (), mixinsInstancesStateInitialisersArgumentsFunctors.IDable    );
 			ProjectData_class.mixIn(::util.Locatable(), mixinsInstancesStateInitialisersArgumentsFunctors.Locatable );
 		}
+		return ProjectData_class;
+	}
+	function ProjectData {
+		if (std::isundefined(static ProjectData_class))
+			ProjectData_class = [
+				@createInstance: function createInstance {
+					return [
+						method setName(name) { @name = name; },
+						method setID  (id)   { @id = id; },
+						method setParentReference(pr) { @pr = pr; },
+						method setLocation(path) { @path = path; },
+						method addDependency(projID) { @deps.push_back(projID); },
+						@deps: std::list_new(),
+						method getName { return @name; },
+						method getID { return @id; },
+						method getParentReference { return @pr; },
+						method Dependencies { return ::util.list_clone(@deps); }
+					];
+				}
+			];
 		return ProjectData_class;
 	}
 	function ProjectData_isaProjectData (obj) {
@@ -180,8 +222,12 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	const ProjectConfigurationPlatforms_TypeAttributeValue  = "ProjectConfigurationPlatforms";
 	const Project_ElementName                               = "Project";
 	const ProjectSection_ElementName                        = "ProjectSection";
+	const ProjectDependencies_TypeAttributeValue            = "ProjectDependencies";
+	//
+	const Pair_ElementName                                  = "Pair";
 	//
 	const WebsiteProperties_TypeAttributeValue              = "WebsiteProperties";
+	const SolutionItems_TypeAttributeValue                  = "SolutionItems";
 
 	
 	/////////////////////////////////////////////////////////////////
@@ -203,6 +249,9 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		local child = parent[childindex];
 		::util.Assert( child );
 		return child;
+	}
+	function xmlhaschild (parent, childindex) {
+		return not not parent[childindex];
 	}
 	function xmlgetchildwithindex (parent, childindex) {
 		return [ childindex, xmlgetchild(parent, childindex) ];
@@ -243,19 +292,28 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		xmlforeachchild(solutionXML, Project_ElementName, function(parent_solutionXML, childindex, child_project, ismany) {
 			::util.Assert( parent_solutionXML[childindex] == child_project );
 			::util.Assert( childindex == Project_ElementName or (ismany and ::util.isdeltanumber(childindex)) );
-			if (local projsect = child_project[ProjectSection_ElementName])
+			if (local projsect = child_project[ProjectSection_ElementName]) {
 				// if it has a ProjectSection, then...
 				// ... foreach ProjectSection
 				xmlforeachchild(child_project, ProjectSection_ElementName, function(parent, childindex, child_projectSection, ismany) {
 					::util.Assert( parent[childindex] == child_projectSection );
 					::util.Assert( childindex == ProjectSection_ElementName or (ismany and ::util.isdeltanumber(childindex)) );
 					::util.Assert( child_projectSection.type );
-					if (child_projectSection.type == WebsiteProperties_TypeAttributeValue)
-						// delete a "WebsiteProperties" ProjectSection
+					if (
+						child_projectSection.type == WebsiteProperties_TypeAttributeValue or
+						child_projectSection.type == SolutionItems_TypeAttributeValue
+					)
+						// delete a "WebsiteProperties" or "SolutionItems" ProjectSection
 						parent[childindex] = nil;
 					return true;
 				});
-				return true;
+				
+				// kill an alltogethere empty ProjectSection
+				if (::util.dobj_empty(projsect))
+					child_project[ProjectSection_ElementName] = nil;
+			}
+
+			return true;
 		});
 	}
 	
@@ -323,6 +381,16 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		local key             = confPlatsAndKey[0];
 		xfree(xProjectConfigurationPlatforms_parent(solutionXML), key);
 	}
+	//
+	function xProject_parent (solutionXML) {
+		return solutionXML;
+	}
+	function xProject (solutionXML) {
+		return xmlgetchild(solutionXML, Project_ElementName);
+	}
+	function xfreeProject (solutionXML) {
+		return xfree(solutionXML, Project_ElementName);
+	}
 
 	/////////////////////////////////////////////////////////////////
 	// Data extraction from XML elements
@@ -331,10 +399,14 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		::util.Assert( SolutionData_isaSolutionData(solutionConfigurations) );
 		local configurations_element = xSolutionConfigurationPlatforms(solutionXML);
 		::util.Assert( configurations_element.type == SolutionConfigurationPlatforms_TypeAttributeValue );
-		foreach (local pair, configurations_element.Pair) {
-			::util.Assert( pair.left == pair.right );
-			solutionConfigurations.addConfiguration(pair.right);
-		}
+		xmlforeachchild(configurations_element, Pair_ElementName, [
+			method @operator () (parent, childindex, pair, ismany) {
+				::util.Assert( pair.left == pair.right );
+				@configurationAdder(pair.right);
+				return true;
+			},
+			@configurationAdder: solutionConfigurations.addConfiguration
+		]);
 		// Free this element
 		xfreeSolutionConfigurationPlatforms(solutionXML);
 	}
@@ -359,7 +431,67 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		return true;
 	}
 	function dexProjectData (solutionXML, projectDataHolder) {
+		xmlforeachchild(xProject_parent(solutionXML), Project_ElementName, [
+			method @operator () (parent, childindex, projectElement, ismany) {
+				if (std::isundefined(static runcounter)) runcounter = 1; else runcounter = runcounter;
+				::util.Assert( ismany ); // it is unlikely that we would have a solution with one project only
+				::log("Analysing project data for /Project[", childindex, "]  (", runcounter++, "/",
+					(function(parent, childindex, projectElement, ismany){if(ismany)return::util.dobj_length(parent);else return(1);})
+							(parent, childindex, projectElement, ismany), ")");
+				//
+				local projectData = ProjectData().createInstance();
+				//
+				local id              = projectElement.id;
+				local name            = projectElement.name;
+				local parentReference = projectElement.parentref;
+				local path            = projectElement.path;
+				//
+				::util.assert_str(id);
+				::util.assert_str(name);
+				::util.assert_str(path);
+				::util.assert_str(parentReference);
+				//
+				projectData.setID(id);
+				projectData.setName(name);
+				projectData.setLocation(path);
+				projectData.setParentReference(parentReference);
+				//
+				if (xmlhaschild(projectElement, ProjectSection_ElementName)) {
+					// foreach ProjectSection (there should be only one, but is left over of many, so this is more conventient, as it abstracts whethere something is/was one or many)
+					xmlforeachchild(projectElement, ProjectSection_ElementName, [
+						method @operator () (parent, childindex, projectSectionElement, ismany) {
+							// It has to be a project dependencies node
+							::util.assert_eq( projectSectionElement.type , ProjectDependencies_TypeAttributeValue );
+							// foreach pair
+							xmlforeachchild(projectSectionElement, Pair_ElementName, [
+								method @operator () (parent, childindex, pairElement, ismany) {
+									::util.assert_eq( pairElement.left , pairElement.right );
+									// add dependency
+									@dependencyAdder(pairElement.right);
+									return true; // keep iterating
+								},
+								@dependencyAdder: @projectData.addDependency
+							]);
+							
+							return true; // keep iterating
+						},
+						@projectData: projectData
+					]);
+					
+					// kill all ProjectSections
+					xfree(projectElement, ProjectSection_ElementName);
+				}
+				
+				// add project data to holder
+				@holder[id] = projectData;
+				
+				// keep iterating
+				return true;
+			},
+			@holder: projectDataHolder
+		]);
 		
+		//xfreeProject(solutionXML);
 	}
 	
 	local result = nil;
@@ -377,6 +509,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	xppRemoveUninterestingFields(solutionXML);
 	dexSolutionConfigurations(solutionXML, solutionData);
 	dexProjectsConfigurations(solutionXML, solutionData);
+	dexProjectData(solutionXML, projectDataHolder);
 	xfreeGlobal(solutionXML);
 	
 	

@@ -89,6 +89,7 @@ function dobj_checked_set               (dobj, validKeys, key, val)
 function dobj_checked_get               (dobj, key)
 function dobj_length                    (dobj)
 function dobj_keys                      (dobj)
+function dobj_empty                     (dobj)
 //
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
@@ -449,5 +450,12 @@ function ProjectType_isValid(type)
 //     <^> Public methods
 //         - get/setParentReference(parentID:deltastring)
 //               gets or sets this projects "parent reference".
+//         - addDependency(projID:deltastring)
+//               adds the given project id to the list of dependencies
+//               (must be a valid ID).
+//         - Dependencies
+//               returns an iterable with all the IDs (as strings)
+//               of the dependencies.
 //     <^> state fields
 //         01. ProjectData_parentReference
+//         02. ProjectData_dependencies

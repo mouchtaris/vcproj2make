@@ -361,6 +361,10 @@ function dobj_length(dobj) {
 function dobj_keys(dobj) {
 	return std::tabindices(dobj);
 }
+function dobj_empty(dobj) {
+	return ::dobj_length(dobj) == 0;
+}
+
 //
 // Functional games
 function constantf(val) {
@@ -1313,7 +1317,7 @@ function IDable {
 				},
 				method setID(id) {
 					::assert_str(id);
-					return ::dobj_checked_set(self, ::IDable().stateFIelds(), #IDable_id, id);
+					return ::dobj_checked_set(self, ::IDable().stateFields(), #IDable_id, id);
 				}
 			],
 			// mixinRequirements
