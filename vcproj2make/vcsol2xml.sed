@@ -1,6 +1,7 @@
 ### Project
 /^((\t|[ ])*)Project\("([^"]+)"\) *= *"([^"]+)" *, *"([^"]+)" *, *"([^"]+)"[ ]*\x0d?$/{
-	s//\1<Project\n\1\t\tid="\5"\n\1\t\tpath="\4"\n\1\t\tname="\3"\n\1\t\tparentref="\3"\n\1\t>/gp
+# 1->whitespace, 3->parentref, 4->Name, 5->path, 6->ID
+	s//\1<Project\n\1\t\tid="\6"\n\1\t\tpath="\5"\n\1\t\tname="\4"\n\1\t\tparentref="\3"\n\1\t>/gp
 	d
 }
 /^((\t|[ ])*)EndProject *\x0d?$/{
