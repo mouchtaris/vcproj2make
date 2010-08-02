@@ -45,6 +45,60 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	/////////////////////////// Classes /////////////////////////////
 	/////////////////////////////////////////////////////////////////
 	
+	function SolutionData {
+		if (std::isundefined(static SolutionData_stateFields))
+			SolutionData_stateFields = [ #SolutionData_configurations, #SolutionData_configurationMapper ];
+
+		if (std::isundefined(static SolutionData_class))
+			SolutionData_class = ::util.Class().createInstance(
+				// stateInitialiser
+				function SolutionData_stateInitialiser (new, validFieldsNames) {
+					::util.Class_checkedStateInitialisation(
+						new,
+						validFieldsNames,
+						[
+							@SolutionData_configurations     : [], //self map
+							@SolutionData_configurationMapper: []
+						]
+					);
+				},
+				// prototype
+				[
+					method addConfiguration (configurationID) {
+						::util.assert_str(configurationID);
+						local configs = ::util.dobj_checked_get(self, SolutionData_stateFields, #SolutionData_configurations);
+						::util.Assert( ::util.isdeltanil(configs[configurationID]) );
+						configs[configurationID] = configurationID;
+					},
+					method hasConfiguration (configurationID) {
+						return not not ::util.dobj_checked_get(self, SolutionData_stateFields, #SolutionData_configurations)[configurationID];
+					},
+					method registerProjectConfigurationForConfiguration (solutionConfigurationID, projectID, projectConfigurationID) {
+						::util.assert_str(solutionConfigurationID);
+						::util.assert_str(projectID);
+						::util.assert_str(projectConfigurationID);
+						::util.Assert( self.hasConfiguration(solutionConfigurationID) );
+						local mapper = ::util.dobj_checked_get(self, SolutionData_stateFields, #SolutionData_configurationMapper);
+						if ( not (local configurationProjects = mapper[solutionConfigurationID]) )
+							configurationProjects = mapper[solutionConfigurationID] = [];
+						::util.Assert( not ::util.dobj_contains_key(configurationProjects, projectID) );
+						configurationProjects[projectID] = projectConfigurationID;
+					}
+				],
+				// mixinRequirements
+				[],
+				// state field names
+				[ #SolutionData_configurations, #SolutionData_configurationMapper ],
+				// class name
+				#SolutionData
+			);
+
+		return SolutionData_class;
+	}
+	function SolutionData_isaSolutionData (obj) {
+		return ::util.Class_isa(obj, SolutionData());
+	}
+	
 	// ProjectData
 	function ProjectData_validProjectID (id) {
 		return // some heuristics
@@ -56,43 +110,23 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	}
 	function ProjectData {
 		if (std::isundefined(static ProjectData_stateFields))
-			ProjectData_stateFields = [ #ProjectData_projects ];
+			ProjectData_stateFields = [ #ProjectData_parentReference ];
 		
-		function getproj(projdatainst, projid) {
-			::util.Assert( ProjectData_validProjectID(projid) );
-			local projects = ::util.dobj_checked_get(projdatainst, ProjectData_stateFields, #ProjectData_projects);
-			local project = projects[projid];
-			if (not project)
-				project = projects[projid] = [
-					@configs: []
-				];
-			return project;
-		}
-		function haveproj(projdatainst, projid) {
-			::util.Assert( ProjectData_validProjectID(projid) );
-			local projects = ::util.dobj_checked_get(projdatainst, ProjectData_stateFields, #ProjectData_projects);
-			local project = projects[projid];
-			return not not project;
-		}
-		
-		if (std::isundefined(static ProjectData_class))
+		if (std::isundefined(static ProjectData_class)) {
 			ProjectData_class = ::util.Class().createInstance(
 				// stateInitialiser
 				function ProjectData_stateInitialiser (new, validFieldsNames) {
 					::util.Class_checkedStateInitialisation(new, validFieldsNames,
-						[ { #ProjectData_projects: [] } ]);
+						[ { #ProjectData_parentReference: "" } ]);
 				},
 				// prototype
 				[
-					method addProjectConfiguration (projid, confid) {
-						::util.assert_str( confid );
-						local project = getproj(self, projid);
-						project.configs[confid] = confid;
+					method setParentReference (parentID) {
+						::util.assert_str( parentID );
+						return ::util.dobj_checked_set(self, ProjectData_stateFields, #ProjectData_parentReference, parentID);
 					},
-					method getProjectConfigurations (projid) {
-						local result = nil;
-						if (haveproj(self, projid))
-							result = getproj(self, projid).configs;
+					method getParentReference {
+						local result = ::util.dobj_checked_get(self, ProjectData_stateFields, #ProjectData_parentReference);
 						return result;
 					}
 				],
@@ -103,7 +137,25 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				// class name
 				#ProjectData
 			);
+			
+			if (std::isundefined(static mixinsInstancesStateInitialisersArgumentsFunctors)) {
+				mixinsInstancesStateInitialisersArgumentsFunctors = [
+					@Namable  : lambda {["__noname__"]},
+					@IDable   : lambda {["__noID__"  ]},
+					@Locatable: lambda {["__nopath__"]}
+				];
+			}
+			else
+				mixinsInstancesStateInitialisersArgumentsFunctors=mixinsInstancesStateInitialisersArgumentsFunctors;
+			// Mix-ins
+			ProjectData_class.mixIn(::util.Namable  (), mixinsInstancesStateInitialisersArgumentsFunctors.Namable   );
+			ProjectData_class.mixIn(::util.IDable   (), mixinsInstancesStateInitialisersArgumentsFunctors.IDable    );
+			ProjectData_class.mixIn(::util.Locatable(), mixinsInstancesStateInitialisersArgumentsFunctors.Locatable );
+		}
 		return ProjectData_class;
+	}
+	function ProjectData_isaProjectData (obj) {
+		return ::util.Class_isa(obj, ProjectData());
 	}
 	
 	/////////////////////////////////////////////////////////////////
@@ -146,7 +198,8 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	// Utilities for XML nodes
 	// --------------------------------------------------------------
 	function xmlgetchild (parent, childindex) {
-		::util.assert_and( parent , childindex );
+		::util.Assert( parent );
+		::util.assert_def( childindex );
 		local child = parent[childindex];
 		::util.Assert( child );
 		return child;
@@ -209,11 +262,15 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	/////////////////////////////////////////////////////////////////
 	// Utilities for quick access to standard XPATHs
 	// --------------------------------------------------------------
+	function xfree (parent, childindex) {
+		::util.Assert( xmlgetchild(parent, childindex) == parent[childindex] );
+		parent[childindex] = nil;
+	}
 	function xGlobal (solutionXML) {
 		return xmlgetchild(solutionXML, Global_ElementName);
 	}
 	function xfreeGlobal (solutionXML) {
-		solutionXML[Global_ElementName] = nil;
+		xfree(solutionXML, Global_ElementName);
 	}
 	function xGlobalSection (solutionXML) {
 		return xmlgetchild(xGlobal(solutionXML), GlobalSection_ElementName);
@@ -244,7 +301,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	function xfreeSolutionConfigurationPlatforms (solutionXML) {
 		local confPlatsAndKey = xSolutionConfigurationPlatformsWithElementName(solutionXML);
 		local key             = confPlatsAndKey[0];
-		xSolutionConfigurationPlatforms_parent(solutionXML)[key] = nil;
+		xfree(xSolutionConfigurationPlatforms_parent(solutionXML), key);
 	}
 	//
 	function xProjectConfigurationPlatforms_parent (solutionXML) {
@@ -264,53 +321,64 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	function xfreeProjectConfigurationPlatforms (solutionXML) {
 		local confPlatsAndKey = xProjectConfigurationPlatformsWithElementName(solutionXML);
 		local key             = confPlatsAndKey[0];
-		xProjectConfigurationPlatforms_parent(solutionXML)[key] = nil;
+		xfree(xProjectConfigurationPlatforms_parent(solutionXML), key);
 	}
 
 	/////////////////////////////////////////////////////////////////
 	// Data extraction from XML elements
 	// --------------------------------------------------------------
-	function dexSolutionConfigurations (solutionXML) {
+	function dexSolutionConfigurations (solutionXML, solutionConfigurations) {
+		::util.Assert( SolutionData_isaSolutionData(solutionConfigurations) );
 		local configurations_element = xSolutionConfigurationPlatforms(solutionXML);
 		::util.Assert( configurations_element.type == SolutionConfigurationPlatforms_TypeAttributeValue );
-		local configurations = [];
 		foreach (local pair, configurations_element.Pair) {
 			::util.Assert( pair.left == pair.right );
-			configurations[pair.left] = pair.right;
+			solutionConfigurations.addConfiguration(pair.right);
 		}
 		// Free this element
 		xfreeSolutionConfigurationPlatforms(solutionXML);
-		return configurations;
 	}
-	function dexProjectsConfigurations (solutionXML, projectConfigurations) {
-		local configurations_element = xProjectConfigurationPlatforms(solutionXML);
-		::util.Assert( configurations_element.type == ProjectConfigurationPlatforms_TypeAttributeValue );
-		foreach (local pair, configurations_element.Pair) {
-			local projid = ::util.strsubstr(pair.left, 0, ::util.strindex(pair.left, ".") - 1);
-			local config = pair.right;
-			projectConfigurations.addProjectConfiguration(projid, config);
+	function dexProjectsConfigurations (solutionXML, solutionConfigurations) {
+		::util.Assert( SolutionData_isaSolutionData(solutionConfigurations) );
+		local configurations_XMLelement = xProjectConfigurationPlatforms(solutionXML);
+		::util.Assert( configurations_XMLelement.type == ProjectConfigurationPlatforms_TypeAttributeValue );
+		foreach (local pair, configurations_XMLelement.Pair) {
+			local config_elems = ::util.strsplit(pair.left, ".", 0);
+			local proj_config = pair.right;
+			function isBuildable (config_elems) { return config_elems[2] == "Build" and config_elems[3] == "0"; }
+			if (isBuildable(config_elems)) {
+				//
+				local projid          = config_elems[0];
+				local solution_config = config_elems[1];
+				//
+				solutionConfigurations.registerProjectConfigurationForConfiguration(solution_config, projid, proj_config);
+			}
 		}
 		// Free this element
 		xfreeProjectConfigurationPlatforms(solutionXML);
 		return true;
+	}
+	function dexProjectData (solutionXML, projectDataHolder) {
+		
 	}
 	
 	local result = nil;
 	::util.assert_str( solutionFilePath_str );
 	::util.assert_str( solutionName );
 	
-	if (not local solutionData = loadSolutionDataFromSolutionFile(solutionFilePath_str))
+	if (not local solutionXML = loadSolutionDataFromSolutionFile(solutionFilePath_str))
 		return nil;
 	
-	// Data holders
-	local projectData = ProjectData().createInstance();
+	// Data and holders
+	local solutionData       = SolutionData().createInstance();
+	local projectDataHolder  = [];
 	
 	// Test code
-	xppRemoveUninterestingFields(solutionData);
-	local solutionConfigurations = dexSolutionConfigurations(solutionData);
-	dexProjectsConfigurations(solutionData, projectData);
-	xfreeGlobal(solutionData);
+	xppRemoveUninterestingFields(solutionXML);
+	dexSolutionConfigurations(solutionXML, solutionData);
+	dexProjectsConfigurations(solutionXML, solutionData);
+	xfreeGlobal(solutionXML);
 	
 	
-	return result = solutionData;
+	return result = solutionXML;
 }

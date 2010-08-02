@@ -182,6 +182,24 @@ if (::util.False())
 			"strsubstr(len+1) : ", insp(::util.strsubstr(s1, s1_len + 1)       ), ::util.ENDL(),
 			nil
 	);
+	// string splits
+	::util.println(
+		"Splits: ", ::util.ENDL()
+		, "normal case", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e", ",", 0), ::util.ENDL()
+		, "limit splits", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e,f,g,h,i,j,k,l", ",", 4), ::util.ENDL()
+		, "zero length str", ::util.ENDL()
+		, ::util.strsplit("", "HO HO HO", 0), ::util.ENDL()
+		, "zero length pattern", ::util.ENDL()
+		, ::util.strsplit("A,b,c,e,f,d,g", "", 4), ::util.ENDL()
+		, "zero length pattern without a limit", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p", "", 0), ::util.ENDL()
+		, "zero length both", ::util.ENDL()
+		, ::util.strsplit("", "", 4), ::util.ENDL()
+		, "zero length both with no limit", ::util.ENDL()
+		, ::util.strsplit("", "", 0)
+	);
 }
 
 

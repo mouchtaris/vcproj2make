@@ -124,6 +124,9 @@ function assert_gt_or_eq(val1, val2, val3, val4) {
 function assert_ge_or_eq(val1, val2, val3, val4) {
 	::Assert( val1 >= val2 or val3 == val4 );
 }
+function assert_def(val) {
+	::assert_and( not ::isdeltanil(val) , not ::isdeltaundefined(val) );
+}
 function assert_fail {
 	::Assert( not "Assertion-failure requested" );
 }
@@ -559,6 +562,32 @@ function strchar(str, charindex) {
 }
 function strmul(str, times) {
 	return std::strrep(str, times);
+}
+function strsplit(str, pattern, max) {
+	::assert_str( str );
+	::assert_str( pattern );
+	::assert_num( max );
+	
+	local pattern_length = ::strlength(pattern);
+	local pieces_index = 0;
+	local result = [];
+	local times_left = max;
+	local done = false;
+	local search_in = str;
+	while ( not done and search_in != "" and (times_left-- > 0 or max <= 0)) {
+		local end = ::strindex(search_in, pattern);
+		// if pattern found
+		if ( not ( done = (end < 0)) ) {
+			if ( end > 0 )
+				--end;
+			result[pieces_index++] = ::strsubstr(search_in, 0, end);
+			search_in = ::strsubstr(search_in, end + 1 + pattern_length);
+		}
+	}
+	// Append rest of the string as a piece
+	result[pieces_index++] = search_in;
+	::assert_eq( pieces_index, ::dobj_length(result) );
+	return result;
 }
 
 /// File utilities

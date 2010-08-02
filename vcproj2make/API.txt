@@ -74,6 +74,7 @@ function assert_or          (cond1, cond2)
 function assert_and			(cond1, cond2)
 function assert_gt_or_eq    (val1, val2, val3, val4)
 function assert_ge_or_eq    (val1, val2, val3, val4)
+function assert_def         (val)
 function assert_fail
 //
 function pfield                         (field_name)
@@ -119,6 +120,7 @@ function strrindex                      (hay, needle)
 function strlength                      (str)
 function strchar                        (str, charindex)
 function strmul                         (str, num)
+function strsplit                       (str, split, limit)
 
 // program flow/control utilities
 function orval  (val1, val2)        // val1? val1 : val2
@@ -414,6 +416,28 @@ function ProjectType_isValid(type)
 //     <^> state fields
 //         01. CSolution_projects
 
+/////////////////////////////////////////////////////////////////
+// Class SolutionData
+// A temporary solution data holder. It also provides crossing
+// information to and from IDs.
+// --------------------------------------------------------------
+//     <^> createInstance( )
+//     <^> Mixes in: 
+//     <^> Public methods
+//         - addConfiguration(configurationID:deltastring)
+//               adds the given configuration to the given project.
+//               If the project does not exist, it is created.
+//         - registerProjectConfigurationForConfiguration(
+//                       solutionConfigurationID:deltastring,
+//                       projectID:deltastirng,
+//                       projectConfigurationID:deltastring)
+//               registers the given configuration for the given
+//               project as part of the given configuration for this solution.
+//         - hasConfiguration(configurationID:deltastring)
+//               returns true if the given configuration ID exists in the data.
+//     <^> state fields
+//         01. SolutionData_configurations
+//         02. SolutionData_configurationMapper       [ solConfID => [ projID => projConf, ... ], ... ]
 
 /////////////////////////////////////////////////////////////////
 // Class ProjectData
@@ -421,13 +445,9 @@ function ProjectType_isValid(type)
 // information to and from IDs.
 // --------------------------------------------------------------
 //     <^> createInstance( )
-//     <^> Mixes in: 
+//     <^> Mixes in: IDable, Namable, Locatable
 //     <^> Public methods
-//         - addProjectConfiguration(projectID:deltastring, configurationID:deltastring)
-//               adds the given configuration to the given project.
-//               If the project does not exist, it is created.
-//         - getProjectConfigurations
-//               retuns a deltaobject with all the configurations of the given object
-//               (indexed by themselves), or nil if this project does not exist.
+//         - get/setParentReference(parentID:deltastring)
+//               gets or sets this projects "parent reference".
 //     <^> state fields
-//         01. ProjectData_projects
+//         01. ProjectData_parentReference
