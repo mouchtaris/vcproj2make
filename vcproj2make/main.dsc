@@ -20,6 +20,16 @@ local libs_loaded_successfully = false;
 if (LoadLibs) {
 	// Copy libs first
 	(method copylibs {
+		function libifyname(basename) {
+			local result = nil;
+			if (::util.iswin32())
+				result = ::util.libifyname(basename);
+			else if (::util.islinux())
+				result = ::util.libifyname(basename + "-linux");
+			else
+				::util.error().UnknownPlatform();
+			return result;
+		}
 		function xmllibpathcomponents(configuration) {
 			local result = nil;
 			if (::util.iswin32())
@@ -45,7 +55,7 @@ if (LoadLibs) {
 		}
 		function makelibpath(libid, configuration, basename) {
 			local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "libpathcomponents");
-			local result = ::util.file_pathconcatenate(|libpathcomponents(configuration)|) + ::util.libifyname(basename);
+			local result = ::util.file_pathconcatenate(|libpathcomponents(configuration)|) + libifyname(basename);
 			return result;
 		}
 		// Libs basenames
@@ -338,13 +348,13 @@ if (::util.False())
 	if (doFirst) {
 		::util.println("DOING FIRST");
 		reader = 8;
-		std::reader_read_buffer(reader);
+		std::reader_read_buffer(reader, 1024*8);
 	}
 	else {
 		fh = std::fileopen("main.dsc", "rt");
 		if (fh) {
 			reader = std::reader_fromfile(fh);
-			std::reader_read_buffer(reader);
+			std::reader_read_buffer(reader, 1024*8);
 			std::fileclose(fh);
 		}
 	}

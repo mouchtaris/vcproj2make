@@ -667,7 +667,7 @@ function file_copy(src, dst) {
 			while ( not feof ) {
 				feof = true;
 				local eof = false;
-				local inbuf = std::reader_read_buffer(reader);
+				local inbuf = std::reader_read_buffer(reader, 1024*16);
 				local buffedreader = std::reader_frominputbuffer(inbuf);
 				while ( not (eof = std::inputbuffer_eof(inbuf)) ) {
 					feof = false;
