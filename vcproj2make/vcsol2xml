@@ -2,6 +2,9 @@
 
 filename="$1"
 
+### Options
+sed_posix=
+
 if [ -z "$filename" ]
 	then printf 'Please provide a filename'
 fi
@@ -9,7 +12,7 @@ fi
 {
 	vss_tag_name='VisualStudioSolution'
 	printf '<%s>\n' "$vss_tag_name"
-	sed --posix --regexp-extended --file 'vcsol2xml.sed' "$filename"
+	sed $sed_posix --regexp-extended --file 'vcsol2xml.sed' "$filename"
 	printf '</%s>\n' "$vss_tag_name"
 }
 
