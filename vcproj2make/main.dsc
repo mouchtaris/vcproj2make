@@ -182,6 +182,24 @@ if (::util.False())
 			"strsubstr(len+1) : ", insp(::util.strsubstr(s1, s1_len + 1)       ), ::util.ENDL(),
 			nil
 	);
+	// string splits
+	::util.println(
+		"Splits: ", ::util.ENDL()
+		, "normal case", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e", ",", 0), ::util.ENDL()
+		, "limit splits", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e,f,g,h,i,j,k,l", ",", 4), ::util.ENDL()
+		, "zero length str", ::util.ENDL()
+		, ::util.strsplit("", "HO HO HO", 0), ::util.ENDL()
+		, "zero length pattern", ::util.ENDL()
+		, ::util.strsplit("A,b,c,e,f,d,g", "", 4), ::util.ENDL()
+		, "zero length pattern without a limit", ::util.ENDL()
+		, ::util.strsplit("A,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p", "", 0), ::util.ENDL()
+		, "zero length both", ::util.ENDL()
+		, ::util.strsplit("", "", 4), ::util.ENDL()
+		, "zero length both with no limit", ::util.ENDL()
+		, ::util.strsplit("", "", 0)
+	);
 }
 
 
@@ -311,6 +329,7 @@ if (::util.False() or RunReal)
 	//(lambda(x){ x })(satan);
 }
 
+if (::util.False())
 {
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParserD.dll", "XMLParserD.dll");
 //	::util.file_copy("..\\..\\..\\..\\..\\thesis_new\\deltaide\\Tools\\Delta\\DeltaExtraLibraries\\XMLParser\\lib\\debug\\XMLParser.dll", "XMLParser.dll");
@@ -346,6 +365,23 @@ if (libs_loaded_successfully)
 }
 
 //if (libs_loaded_successfully)
+{
+	local v1 = false;
+	local v2 = nil;
+	tobool = lambda(v) { not not v };
+	assert( not v1 );
+	assert( not v2 );
+	assert( not (not not v1) );
+	assert( not (not not v2) );
+	assert( not (v1 or v2) );
+	assert( not (not not v1 or not not v2) );
+	assert( tobool(v1) == tobool(v2) );
+	(function (v1, v2) { assert( v1 == v2 ); })(not not v1, not not v2);
+	assert( (local v3 = not not v1) == (local v4 = not not v2) );
+	// VM bug
+	//assert( (not not v1) == (not not v2) );
+}
+
 {
 	::vc2pr.CSolutionFromVCSolution("TestSolution.xml", "IDE");
 }

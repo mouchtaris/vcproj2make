@@ -3,14 +3,15 @@ const plat_linux = "linux";
 const conf_debug = "debug";
 const conf_release = "release";
 ManualConfiguration =
-		[ plat_win32, conf_debug   ]
+//		[ plat_win32, conf_debug   ]
 //		[ plat_win32, conf_release ]
 //		[ plat_linux, conf_debug   ]
 //		[ plat_linux, conf_release ]
+		nil // for non-AS-safe environments
 ;
 // Flag for classic delta compatibility
 ASsafe = 
-//	false;
+	false;
 [
 	{ "NotSafe" : (function Asafe_NotSafe(funcname) {
 		// No error, just warn
@@ -18,6 +19,12 @@ ASsafe =
 		warning().Important("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
 	})}
 ];
+// A ManualConfiguration can be defined only when ASsafe is defined
+(method {
+	const bool = lambda(v) { not not v };
+	assert( bool(ManualConfiguration) == bool(ASsafe) );
+})();
+
 ASsafeAlternatives = [
 	{plat_win32: [
 		{conf_debug: [
@@ -108,11 +115,17 @@ function assert_ge(val1, val2) {
 function assert_or(cond1, cond2) {
 	::Assert( cond1 or cond2 );
 }
+function assert_and(cond1, cond2) {
+	::Assert( cond1 and cond2 );
+}
 function assert_gt_or_eq(val1, val2, val3, val4) {
 	::Assert( val1 > val2 or val3 == val4 );
 }
 function assert_ge_or_eq(val1, val2, val3, val4) {
 	::Assert( val1 >= val2 or val3 == val4 );
+}
+function assert_def(val) {
+	::assert_and( not ::isdeltanil(val) , not ::isdeltaundefined(val) );
 }
 function assert_fail {
 	::Assert( not "Assertion-failure requested" );
@@ -531,6 +544,9 @@ function strgsub(string, pattern, replacement) {
 	}
 	return result + string_to_check;
 }
+function strindex(hay, needle) {
+	return std::strsub(hay, needle);
+}
 function strrindex(hay, needle) {
 	::assert_str(hay);
 	::assert_str(needle);
@@ -546,6 +562,32 @@ function strchar(str, charindex) {
 }
 function strmul(str, times) {
 	return std::strrep(str, times);
+}
+function strsplit(str, pattern, max) {
+	::assert_str( str );
+	::assert_str( pattern );
+	::assert_num( max );
+	
+	local pattern_length = ::strlength(pattern);
+	local pieces_index = 0;
+	local result = [];
+	local times_left = max;
+	local done = false;
+	local search_in = str;
+	while ( not done and search_in != "" and (times_left-- > 0 or max <= 0)) {
+		local end = ::strindex(search_in, pattern);
+		// if pattern found
+		if ( not ( done = (end < 0)) ) {
+			if ( end > 0 )
+				--end;
+			result[pieces_index++] = ::strsubstr(search_in, 0, end);
+			search_in = ::strsubstr(search_in, end + 1 + pattern_length);
+		}
+	}
+	// Append rest of the string as a piece
+	result[pieces_index++] = search_in;
+	::assert_eq( pieces_index, ::dobj_length(result) );
+	return result;
 }
 
 /// File utilities
@@ -1250,6 +1292,40 @@ function Namable {
 		);
 	return Namable_class;
 }
+
+// IDable
+function IDable {
+	if (std::isundefined(static IDable_class))
+		IDable_class = ::Class().createInstance(
+			// stateInitialiser
+			function IDable_stateInitialiser(newIDableInstance, validFieldsNames, id) {
+				::assert_str( id );
+				::Class_checkedStateInitialisation(
+					newIDableInstance,
+					validFieldsNames,
+					[ { #IDable_id: id } ]
+				);
+			},
+			// prototype
+			[
+				method getID {
+					return ::dobj_checked_get(self, ::IDable().stateFields(), #IDable_id);
+				},
+				method setID(id) {
+					::assert_str(id);
+					return ::dobj_checked_set(self, ::IDable().stateFIelds(), #IDable_id, id);
+				}
+			],
+			// mixinRequirements
+			[],
+			// stateFields
+			[ #IDable_id ],
+			// Class name
+			#IDable
+		);
+	return IDable_class;
+}
+
 
 // ProjectType
 const ProjectType_StaticLibrary  = 1;
