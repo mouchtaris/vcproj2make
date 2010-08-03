@@ -436,9 +436,19 @@ function ProjectType_isValid(type)
 //               project as part of the given configuration for this solution.
 //         - hasConfiguration(configurationID:deltastring)
 //               returns true if the given configuration ID exists in the data.
+//         - addNonBuildable(projID:deltastring)
+//               adds the given project ID as a non-buildable (by configuration)
+//               project.
+//         - isNonBuildable(projID:deltastring)
+//               checks whether the given project ID is non-buildable
+//               by configuration.
+//         - isBuildable(projID:deltastring)
+//               checks whether the given project ID has been registered as
+//               non-buildable (by configuration).
 //     <^> state fields
 //         01. SolutionData_configurations
 //         02. SolutionData_configurationMapper       [ solConfID => [ projID => projConf, ... ], ... ]
+//         03. SolutionData_nonbuildables             [ selfMapping ]
 
 /////////////////////////////////////////////////////////////////
 // Class ProjectData
@@ -459,3 +469,4 @@ function ProjectType_isValid(type)
 //     <^> state fields
 //         01. ProjectData_parentReference
 //         02. ProjectData_dependencies
+

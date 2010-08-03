@@ -16,6 +16,12 @@ RunReal =
 LoadLibs = 
 		not
 		false;
+UpdateSolutionXML =
+		not
+		false;
+
+
+// // // // 
 local libs_loaded_successfully = false;
 if (LoadLibs) {
 	// Copy libs first
@@ -86,6 +92,16 @@ if (LoadLibs) {
 	}
 }
 
+
+if (UpdateSolutionXML) {
+	::util.println("Producing TestSolution.xml");
+	if ( ::util.iswin32() )
+		::util.shell(".\vcsol2xml.bat");
+	else if ( ::util.islinux() )
+		::util.shell("./vcsol2xml ../../../deltux/deltaide/IDE/IDE.sln >TestSolution.xml");
+	else
+		::util.error().UnknownPlatform();
+}
 
 if (::util.False())
 // TODO think about:

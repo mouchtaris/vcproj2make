@@ -49,10 +49,38 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	/////////////////////////// Classes /////////////////////////////
 	/////////////////////////////////////////////////////////////////
 	
+	// Forward static members of ProjectData
+	function ProjectData_validProjectID (id) {
+		return // some heuristics
+				::util.isdeltastring(id)            and
+				::util.strlength(id) == (52-15+1)   and
+				::util.strchar(id, 0) == "{"        and
+				::util.strchar(id, ::util.strlength(id) - 1) == "}" and
+		true;
+	}
+	
+	// SolutionData
 	function SolutionData {
 		if (std::isundefined(static SolutionData_stateFields))
-			SolutionData_stateFields = [ #SolutionData_configurations, #SolutionData_configurationMapper ];
+			SolutionData_stateFields = [ #SolutionData_configurations, #SolutionData_configurationMapper, #SolutionData_nonbuildables ];
 
+		// Private methods
+		function getnonbuildables (this) {
+			return ::util.dobj_checked_get(this, SolutionData_stateFields, #SolutionData_nonbuildables);
+		}
+		function getsolutionmapper (this) {
+			return ::util.dobj_checked_get(this, SolutionData_stateFields, #SolutionData_configurationMapper);
+		}
+		function isbuildable (this, projid) {
+			::util.assert_str(projid);
+			local solutionMapper = getsolutionmapper(this);
+			foreach (local configurationMapper, solutionMapper)
+				foreach (local projectID, ::util.dobj_keys(configurationMapper))
+					if (::util.assert_str(projectID) == projid)
+						return true;
+			return false;
+		}
+		
 		if (std::isundefined(static SolutionData_class))
 			SolutionData_class = ::util.Class().createInstance(
 				// stateInitialiser
@@ -62,7 +90,8 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 						validFieldsNames,
 						[
 							@SolutionData_configurations     : [], //self map
-							@SolutionData_configurationMapper: []
+							@SolutionData_configurationMapper: [],
+							@SolutionData_nonbuildables      : []  //self map
 						]
 					);
 				},
@@ -82,17 +111,42 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 						::util.assert_str(projectID);
 						::util.assert_str(projectConfigurationID);
 						::util.Assert( self.hasConfiguration(solutionConfigurationID) );
-						local mapper = ::util.dobj_checked_get(self, SolutionData_stateFields, #SolutionData_configurationMapper);
+						local mapper = getsolutionmapper(self);
 						if ( not (local configurationProjects = mapper[solutionConfigurationID]) )
 							configurationProjects = mapper[solutionConfigurationID] = [];
 						::util.Assert( not ::util.dobj_contains_key(configurationProjects, projectID) );
 						configurationProjects[projectID] = projectConfigurationID;
+						//
+						::util.Assert( isbuildable(self, projectID) );
+					},
+					method addNonBuildable (projID) {
+						::util.Assert( ProjectData_validProjectID(projID) );
+						::util.Assert( not isbuildable(self, projID) );
+						local nonbuildables = getnonbuildables(self);
+						::util.Assert( not ::util.dobj_contains_key(nonbuildables, projID) );
+						nonbuildables[projID] = projID;
+					},
+					method isNonBuildable (projID) {
+						::util.Assert( ProjectData_validProjectID(projID) );
+						local nonbuildables = getnonbuildables(self);
+						local result = ::util.dobj_contains_key(nonbuildables, projID);
+						// it is not necessary that a non-buildable project will have
+						// been registered as a buildable one
+						// (because of virtual folders (filters) etc
+						// TODO re-enable this assertion after trimming out
+						// virtual folders and such
+						//::util.assert_eq( result, not isbuildable(self, projID) );
+						return result;
+					},
+					method isBuildable (projID) {
+						local result = not self.isNonBuildable(projID);
+						return result;
 					}
 				],
 				// mixinRequirements
 				[],
 				// state field names
-				[ #SolutionData_configurations, #SolutionData_configurationMapper ],
+				[ #SolutionData_configurations, #SolutionData_configurationMapper, #SolutionData_nonbuildables ],
 				// class name
 				#SolutionData
 			);
@@ -104,14 +158,6 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	}
 	
 	// ProjectData
-	function ProjectData_validProjectID (id) {
-		return // some heuristics
-				::util.isdeltastring(id)            and
-				::util.strlength(id) == (52-15+1)   and
-				::util.strchar(id, 0) == "{"        and
-				::util.strchar(id, ::util.strlength(id) - 1) == "}" and
-		true;
-	}
 	function classy_ProjectData {
 		if (std::isundefined(static ProjectData_stateFields))
 			ProjectData_stateFields = [ #ProjectData_parentReference, #ProjectData_dependencies ];
@@ -145,7 +191,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 						::util.Assert( ProjectData_validProjectID(projID) );
 						local dops = deps(self);
 						local deps = dops;
-						::util.Assert( ::util.iterable_contains(deps, projID) ); // TODO should add a not
+						::util.Assert( not ::util.iterable_contains(deps, projID) );
 						std::list_push_back(deps, projID);
 					},
 					method Dependencies {
@@ -176,7 +222,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		}
 		return ProjectData_class;
 	}
-	function ProjectData {
+	function light_ProjectData {
 		if (std::isundefined(static ProjectData_class))
 			ProjectData_class = [
 				@createInstance: function createInstance {
@@ -195,6 +241,11 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				}
 			];
 		return ProjectData_class;
+	}
+	function ProjectData { return
+//			light_ProjectData
+			classy_ProjectData
+		();
 	}
 	function ProjectData_isaProjectData (obj) {
 		return ::util.Class_isa(obj, ProjectData());
@@ -414,23 +465,29 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		::util.Assert( SolutionData_isaSolutionData(solutionConfigurations) );
 		local configurations_XMLelement = xProjectConfigurationPlatforms(solutionXML);
 		::util.Assert( configurations_XMLelement.type == ProjectConfigurationPlatforms_TypeAttributeValue );
-		foreach (local pair, configurations_XMLelement.Pair) {
-			local config_elems = ::util.strsplit(pair.left, ".", 0);
-			local proj_config = pair.right;
-			function isBuildable (config_elems) { return config_elems[2] == "Build" and config_elems[3] == "0"; }
-			if (isBuildable(config_elems)) {
+		xmlforeachchild(configurations_XMLelement, Pair_ElementName, [
+			method @operator () (parent, childindex, pair_element, ismany) {
+				local config_elems = ::util.strsplit(pair_element.left, ".", 0);
+				local proj_config = pair_element.right;
 				//
 				local projid          = config_elems[0];
 				local solution_config = config_elems[1];
 				//
-				solutionConfigurations.registerProjectConfigurationForConfiguration(solution_config, projid, proj_config);
-			}
-		}
+				function isBuildable (config_elems) { return config_elems[2] == "Build" and config_elems[3] == "0"; }
+				if (isBuildable(config_elems))
+					@solutionConfigurations.registerProjectConfigurationForConfiguration(solution_config, projid, proj_config);
+				else {
+					@solutionConfigurations.addNonBuildable(projid); // TODO think about storing the rest of the info
+					::log("notice: project configured not to be built: ID=", projid);
+				}
+			},
+			@solutionConfigurations: solutionConfigurations
+		]);
 		// Free this element
 		xfreeProjectConfigurationPlatforms(solutionXML);
 		return true;
 	}
-	function dexProjectData (solutionXML, projectDataHolder) {
+	function dexProjectData (solutionXML, solutionData, projectDataHolder) {
 		xmlforeachchild(xProject_parent(solutionXML), Project_ElementName, [
 			method @operator () (parent, childindex, projectElement, ismany) {
 				if (std::isundefined(static runcounter)) runcounter = 1; else runcounter = runcounter;
@@ -438,8 +495,6 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				::log("Analysing project data for /Project[", childindex, "]  (", runcounter++, "/",
 					(function(parent, childindex, projectElement, ismany){if(ismany)return::util.dobj_length(parent);else return(1);})
 							(parent, childindex, projectElement, ismany), ")");
-				//
-				local projectData = ProjectData().createInstance();
 				//
 				local id              = projectElement.id;
 				local name            = projectElement.name;
@@ -451,47 +506,53 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				::util.assert_str(path);
 				::util.assert_str(parentReference);
 				//
-				projectData.setID(id);
-				projectData.setName(name);
-				projectData.setLocation(path);
-				projectData.setParentReference(parentReference);
-				//
-				if (xmlhaschild(projectElement, ProjectSection_ElementName)) {
-					// foreach ProjectSection (there should be only one, but is left over of many, so this is more conventient, as it abstracts whethere something is/was one or many)
-					xmlforeachchild(projectElement, ProjectSection_ElementName, [
-						method @operator () (parent, childindex, projectSectionElement, ismany) {
-							// It has to be a project dependencies node
-							::util.assert_eq( projectSectionElement.type , ProjectDependencies_TypeAttributeValue );
-							// foreach pair
-							xmlforeachchild(projectSectionElement, Pair_ElementName, [
-								method @operator () (parent, childindex, pairElement, ismany) {
-									::util.assert_eq( pairElement.left , pairElement.right );
-									// add dependency
-									@dependencyAdder(pairElement.right);
-									return true; // keep iterating
-								},
-								@dependencyAdder: @projectData.addDependency
-							]);
-							
-							return true; // keep iterating
-						},
-						@projectData: projectData
-					]);
-					
-					// kill all ProjectSections
-					xfree(projectElement, ProjectSection_ElementName);
+				local solutionData = @solutionData;
+				if (solutionData.isBuildable(id)) {
+					local projectData = ProjectData().createInstance();
+					projectData.setID(id);
+					projectData.setName(name);
+					projectData.setLocation(path);
+					projectData.setParentReference(parentReference);
+					//
+					if (xmlhaschild(projectElement, ProjectSection_ElementName)) {
+						// foreach ProjectSection (there should be only one, but is left over of many, so this is more conventient, as it abstracts whethere something is/was one or many)
+						xmlforeachchild(projectElement, ProjectSection_ElementName, [
+							method @operator () (parent, childindex, projectSectionElement, ismany) {
+								// It has to be a project dependencies node
+								::util.assert_eq( projectSectionElement.type , ProjectDependencies_TypeAttributeValue );
+								// foreach pair
+								xmlforeachchild(projectSectionElement, Pair_ElementName, [
+									method @operator () (parent, childindex, pairElement, ismany) {
+										::util.assert_eq( pairElement.left , pairElement.right );
+										// add dependency
+										@dependencyAdder(pairElement.right);
+										return true; // keep iterating
+									},
+									@dependencyAdder: @projectData.addDependency
+								]);
+								
+								return true; // keep iterating
+							},
+							@projectData: projectData
+						]);
+
+						// kill all ProjectSections
+						xfree(projectElement, ProjectSection_ElementName);
+					}
+					// add project data to holder
+					@holder[id] = projectData;
 				}
-				
-				// add project data to holder
-				@holder[id] = projectData;
+				else // a non-buildable project has been encountered
+					::log("Ignoring unbuildable project ", id, ", ", name, ", ", path);
 				
 				// keep iterating
 				return true;
 			},
-			@holder: projectDataHolder
+			@holder      : projectDataHolder,
+			@solutionData: solutionData
 		]);
 		
-		//xfreeProject(solutionXML);
+		xfreeProject(solutionXML);
 	}
 	
 	local result = nil;
@@ -504,13 +565,12 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	// Data and holders
 	local solutionData       = SolutionData().createInstance();
 	local projectDataHolder  = [];
-	
-	// Test code
+	// Trim and extract data
 	xppRemoveUninterestingFields(solutionXML);
 	dexSolutionConfigurations(solutionXML, solutionData);
 	dexProjectsConfigurations(solutionXML, solutionData);
-	dexProjectData(solutionXML, projectDataHolder);
 	xfreeGlobal(solutionXML);
+	dexProjectData(solutionXML, solutionData, projectDataHolder);
 	
 	
 	return result = solutionXML;

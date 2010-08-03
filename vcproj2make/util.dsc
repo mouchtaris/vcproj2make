@@ -87,6 +87,7 @@ function assert_notundef(val) {
 }
 function assert_str(val) {
 	::Assert( ::isdeltastring(val) );
+	return val;
 }
 function assert_num(val) {
 	::Assert( ::isdeltanumber(val) );
@@ -330,7 +331,7 @@ function dobj_contains(dobj, val) {
 	return contains;
 }
 function dobj_contains_key(dobj, key) {
-	return dobj[key] != nil;
+	return not ::isdeltanil(dobj[key]);
 }
 function dobj_contains_any(dobj, dobj_other) {
 	foreach (local val, dobj_other)
