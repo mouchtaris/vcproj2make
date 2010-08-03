@@ -421,6 +421,12 @@ function ProjectType_isValid(type)
 // Class SolutionData
 // A temporary solution data holder. It also provides crossing
 // information to and from IDs.
+//   Concerning non-buildable projects: they are assumed to be built
+// in all or no configuration. This is reflected in the API, through
+// which only the project-ID is required in order to query for a
+// project's building or unbuilding-ness. If this needs to be changed
+// in the future, the signature for addNonBuildable(), isNonBuildable()
+// and isBuildable() will change.
 // --------------------------------------------------------------
 //     <^> createInstance( )
 //     <^> Mixes in: 

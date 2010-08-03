@@ -43,6 +43,9 @@ function VisualStudioProjectAdaptor (vcproj_filepath_str) {
 ///////////////////////////////////////////////////////////////////////
 }
 
+
+
+// TODO add magic numbers and check for them
 function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	
 	/////////////////////////////////////////////////////////////////
@@ -266,6 +269,8 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	/////////////////////////////////////////////////////////////////
 	// Various constants
 	// --------------------------------------------------------------
+	const VCPROJ_Extension                                  = "vcproj";
+	//
 	const Global_ElementName                                = "Global";
 	const GlobalSection_ElementName                         = "GlobalSection";
 	const SolutionConfigurationPlatforms_TypeAttributeValue = "SolutionConfigurationPlatforms";
@@ -328,11 +333,15 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	// XML data (pre)processing
 	// --------------------------------------------------------------
 	function xppRemoveUninterestingFields (solutionXML) {
+		local outer_log = log;
+		local log = [method@operator()(...){@l("Trimmer: ",...);},@l:outer_log];
+		//
 		local keys_to_die = std::list_new();
 		local interesting_global_section_types = [
 				SolutionConfigurationPlatforms_TypeAttributeValue,
 				ProjectConfigurationPlatforms_TypeAttributeValue];
 		// Remove useless "GlobalSection"s
+		log("removing useless GlobalSection-s");
 		foreach (local key, ::util.dobj_keys(local gsects = solutionXML.Global.GlobalSection)) {
 			local gsect = gsects[key];
 			if ( not ::util.dobj_contains(interesting_global_section_types, gsect.type) )
@@ -340,6 +349,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		}
 		// Remove useless <ProjectSection type="WebsiteProperties"> from projects
 		// foreach Project element
+		log("removing \"WebsiteProperties\" ProjectSection-s");
 		xmlforeachchild(solutionXML, Project_ElementName, function(parent_solutionXML, childindex, child_project, ismany) {
 			::util.Assert( parent_solutionXML[childindex] == child_project );
 			::util.Assert( childindex == Project_ElementName or (ismany and ::util.isdeltanumber(childindex)) );
@@ -366,6 +376,26 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 
 			return true;
 		});
+		
+		// Remove "project" entries which are not real projects but some
+		// else and useless, like filtres and such.
+		log("removing non-project Project-s");
+		xmlforeachchild(solutionXML, Project_ElementName, [
+			method NonProjectProjectEntryRemover
+				(parent, childindex, projelem, ismany)
+			{
+				local path = ::util.Path_castFromPath(projelem.path);
+				if (path.Extension() != VCPROJ_Extension) {
+					::util.assert_eq( projelem.name , projelem.path );
+					@l("Deleting nonProject project: ", projelem.name, ", ",
+							projelem.id, ", ", projelem.path);
+					parent[childindex] = nil;
+				}
+				return true; //keep iterating
+			},
+			{"()": @self.NonProjectProjectEntryRemover},
+			@l: log
+		]);
 	}
 	
 	/////////////////////////////////////////////////////////////////
