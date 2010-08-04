@@ -6,7 +6,7 @@
         <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</text>
         <symbolic>22 serialization::archive 4 0 0 1 0 58 22 serialization::archive 4 0 0 23 Util/Project/Util.dproj</symbolic>
         <startup>22 serialization::archive 4 0 0 1 0 53 22 serialization::archive 4 0 0 18 ..\Source\util.dsc</startup>
-        <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
+        <output_path>22 serialization::archive 4 0 0 1 0 40 22 serialization::archive 4 0 0 6 ..\Lib</output_path>
         <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
         <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</icode>
         <hostd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </hostd>

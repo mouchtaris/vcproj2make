@@ -7,7 +7,8 @@
         <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
         <breakpoints>22 serialization::archive 4 0 0 1 0 43 22 serialization::archive 4 0 0 9 break.dat</breakpoints>
     </WorkspaceProperties>
-    <Child type="Project">SolutionLoader\Project\SolutionParser.dproj</Child>
     <Child type="Project">Util\Project\Util.dproj</Child>
     <Child type="Project">DeltaIDE_2_Make\Project\DeltaIDE_2_Make.dproj</Child>
+    <Child type="Project">SolutionLoader\Project\SolutionLoader.dproj</Child>
+    <Child type="Project">..\vcproj2make_old\vcproj2make.dproj</Child>
 </Workspace>
