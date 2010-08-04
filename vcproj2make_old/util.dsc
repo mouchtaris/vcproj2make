@@ -295,7 +295,7 @@ function loadlibs {
 		return result;
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
-			loadlib("XMLParser")        and
+//			loadlib("XMLParser")        and
 //			loadlib("VCSolutionParser") and
 			true
 	;
@@ -1618,27 +1618,23 @@ xmlload_LibFunc         = #xmlload;
 xmlparse_LibFunc        = #xmlparse;
 xmlloadgeterror_LibFunc = #xmlloadgeterror;
 xmlparsegeterror_LibFunc= #xmlloadgeterror;
-function xmlload(filename_str) {
+function XMLload(filename_str) {
 	::Assert( ::libsloaded() );
-	local xmlload = std::libfuncget(::xmlload_LibFunc);
-	local result = xmlload(filename_str);
+	local result = xmlload_LibFunc(filename_str);
 	return result;
 }
-function xmlloaderror {
+function XMLloaderror {
 	::Assert( ::libsloaded() );
-	local xmlloadgeterror = std::libfuncget(::xmlloadgeterror_LibFunc);
-	local result = xmlloadgeterror();
+	local result = xmlloadgeterror_LibFunc();
 	return result;
 }
-function xmlparse(str) {
+function XMLparse(str) {
 	::Assert( ::libsloaded() );
-	local xmlparse = std::libfuncget(::xmlparse_LibFunc);
-	local result = xmlparse(str);
+	local result = xmlparse_LibFunc(str);
 	return result;
 }
-function xmlparseerror {
+function XMLparseerror {
 	::Assert( ::libsloaded() );
-	local xmlparsegeterror = std::libfuncget(::xmlparsegeterror_LibFunc);
-	local result = xmlparsegeterror();
+	local result = xmlparsegeterror_LibFunc();
 	return result;
 }

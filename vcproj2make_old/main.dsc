@@ -10,6 +10,9 @@ vc2pr = std::vmload("vcproj2proj.dbc", "vc2pr");
 std::vmrun(vc2pr);
 assert( vc2pr );
 
+// UTIL adaptors
+util.xmlparse = util.XMLparse;
+
 RunReal = 
 //		not
 		false;
@@ -39,7 +42,7 @@ if (LoadLibs) {
 		function xmllibpathcomponents(configuration) {
 			local result = nil;
 			if (::util.iswin32())
-				result = ["..", "..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
+				result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
 						"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
 			else if (::util.islinux())
 				result = ["..", "..", "..", "deltux", "psp", "projects", "Tools", 

@@ -5,7 +5,10 @@ if (not util) {
 }
 assert( util );
 
-function xmlload (filename_str) {
+// UTIL adaptors
+util.xmlload = util.XMLload;
+
+function myxmlload (filename_str) {
 	return ::util.xmlload(filename_str);
 }
 // Should only be called if xmlload returns falsy
@@ -29,7 +32,7 @@ function{
 
 
 function VisualStudioProjectAdaptor (vcproj_filepath_str) {
-	local vcproj_data = xmlload(vcproj_filepath_str);
+	local vcproj_data = ::myxmlload(vcproj_filepath_str);
 	local vcproj_loaderror = ::xmlloaderror();
 	if (vcproj_data) {
 		::util.Assert( not vcproj_loaderror );
@@ -260,7 +263,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 	
 	function loadSolutionDataFromSolutionFile (solutionFilePath_str) {
 		::util.assert_str( solutionFilePath_str );
-		local data = xmlload(solutionFilePath_str);
+		local data = ::myxmlload(solutionFilePath_str);
 		if (not data)
 			::util.error().AddError(::xmlloaderror());
 		return data;
