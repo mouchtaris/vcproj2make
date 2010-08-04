@@ -29,6 +29,8 @@ function argstostring   (...)
 // - UnknownConfiguration
 //   adds an error with a default error message if running on an unknown
 //   configuration.
+// - Die(...)
+//   stops execution, showing optional arguments as stings.
 //
 
 //

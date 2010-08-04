@@ -295,7 +295,7 @@ function loadlibs {
 		return result;
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
-//			loadlib("XMLParser")        and
+			loadlib("XMLParser")        and
 //			loadlib("VCSolutionParser") and
 			true
 	;

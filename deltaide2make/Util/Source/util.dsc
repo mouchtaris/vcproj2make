@@ -168,7 +168,10 @@ function error {
 			@UnfoundLibFunc: function error_UnfoundLibFunc(libfuncname, extraerrmsg)
 				{ error_AddError("Could not find a *::" + libfuncname + " libfunc. " + extraerrmsg); },
 			@UnknownConfiguration: function error_UnknownConfiguration
-				{ error_AddError("Unknown configuration: " + std::vmfuncaddr(std::vmthis(), #deltaconfiguration)()); }
+				{ error_AddError("Unknown configuration: " + std::vmfuncaddr(std::vmthis(), #deltaconfiguration)()); },
+				
+			@Die: function error_Die(...)
+				{ error_AddError(...); }
 		];
 	return error;
 }
