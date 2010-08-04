@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workspace name="DeltaIDE_2_Make" version="alpha">
+    <WorkspaceProperties>
+        <symbolic>22 serialization::archive 4 0 0 1 0 54 22 serialization::archive 4 0 0 19 DeltaIDE_2_Make.wsp</symbolic>
+        <startup>22 serialization::archive 4 0 0 1 0 80 22 serialization::archive 4 0 0 45 DeltaIDE_2_Make\Project\DeltaIDE_2_Make.dproj</startup>
+        <config>22 serialization::archive 4 0 0 1 0 39 22 serialization::archive 4 0 0 5 debug</config>
+        <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+        <breakpoints>22 serialization::archive 4 0 0 1 0 43 22 serialization::archive 4 0 0 9 break.dat</breakpoints>
+    </WorkspaceProperties>
+    <Child type="Project">SolutionLoader\Project\SolutionParser.dproj</Child>
+    <Child type="Project">Util\Project\Util.dproj</Child>
+    <Child type="Project">DeltaIDE_2_Make\Project\DeltaIDE_2_Make.dproj</Child>
+</Workspace>
