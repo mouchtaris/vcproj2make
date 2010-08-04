@@ -1,6 +1,0 @@
-#!/bin/bash
-
-for f in *.dsc
-	do ./__remove_CR_from_file__give_file_as_argument__it_is_overwritten "$f"
-done
-
