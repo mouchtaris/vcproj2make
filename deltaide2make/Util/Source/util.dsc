@@ -10,8 +10,9 @@ ManualConfiguration =
 		nil // for non-AS-safe environments
 ;
 // Flag for classic delta compatibility
-ASsafe = 
-	false;
+ASsafe = nil;
+if (ManualConfiguration)
+	ASsafe =
 [
 	{ "NotSafe" : (function Asafe_NotSafe(funcname) {
 		// No error, just warn
@@ -19,6 +20,8 @@ ASsafe =
 		warning().Important("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
 	})}
 ];
+else
+	ASsafe = false;
 // A ManualConfiguration can be defined only when ASsafe is defined
 (method {
 	const bool = lambda(v) { not not v };
@@ -74,6 +77,7 @@ function isdeltanil   (val) { return ::typeof(val) == "Nil"   ; }
 function isdeltaundefined(val){return std::isundefined(val)   ; }
 function isdeltacallable(va){ return std::iscallable(va)      ; }
 function toboolean    (val) { if (val) return true; else return false; }
+function tobool       (val) { return ::toboolean(val)         ; }
 //
 // assertion utils
 function Assert(cond) {
@@ -299,7 +303,7 @@ function loadlibs {
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
 			loadlib("XMLParser")        and
-//			loadlib("VCSolutionParser") and
+			loadlib("VCSolutionParser") and
 			true
 	;
 }
@@ -368,6 +372,14 @@ function dobj_keys(dobj) {
 function dobj_empty(dobj) {
 	return ::dobj_length(dobj) == 0;
 }
+function dobj_copy (dobj) {
+	return std::tabcopy(dobj);
+}
+function dobj_replace (dobj, index, newval) {
+	local prev = dobj[index];
+	dobj[index] = newval;
+	return prev;
+}
 
 //
 // Functional games
@@ -431,6 +443,11 @@ function equals(val1, val2) {
 }
 function equalitypredicate(val) {
 	return ::bindfront(::equals, val);
+}
+function nothing {
+}
+function nothingf {
+	return ::nothing;
 }
 
 //
@@ -715,6 +732,12 @@ function orval(val1, val2) {
 	else
 		result = val2;
 	return result;
+}
+function ternary (cond, val1, val2) {
+	if (cond)
+		return val1;
+	else
+		return val2;
 }
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
@@ -1211,6 +1234,10 @@ function Path {
 					local pathstr = self.deltaString();
 					::dobj_checked_set(self, ::Path().stateFields(), #Path_path, pathstr + str);
 					return self;
+				},
+				// NOT API related
+				method @ {
+					return "path:" + self.deltaString();
 				}
 			],
 			// mixInRequirements
@@ -1614,6 +1641,83 @@ function CSolution_isaCSolution(object) {
 }
 
 
+// IDableHolder template class for mixing-in
+function IDableHolder (holdingItemName) {
+	if (std::isundefined(static Holder_classes))
+		Holder_classes = [];
+	else
+		Holder_classes = Holder_classes;
+
+	// Meta-class class generation utils
+	function holderClassName (holdingItemName)
+		{ return holdingItemName + "Holder"; }
+	//
+	function holderFieldPrefix (holdingItemName)
+		{ return holderClassName(holdingItemName) + "_"; }
+	//
+	function holderFieldName (holdingItemName)
+		{ return holderFieldPrefix(holdingItemName) + holdingItemName + "s"; }
+	function holderItemNameMetafieldName (holdingItemName)
+		{ return holderFieldPrefix(holdingItemName) + "holdingItemName"; }
+	//
+	function holderAddMethodName (holdingItemName)
+		{ return "add" + holdingItemName; }
+	function holderRetrieveMethodName (holdingItemName)
+		{ return holdingItemName + "s"; }
+	//
+
+	if (not (local holder_class = Holder_classes[holdingItemName]) ) {
+		holder_class = Holder_classes[holdingItemName] = [];
+		holder_class.stateFields = [
+			holderFieldName(holdingItemName),
+			holderItemNameMetafieldName(holdingItemName)
+		];
+		holder_class.class = ::Class().createInstance(
+			// state initialiser
+			[
+				method @operator () (newHolderInstance, validFieldsNames) {
+					::Class_checkedStateInitialisation(
+						newHolderInstance,
+						validFieldsNames,
+						[
+							{ holderFieldName(@itemName): [] },
+							{ holderItemNameMetafieldName(@itemName): @itemName}
+						]
+					);
+				},
+				@itemName: holdingItemName
+			],
+			// prototype
+			[
+				{ holderAddMethodName(holdingItemName): [ method @operator () (idable) {
+					local result = nil;
+					if (not ::Class_isa(idable, ::IDable()))
+						::error().AddError("Not an IDable: ", idable);
+					else if ((local holder = self[holderFieldName(@itemName)])[local id = idable.getID()])
+						::error().AddError("IDable already added in holder: ", idable);
+					else
+						result = ::tobool(holder[id] = idable);
+					return result;
+				}, @itemName: holdingItemName] },
+				{ holderRetrieveMethodName(holdingItemName): [ method @operator () {
+					local holder = self[holderFieldName(@itemName)];
+					local result = ::dobj_copy(holder);
+					return result;
+				}, @itemName: holdingItemName] }
+			],
+			// mix in requirements
+			[],
+			// state fields
+			holder_class.stateFields,
+			// class name
+			holderClassName(holdingItemName)
+		);
+	}
+
+	return holder_class.class;
+}
+
+
 ////////////////////////
 // xml utilities
 ////////////////////////
@@ -1644,4 +1748,13 @@ function xmlparseerror {
 	local xmlparsegeterror = std::libfuncget(::xmlparsegeterror_LibFunc);
 	local result = xmlparsegeterror();
 	return result;
+}
+
+
+////////////////////////////////////////
+// Logging
+////////////////////////////////////////
+function log (from ...) {
+	local str = ::argstostring("[", from, "]: ", |::argspopfront(arguments, 1)|);
+	::println(str);
 }

@@ -41,6 +41,7 @@ function argstostring   (...)
 //
 
 
+// functional games
 function constantf                      (val)
 function bindfront                      (f ...)
 function bindback                       (f ...)
@@ -52,6 +53,9 @@ function membercalltransformation       (object, membername, args)      // "tran
 function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
 function equals                         (val1, val2)
 function equalitypredicate              (val)
+function nothing
+function nothingf                                                       => function nothing
+function ternary                        (cond, val1, val2)
 //
 function isdeltastring  (val)
 function isdeltaobject  (val)
@@ -61,6 +65,7 @@ function isdeltaboolean (val)
 function isdeltanil     (val)
 function isdeltacallable(val)
 function toboolean      (val)
+function tobool         (val)
 //
 function assert_notnil      (val)
 function assert_notundef    (val)
@@ -92,6 +97,8 @@ function dobj_checked_get               (dobj, key)
 function dobj_length                    (dobj)
 function dobj_keys                      (dobj)
 function dobj_empty                     (dobj)
+function dobj_copy                      (dob)
+function dobj_replace                   (dobj, key, val)                 => oldval
 //
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
@@ -133,6 +140,11 @@ function xmlload            (filename_str)
 function xmlloaderror
 function xmlparse			(string)
 function xmlparseerror
+
+// logging
+function log     (from, ...)
+
+
 ////////////////////////////////////////////////////////////////////////
 function mixin_state                            (state, mixin)
 function stateFieldsClash                       (fields1, fields2)
@@ -420,15 +432,9 @@ function ProjectType_isValid(type)
 //         01. CSolution_projects
 
 /////////////////////////////////////////////////////////////////
-// Class SolutionData
-// A temporary solution data holder. It also provides crossing
-// information to and from IDs.
-//   Concerning non-buildable projects: they are assumed to be built
-// in all or no configuration. This is reflected in the API, through
-// which only the project-ID is required in order to query for a
-// project's building or unbuilding-ness. If this needs to be changed
-// in the future, the signature for addNonBuildable(), isNonBuildable()
-// and isBuildable() will change.
+// Class ConfigurationManager
+// Maps solution configurations to project configurations and
+// keeps track of which projects are to be build in each configuration.
 // --------------------------------------------------------------
 //     <^> createInstance( )
 //     <^> Mixes in: 
@@ -436,30 +442,51 @@ function ProjectType_isValid(type)
 //         - addConfiguration(configurationID:deltastring)
 //               adds the given configuration to the given project.
 //               If the project does not exist, it is created.
-//         - registerProjectConfigurationForConfiguration(
+//         - Configurations
+//               returns a deltaobject with all the registered
+//               solution configurations.
+//         - registerProjectConfiguration(
 //                       solutionConfigurationID:deltastring,
 //                       projectID:deltastirng,
 //                       projectConfigurationID:deltastring)
 //               registers the given configuration for the given
 //               project as part of the given configuration for this solution.
+//               The project is automatically marked as non-buildable.
+//         - Projects(configurationID:deltastring)
+//               returns a deltaobject with the IDs of all the projects registered
+//               under the given solution configuration (whether as buildable or
+//               non-buildable).
+//         - markNonBuildable(solutionConfigurationID:deltastring, projectID:deltastirng)
+//               marks the given project as non-buildable, under the given solution
+//               configuration.
+//         - markBuildable(solutionConfigurationID:deltastring, projectID:deltastirng)
+//               marks the given project as buildable, under the given solution
+//               configuration.
 //         - hasConfiguration(configurationID:deltastring)
 //               returns true if the given configuration ID exists in the data.
-//         - addNonBuildable(projID:deltastring)
-//               adds the given project ID as a non-buildable (by configuration)
-//               project.
-//         - isNonBuildable(projID:deltastring)
-//               checks whether the given project ID is non-buildable
-//               by configuration.
-//         - isBuildable(projID:deltastring)
+//         - hasProject(configurationID:deltastring, projID:deltastring)
+//               returns true if the given project configuration is registered
+//               under the given solution configuration.
+//         - hasProjectInAnyConfiguration(projID:deltastrin)
+//               returns true if the given project ID is registered under
+//               any registered configuration.
+//         - isNonBuildable(configurationID:deltastring, projID:deltastring)
+//               checks whether the given project has been marked non-buildable
+//               by configuration, under the given configuration.
+//         - isBuildable(configurationID:deltastring, projID:deltastring)
 //               checks whether the given project ID has been registered as
-//               non-buildable (by configuration).
+//               buildable under the given configuration.
+//         - isBuildableInAnyConfiguration(projID:deltastring)
+//               checks whether the project indicated by the given project ID
+//               has been marked as buildable under any configuration.
+//         - isNonBuildableInEveryConfiguration(projID:deltastring)
+//               checks whether the project indicated by the given project ID
+//               has been marked as nonbuildable under every configuration.
 //     <^> state fields
-//         01. SolutionData_configurations
-//         02. SolutionData_configurationMapper       [ solConfID => [ projID => projConf, ... ], ... ]
-//         03. SolutionData_nonbuildables             [ selfMapping ]
+//         01. ConfigurationManager_configurationsMap         [sol_conf_id => [ projid => [ confid, buildable ], ...], ...]
 
 /////////////////////////////////////////////////////////////////
-// Class ProjectData
+// Class ProjectEntry
 // A temporary project data holder. It also provides crossing
 // information to and from IDs.
 // --------------------------------------------------------------
@@ -474,7 +501,27 @@ function ProjectType_isValid(type)
 //         - Dependencies
 //               returns an iterable with all the IDs (as strings)
 //               of the dependencies.
+//     <^> Static
+//         - validProjectID(projid:deltastring)
 //     <^> state fields
-//         01. ProjectData_parentReference
-//         02. ProjectData_dependencies
+//         01. ProjectEntry_parentReference
+//         02. ProjectEntry_dependencies
 
+
+/////////////////////////////////////////////////////////////////
+// Class SolutionData
+// Solution data extracted from a Solution File
+// --------------------------------------------------------------
+//     <^> createInstance( )
+//     <^> Mixes in:
+//     <^> Public methods
+//         - addProjectEntry(_:ProjectEntry)
+//               adds the given project entry to the solution data.
+//         - ProjectEntries
+//               returns an std::list with all the project entries
+//               of this solution data.
+//         - set/getConfigurationMapper(_:ConfigurationMapper)
+//               sets or gets the solution entry for this solution data.
+//     <^> state fields
+//         01. SolutionData_projectEntries
+//         02. SolutionData_solutionEntry

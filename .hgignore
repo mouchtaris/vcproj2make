@@ -9,3 +9,8 @@ glob:vcproj2make_old/vcsol2xml.bat
 glob:vcproj2make_old/proj2make.txt
 glob:vcproj2make_old/vcproj2proj.txt
 glob:vcproj2make_old/TestSolution.xml
+glob:dallocstats.txt
+glob:derror.txt
+glob:deltaide2make/Solution.xml
+glob:deltaide2make/SolutionLoaderReport.xhtml
+glob:deltaide2make/deltalog.txt
