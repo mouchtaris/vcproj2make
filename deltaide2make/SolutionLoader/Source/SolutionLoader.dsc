@@ -647,7 +647,8 @@ function SolutionLoader_LoadSolution (solutionXML) {
 			}
 			append("</body></html>");
 			
-			conclude();		}
+			conclude();
+		}
 		else
 			log("Could not open ", report_file_path, " for writing");
 	}

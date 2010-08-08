@@ -2,26 +2,50 @@ const plat_win32 = "win32";
 const plat_linux = "linux";
 const conf_debug = "debug";
 const conf_release = "release";
-ManualConfiguration =
-//		[ plat_win32, conf_debug   ]
-//		[ plat_win32, conf_release ]
-//		[ plat_linux, conf_debug   ]
-//		[ plat_linux, conf_release ]
-		nil // for non-AS-safe environments
-;
+ManualConfigurations = [
+		@win32_debug  : [ plat_win32, conf_debug   ],
+		@win32_release: [ plat_win32, conf_release ],
+		@linux_debug  : [ plat_linux, conf_debug   ],
+		@linux_release: [ plat_linux, conf_release ]
+];
+function getManualConfigurations {
+	if ( std::isundefined(static configs) )
+		configs = std::tabindices(::ManualConfigurations);
+	return std::tabcopy(configs);
+}
 // Flag for classic delta compatibility
 ASsafe = nil;
-if (ManualConfiguration)
-	ASsafe =
-[
-	{ "NotSafe" : (function Asafe_NotSafe(funcname) {
-		// No error, just warn
-		local warning = std::vmfuncaddr(std::vmthis(), #warning);
-		warning().Important("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
-	})}
-];
-else
-	ASsafe = false;
+ManualConfiguration = nil;
+function setManualConfiguration (conf) {
+	if ( std::isundefined(static ASsafe_struct) )
+		ASsafe_struct = [
+				{ "NotSafe" : (function Asafe_NotSafe(funcname) {
+					// No error, just warn
+					local warning = std::vmfuncaddr(std::vmthis(), #warning);
+					warning().Important("Calling a non-AS-safe function (" + funcname + ") in a AS-safe configuration");
+				})}
+			];
+
+
+	if ( conf )
+		if ( not local manconf = ::ManualConfigurations[conf] )
+			std::error("Configuration " + conf + " does not exist. Provide one from: " +
+					::getManualConfigurations());
+		else
+			::ManualConfiguration = manconf;
+	else
+		::ManualConfiguration = nil;
+	
+	if (::ManualConfiguration)
+		::ASsafe = ASsafe_struct;
+	else
+		::ASsafe = nil;
+
+	return ::ASsafe;
+}
+function isASsafe {
+	return not not ::ASsafe;
+}
 // A ManualConfiguration can be defined only when ASsafe is defined
 (method {
 	const bool = lambda(v) { not not v };
@@ -302,8 +326,8 @@ function loadlibs {
 		return result;
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
-			loadlib("XMLParser")        and
-			loadlib("VCSolutionParser") and
+			loadlib("XMLParser")                                           and
+			(((not ::isASsafe()) and loadlib("VCSolutionParser")) or true) and
 			true
 	;
 }
@@ -1027,6 +1051,19 @@ function Class {
 }
 
 
+p__classyClasses = true;
+function becomeClassy {
+	::p__classyClasses = true;
+}
+function becomeLean {
+	::p__classyClasses = false;
+}
+function beClassy {
+	return ::p__classyClasses;
+}
+function beLean {
+	return not ::beClassy();
+}
 
 function TESTING_THE_CLASS_MODEL {
 ///////////// TESTING THE CLASS MODEL /////////////
@@ -1274,10 +1311,11 @@ function Path {
 			@castFromPath: castFromPath
 		];
 	}
-	return
-//			classy_Path_class
+	
+	return ::ternary(::beClassy(),
+			classy_Path_class,
 			light_Path_class
-	;
+	);
 }
 function Path_isaPath     (obj ) { return Path().isaPath     (obj ); }
 function Path_fromPath    (path) { return Path().fromPath    (path); }

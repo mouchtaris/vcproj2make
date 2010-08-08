@@ -230,6 +230,12 @@ function unmixinObject              (instance)
 //         - mixInRegistry
 //         - className
 
+// Classiness
+function becomeClassy
+function becomeLean
+function beClassy
+function beLean
+
 ////////////////////////////////////////////////////////////////////////
 //////////////////////////////
 // *** Path class

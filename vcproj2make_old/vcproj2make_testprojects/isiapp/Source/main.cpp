@@ -1,10 +1,79 @@
 #include <stdio.h>
+//
 #include "isi/f.h"
 #include "isi/g.h"
+//
+#include <fstream>
+#include <iostream>
+//
+#include <assert.h>
+#include <list>
+#include <algorithm>
+//
+#define RUN_MAIN 1
 
 #define CSTR(SOMETHING) ""#SOMETHING
+#define IASSERT(EXPR)   assert(EXPR)
+struct arrlenvalidator {
+    template <typename T, const size_t N>
+    size_t operator()(size_t const length_to_test, T (&carr)[N]) const throw() {
+        IASSERT( length_to_test == N );
+        IASSERT( sizeof(carr)/sizeof(carr[0]) == N );
+        return N;
+    }
+};
+#define _ARRLENV(CARR)                            \
+   arrlenvalidator()(                           \
+                sizeof(CARR)/sizeof(CARR[0]),   \
+                CARR)
+#define _ARRLEN(CARR) (sizeof(CARR)/sizeof(CARR[0]))
+#define ARRLEN(CARR) _ARRLENV(CARR)
 
-int main(int argc, char *argv[]) {
+
+struct vuf_t {
+    char d[262144]; // 512KiB
+    std::streamsize read;
+};
+struct vuf_printer {
+    void operator ()(vuf_t const& vuf) const throw() {
+        for (std::streamsize i = 0; i < vuf.read; ++i) {
+            const char c = vuf.d[i];
+            printf("%c(%0#x), ", c, c);
+        }
+    }
+};
+static int main1(int argc, char *argv[]) throw() {
+    if (argc > 1) {
+        std::ifstream fin(argv[1], std::ios::in|std::ios::binary);
+        if (fin) {
+            std::list<vuf_t> vufs;
+            while (fin) {
+                vufs.push_back(vuf_t());
+                vuf_t& vuf = vufs.back();
+                fin.read(vuf.d, ARRLEN(vuf.d));
+                vuf.read = fin.gcount();
+            }
+            fin.close();
+            std::for_each(vufs.begin(), vufs.end(), vuf_printer());
+        }
+        else
+            std::cerr << "Could not open file " <<
+                        argv[1] << " for reading" <<
+                        std::endl;
+    }
+    else {
+        std::cerr << "Not enough arguments. Required input "
+                    "file name." << std::endl;
+        for (int i = 0; i < argc; ++i)
+            std::cerr << "arg" << i << ": " << argv[i] <<
+                        std::endl;
+    }
+    return 0;
+}
+
+static int main0(int argc, char *argv[]) throw() {
+    (void) argc;
+    (void) argv;
 
     const int finp = 5;
     const int ginp = 5;
@@ -40,4 +109,10 @@ int main(int argc, char *argv[]) {
     );
 
     return 0;
+}
+
+
+int main(int argc, char* argv[]) {
+    static int (*mains[])(int, char*[]) = {main0, main1};
+    return (*mains[RUN_MAIN])(argc, argv);
 }

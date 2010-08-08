@@ -22,7 +22,7 @@ p = [
 	// ----------------------------------------------------------
 	method LoadLibs {
 		// Copy libs first
-		(function copylibs {
+		function copylibs {
 			function libifyname(basename) {
 				local result = nil;
 				if (u.iswin32())
@@ -81,7 +81,9 @@ p = [
 				u.println("Copying " + src + " to " + dst);
 				u.shellcopy(src, dst);
 			}
-		})();
+		};
+		if (@config.update_libs)
+			copylibs();
 		local libs_loaded_successfully = u.loadlibs();
 		if (not libs_loaded_successfully)
 			u.error().AddError("Could not load required libs");
@@ -104,7 +106,7 @@ p = [
 					u.strmul(u.ENDL(), 5));
 			std::fileclose(fh);
 			//
-			u.shell(shellcommandGenerator(solutionPath, SolutionXMLpath));
+			@shellverb(shellcommandGenerator(solutionPath, SolutionXMLpath));
 			//
 			if (fh = std::fileopen(SolutionXMLpath, "at")) {
 				std::filewrite(fh, u.strmul(u.ENDL(), 5), 
@@ -119,36 +121,89 @@ p = [
 			u.error().AddError("Could not open solution XML file for writing (",
 					SolutionXMLpath, ")");
 	},
-	method loadSolutionData {
+	method loadSolutionXML {
 		local data = u.xmlload(SolutionXMLpath);
 		if (not data)
 			u.error().AddError(u.xmlloaderror());
 		return data;
 	},
-	method generateSedCommandLinux (inputPath, outputPath) {
-		function bashescape (str) {
-			function squote (str) {
-				return "'" + str + "'";
-			}
-			return squote(u.strgsub(str, "'", "'\\''"));
+	@bashescape: function bashescape (str) {
+		function squote (str) {
+			return "'" + str + "'";
 		}
-		return "sed --regexp-extended --file " + bashescape("vcsol2xml.sed") +
-				" " + bashescape(inputPath) + " 1> " + bashescape(outputPath);
+		return squote(u.strgsub(str, "'", "'\\''"));
 	},
+	method generateSedCommandLinux (inputPath, outputPath) {
+		return @config.SED + " --regexp-extended --file " + @bashescape("vcsol2xml.sed") +
+				" " + @bashescape(inputPath) + " 1>> " + @bashescape(outputPath);
+	},
+	@dosesc: function dosesc (str) { return "\"" + str + "\""; },
 	method generateSedCommandWin32 (inputPath, outputPath) {
-		return "\cygwin\bin\sed --regexp-extended --file vcsol2xml.sed " +
-				inputPath + " >> " + outputPath;
+		return @config.SED + " --regexp-extended --file " +
+				@dosesc("vcsol2xml.sed") + " --binary " +
+				@dosesc(inputPath) + " >> " + @dosesc(outputPath);
+	},
+	method unixify (inputPath, outputPath) {
+		const tmppath = "unixification_tmp";
+		assert( inputPath != tmppath );
+		assert( outputPath != tmppath );
+		local sedcommands = nil;
+		if (u.iswin32())
+			sedcommands = [
+				(@config).SED + " --regexp-extended --binary --expression \"s/\x0d//g\" " +
+					@dosesc(inputPath) + " > " + @dosesc(tmppath),
+				"move " + @dosesc(tmppath) + " " + @dosesc(outputPath)
+			];
+		else if (u.islinux())
+			sedcommands = [
+				(@config).SED + " --regexp-extended --expression \"s/\x0d//g\" " +
+					@bashescape(inputPath) + " 1> " + @bashescape(tmppath),
+				"mv " + @bashescape(tmppath) + " " + @bashescape(outputPath)
+			];
+		else
+			u.error().UnknownPlatform();
+
+		foreach (local command , sedcommands)
+			@shellverb(command);
+	},
+	method unixifySources {
+		if (@config.unixify)
+			foreach (local src, [
+					"DeltaIDE_2_Make/Source/main.dsc",
+					"DeltaIDE_2_Make/Source/main_win.dsc",
+					"SolutionLoader/Source/SolutionData.dsc",
+					"SolutionLoader/Source/SolutionLoader.dsc",
+					"Util/Source/util.dsc"
+			])
+				@unixify(src, src);
+	},
+	method shellverb (comm) {
+		u.println("Shell: ", comm);
+		return u.shell(comm);
+	},
+	method configure {
+		// FIRST (!!) set any manual platform configuration that
+		// might be requested.
+		if ( local config = @config.strict_delta )
+			u.setManualConfiguration(config);
+		
+		// Set lean classes, if so desired.
+		if ( @config.lean_classes )
+			u.becomeLean();
 	}
 ];
 
 function main (argc, argv, envp) {
-	local solutionPath = argv[2];
-	local solutionName = argv[1];
+	local solutionPath = argv.solution_path;
+	local solutionName = argv.solution_name;
 	
+	p.config = envp;
+	p.unixifySources();
+	p.configure();
 	p.LoadLibs();
 	p.generateSolutionXML(solutionPath);
 	
-	local solutionXML  = p.loadSolutionData();
+	local solutionXML  = p.loadSolutionXML();
 	local solutionData = sl.SolutionLoader_LoadSolution(solutionXML);
 	
 	u.println("--done--");

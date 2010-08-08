@@ -117,10 +117,10 @@ function ProjectEntry {
 			{"$___CLASS_LIGHT___": "ProjectEntry"}
 		];
 	}
-	return 
-//			classy_ProjectEntry_class
+	return u.ternary(u.beClassy(),
+			classy_ProjectEntry_class,
 			light_ProjectEntry_class
-	;
+	);
 }
 // --------------------------------------------------------------
 function ProjectEntry_isaProjectEntry (obj) {
@@ -281,12 +281,13 @@ function classy_ConfigurationManager {
 				},
 				method isNonBuildable (solutionConfigurationID, projID) {
 					local result = false;
-					if (check_hasproj(self, solutionConfigurationID, projID))
-						result = getconfigmap(self)[solutionConfigurationID][projID].buildable;
+					if ( check_hasproj(self, solutionConfigurationID, projID) )
+						result = not getconfigmap(self)[solutionConfigurationID][projID].buildable;
 					return result;
 				},
 				method isBuildable (solutionConfigurationID, projID) {
 					return not self.isNonBuildable(solutionConfigurationID, projID);
+					// TODO why not @isNonBuildable ?
 				},
 				method isBuildableInAnyConfiguration (projID) {
 					local result = nil;
@@ -368,10 +369,10 @@ function light_ConfigurationManager {
 }
 
 function ConfigurationManager {
-	return
-//		classy_ConfigurationManager
+	return u.ternary(u.beClassy(),
+		classy_ConfigurationManager,
 		light_ConfigurationManager
-	();
+	)();
 }
 function ConfigurationManager_isaConfigurationManager (obj) {
 	local confmanag = ConfigurationManager();
@@ -492,10 +493,10 @@ function ProjectEntryHolder {
 		];
 	}
 	
-	return 
-//			classy_ProjectEntryHolder_class
+	return u.ternary(u.beClassy(),
+			classy_ProjectEntryHolder_class,
 			light_ProjectEntryHolder_class
-	;
+	);
 }
 function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 	return
