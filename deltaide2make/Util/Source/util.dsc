@@ -1171,8 +1171,12 @@ function Path {
 			result = path;
 		return result;
 	}
-	if (std::isundefined(static Path_class)) {
-		Path_class = ::Class().createInstance(
+	static classy_Path_class;
+	static light_Path_class;
+	if (std::isundefined(static static_variables_undefined)) {
+		static_variables_undefined = true;
+		//
+		classy_Path_class = ::Class().createInstance(
 			// stateInitialiser
 			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
 				::assert_str( path );
@@ -1219,7 +1223,7 @@ function Path {
 					::assert_str(newext);
 					local pathstr = self.deltaString();
 					local extindex = ::strrindex(pathstr, ".");
-					pathstr = ::strsubstr(pathstr, 0, extindex);
+					local pathstr = ::strsubstr(pathstr, 0, extindex);
 					::assert_eq( extindex + 1 , ::strlength(pathstr) );
 					::assert_eq( ::strchar(pathstr, ::strlength(pathstr) - 1), "." );
 					::assert_eq( ::strsubstr(pathstr, extindex + 1), "" );
@@ -1247,11 +1251,33 @@ function Path {
 			// className
 			#Path
 		);
-		Path_class.isaPath      = isaPath;
-		Path_class.fromPath     = fromPath;
-		Path_class.castFromPath = castFromPath;
+		classy_Path_class.isaPath      = isaPath;
+		classy_Path_class.fromPath     = fromPath;
+		classy_Path_class.castFromPath = castFromPath;
+		//
+		light_Path_class = [
+			method createInstance (path, absolute) {
+				return [
+					@path: path, @absolute: absolute,
+					method deltaString { return @path; },
+					method IsAbsolute { return @absolute; },
+					method IsRelative { return not @absolute; },
+					method Concatenate (path) { return ::Path().createInstance(@path + "/" + path, @absolute); },
+					method Extension { return ::strsubstr(@path, ::strrindex(@path, ".") + 1); },
+					method asWithExtension (newext) { return ::Path().createInstance(::strsubstr(@path, 0, ::strrindex(@path, ".")) + newext, @absolute); },
+					method Append (extrapath) { @path += extrapath; return self; },
+					method basename { return ::file_basename(@path); }
+				];
+			},
+			method isaPath (obj) { return self."$___CLASS_LIGHT___" == "Path"; },
+			@fromPath: fromPath,
+			@castFromPath: castFromPath
+		];
 	}
-	return Path_class;
+	return
+//			classy_Path_class
+			light_Path_class
+	;
 }
 function Path_isaPath     (obj ) { return Path().isaPath     (obj ); }
 function Path_fromPath    (path) { return Path().fromPath    (path); }
