@@ -1,7 +1,7 @@
 // Get util library
 u = std::vmget("util");
 sd = std::vmget("SolutionLoader/SolutionData");
-rg = std::vmget("SolutionLoader/ReportGenerator");
+rg = std::vmget("ReportGenerator");
 if (not u or not sd or not rg)
 	std::error("Could not acquire necessary VMs");
 
@@ -442,11 +442,6 @@ function SolutionLoader_LoadSolution (solutionXML) {
 	dexProjectsConfigurations(solutionXML, log, configurationManager);
 	xfreeGlobal(solutionXML);
 	dexProjectEntry(solutionXML, log, configurationManager, projectEntryHolder, (function addNonBuildables{return true;})());
-	//
-	rg.ReportGenerator_generateReport(
-			const ReportFilePath = "SolutionLoaderReport.xhtml",
-			log, configurationManager, projectEntryHolder);
-	
 
 	// return solution data
 	return [

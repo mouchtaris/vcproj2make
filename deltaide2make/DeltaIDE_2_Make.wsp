@@ -11,4 +11,5 @@
     <Child type="Project">DeltaIDE_2_Make\Project\DeltaIDE_2_Make.dproj</Child>
     <Child type="Project">SolutionLoader\Project\SolutionLoader.dproj</Child>
     <Child type="Project">..\vcproj2make_old\vcproj2make.dproj</Child>
+    <Child type="Project">ReportGenerator\Project\ReportGenerator.dproj</Child>
 </Workspace>

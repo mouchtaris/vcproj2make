@@ -9,8 +9,8 @@ function importVM(path, id) {
 	return vm;
 }
 local u  = importVM("Util/Lib/util.dbc", "util");
+local rg = importVM("ReportGenerator/Lib/ReportGenerator.dbc", "ReportGenerator");
 local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData");
-local sl_rg = importVM("SolutionLoader/Lib/ReportGenerator.dbc", "SolutionLoader/ReportGenerator");
 local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader");
 
 
@@ -195,25 +195,38 @@ p = [
 			
 		// enable or disable the report generator
 		if ( @config.sl_report )
-			sl_rg.ReportGenerator_respectReportGenerationRequests();
+			rg.ReportGenerator_respectReportGenerationRequests();
 		else
-			sl_rg.ReportGenerator_ignoreReportGenerationRequests();
+			rg.ReportGenerator_ignoreReportGenerationRequests();
+	},
+	method generateReport (solutionData) {
+		const SolutionReportPath = "SolutioReport.xhtml";
+		rg.ReportGenerator_generateReport(
+				SolutionReportPath,
+				u.log,
+				solutionData.configurationManager,
+				solutionData.projectEntryHolder);
+	},
+	method init (argv) {
+		(local p = self).unixifySources();
+		p.configure();
+		p.LoadLibs();
+		p.generateSolutionXML(local solutionPath = argv.solution_path);
+	},
+	method cleanup {
 	}
 ];
 
 function main (argc, argv, envp) {
-	local solutionPath = argv.solution_path;
-	local solutionName = argv.solution_name;
-	
 	p.config = envp;
-	p.unixifySources();
-	p.configure();
-	p.LoadLibs();
-	p.generateSolutionXML(solutionPath);
+	p.init(argv);
 	
 	local solutionXML  = p.loadSolutionXML();
 	local solutionData = sl.SolutionLoader_LoadSolution(solutionXML);
 	
+	p.generateReport(solutionData);
+	p.cleanup();
+
 	u.println("--done--");
 }
 

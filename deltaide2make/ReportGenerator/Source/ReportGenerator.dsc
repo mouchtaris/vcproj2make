@@ -16,7 +16,9 @@ function ReportGenerator_ignoresReportGenerationRequests {
 }
 function ReportGenerator_generateReport (report_file_path, outer_log, configurationManager, projectEntryHolder) {
 	local log = u.bindfront(outer_log, "ReportGenerator: ");
-	if ( local result = ((local fh = std::fileopen(report_file_path, "wt")) and not ::ReportGenerator_ignoresReportGenerationRequests()) ) {
+	if ( ::ReportGenerator_ignoresReportGenerationRequests() )
+		local result = true;
+	else if ( result = u.tobool(local fh = std::fileopen(report_file_path, "wt")) ) {
 		log("Generating results report...");
 		
 		local append = [ 

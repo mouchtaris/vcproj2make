@@ -14,3 +14,11 @@ glob:derror.txt
 glob:deltaide2make/Solution.xml
 glob:deltaide2make/SolutionLoaderReport.xhtml
 glob:deltaide2make/deltalog.txt
+glob:deltaide2make/SolutionLoader/Lib/SolutionData.txt
+glob:deltaide2make/DeltaIDE_2_Make/Lib/main_win.txt
+glob:deltaide2make/Util/Lib/util.txt
+glob:deltaide2make/SolutionLoader/Lib/SolutionLoader.txt
+glob:deltaide2make/SolutionLoader/Lib/ReportGenerator.txt
+glob:deltaide2make/DeltaIDE_2_Make/Lib/main.txt
+glob:deltaide2make/SolutionLoaderReport - IDE.xhtml
+glob:deltaide2make/ReportGenerator/Lib/ReportGenerator.txt

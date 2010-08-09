@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project name="SolutionLoader.dproj" version="alpha">
+<Project name="ReportGenerator.dproj" version="alpha">
     <ProjectProperties>
         <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
         <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
         <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
-        <symbolic>22 serialization::archive 4 0 0 1 0 78 22 serialization::archive 4 0 0 43 SolutionLoader/Project/SolutionLoader.dproj</symbolic>
-        <startup>22 serialization::archive 4 0 0 1 0 63 22 serialization::archive 4 0 0 28 ..\Source\SolutionLoader.dsc</startup>
-        <output_path>22 serialization::archive 4 0 0 1 0 40 22 serialization::archive 4 0 0 6 ../Lib</output_path>
+        <symbolic>22 serialization::archive 4 0 0 1 0 80 22 serialization::archive 4 0 0 45 ReportGenerator/Project/ReportGenerator.dproj</symbolic>
+        <startup>22 serialization::archive 4 0 0 1 0 64 22 serialization::archive 4 0 0 29 ..\Source\ReportGenerator.dsc</startup>
+        <output_path>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 ../Lib/</output_path>
         <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
         <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</icode>
         <hostd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </hostd>
@@ -17,6 +17,5 @@
         <argsd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </argsd>
         <args>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </args>
     </ProjectProperties>
-    <Child type="Script">..\Source\SolutionLoader.dsc</Child>
-    <Child type="Script">..\Source\SolutionData.dsc</Child>
+    <Child type="Script">..\Source\ReportGenerator.dsc</Child>
 </Project>
