@@ -22,3 +22,4 @@ glob:deltaide2make/SolutionLoader/Lib/ReportGenerator.txt
 glob:deltaide2make/DeltaIDE_2_Make/Lib/main.txt
 glob:deltaide2make/SolutionLoaderReport - IDE.xhtml
 glob:deltaide2make/ReportGenerator/Lib/ReportGenerator.txt
+glob:.*swp
