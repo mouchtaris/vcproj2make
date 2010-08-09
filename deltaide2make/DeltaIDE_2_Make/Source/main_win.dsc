@@ -17,7 +17,9 @@ envp = [
 	// unixify sources
 	@unixify		: true,
 	// lean classes
-	@lean_classes	: true
+	@lean_classes	: true,
+	// Solution Loader Report: generate it or not?
+	@sl_report		: false
 ];
 
 args = [

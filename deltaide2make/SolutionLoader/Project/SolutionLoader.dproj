@@ -19,4 +19,5 @@
     </ProjectProperties>
     <Child type="Script">..\Source\SolutionLoader.dsc</Child>
     <Child type="Script">..\Source\SolutionData.dsc</Child>
+    <Child type="Script">..\Source\ReportGenerator.dsc</Child>
 </Project>

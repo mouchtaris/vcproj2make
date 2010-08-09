@@ -9,7 +9,8 @@ function importVM(path, id) {
 	return vm;
 }
 local u  = importVM("Util/Lib/util.dbc", "util");
-local sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionData");
+local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData");
+local sl_rg = importVM("SolutionLoader/Lib/ReportGenerator.dbc", "SolutionLoader/ReportGenerator");
 local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader");
 
 
@@ -173,6 +174,7 @@ p = [
 					"DeltaIDE_2_Make/Source/main_win.dsc",
 					"SolutionLoader/Source/SolutionData.dsc",
 					"SolutionLoader/Source/SolutionLoader.dsc",
+					"SolutionLoader/Source/ReportGenerator.dsc",
 					"Util/Source/util.dsc"
 			])
 				@unixify(src, src);
@@ -190,6 +192,12 @@ p = [
 		// Set lean classes, if so desired.
 		if ( @config.lean_classes )
 			u.becomeLean();
+			
+		// enable or disable the report generator
+		if ( @config.sl_report )
+			sl_rg.ReportGenerator_respectReportGenerationRequests();
+		else
+			sl_rg.ReportGenerator_ignoreReportGenerationRequests();
 	}
 ];
 
