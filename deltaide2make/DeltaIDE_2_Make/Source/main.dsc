@@ -215,8 +215,8 @@ p = [
 		rg.ReportGenerator_generateReport(
 				SolutionReportPath,
 				u.log,
-				solutionData.configurationManager,
-				solutionData.projectEntryHolder);
+				solutionData.ConfigurationManager,
+				solutionData.ProjectEntryHolder);
 	},
 	method init (argv) {
 		(local p = self).unixifySources();
