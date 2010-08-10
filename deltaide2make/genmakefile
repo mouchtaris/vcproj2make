@@ -1,0 +1,24 @@
+#!/bin/bash
+
+dsources=`find . -iname '*.dsc' -print0`
+find . -iname '*.dsc' -print0 | sed --regexp-extended --expression '
+	{
+		h
+		i\
+SHELL=/bin/bash
+		g
+		s/\x00/ /g
+		s/\.dsc/.dbc/g
+		s/Source/Lib/g
+		s/^/all: /g
+		p
+		g
+		s,([^/]+)/Source/([^/]+)\.dsc\x00,\1/Lib/\2.dbc: ./\1/Source/\2.dsc\n\t@printf '\''Compiling %s.dsc... '\'' '\''\2'\'' \n\t@{ if [ ! -d ./\1/Lib/ ] ; then mkdir -p ./\1/Lib/ ; fi \&\& $(DC) --mode=comp --dsc=./\1/Source/\2 2>\&1 1>./\1/Lib/\2_build.log \&\& mv  ./\1/Source/\2.dbc ./\1/Lib/ \&\& if [ -e ./\1/Source/\2.idc ]; then rm ./\1/Source/\2.idc; fi \&\& if [ -e ./\1/Source/\2.txt ]; then rm ./\1/Source/\2.txt; fi \&\& echo OK; } || { echo FAIL. Here is the compilation log:; cat ./\1/Lib/\2_build.log; }\n,g
+		p
+		s/.*/.PHONY: clean all\nclean:/g
+		p
+		g
+		s,\./([^/]+)/Source/([^/]+)\.dsc\x00,\t@if [ -e ./\1/Lib/\2.dbc ] ; then rm -v ./\1/Lib/\2.dbc; fi;\n,g
+		p
+		d
+	}' | tee GNUmakefile

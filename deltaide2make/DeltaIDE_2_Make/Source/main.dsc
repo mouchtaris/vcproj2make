@@ -24,53 +24,64 @@ p = [
 	method LoadLibs {
 		// Copy libs first
 		function copylibs {
-			function libifyname(basename) {
+			function win32debugSuffix (libid, configuration, basename) {
+				local isdebug = configuration == "debug";
+				local win32debugSuffix = u.ternary(isdebug, "D", "");
+				return win32debugSuffix;
+			}
+			function libifyname(libid, configuration, basename) {
 				local result = nil;
+				local isdebug = configuration == "debug";
 				if (u.iswin32())
-					result = u.libifyname(basename);
+					result = u.libifyname(basename + win32debugSuffix(libid, configuration, basename));
 				else if (u.islinux())
-					result = u.libifyname(basename + "-linux");
+					result = u.libifyname(u.ternary(isdebug, basename + "-linux", "DOES NOT EXIST"));
 				else
 					u.error().UnknownPlatform();
 				return result;
 			}
-			function xmllibpathcomponents(configuration) {
+			function xml_libpathcomponents(configuration) {
 				local result = nil;
 				if (u.iswin32())
 					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
 							"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
 				else if (u.islinux())
-					result = ["..", "..", "..", "..", "deltux", "psp", "projects", "Tools", 
+					result = ["..", "..", "..", "deltux", "psp", "projects", "Tools", 
 						"Delta", "DeltaExtraLibraries", "XMLParserPSP", "Project"];
 				else
 					u.error().UnknownPlatform();
 				return result;
 			}
-			function vcsplibpathcomponents(configuration) {
+			function vcsp_libpathcomponents(configuration) {
 				local result = nil;
 				if (u.iswin32())
 					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
 							"Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
 				else if (u.islinux())
-					result = [ "." ]; // dummy lib
+					result = [ "..", "..", "..", "deltux", "psp", "projects", "Tools",
+							"Delta", "DeltaExtraLibraries", "VCSolutionParser", "Project"];
 				else
 					u.error().UnknownPlatform();
 				return result;
 			}
 			function makelibpath(libid, configuration, basename) {
-				local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "libpathcomponents");
-				local result = u.file_pathconcatenate(|libpathcomponents(configuration)|) + libifyname(basename);
+				local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "_libpathcomponents");
+				local result = u.file_pathconcatenate(|libpathcomponents(configuration)|) + libifyname(libid, configuration, basename);
+				return result;
+			}
+			function makelibname (libid, configuration, basename) {
+				local result = u.libifyname(basename + win32debugSuffix(libid, configuration, basename));
 				return result;
 			}
 			// Libs basenames
 			const xmllibbasename           = "XMLParser";
-			const vcsolutionparserbasename = "VCSolutionParser";
+			const vcsplibbasename          = "VCSolutionParser";
 			// Libs info
 			libsinfo = [
-				["release", "xml" , xmllibbasename                ],
-				["debug"  , "xml" , xmllibbasename + "D"          ],
-				["."      , "vcsp", vcsolutionparserbasename      ],
-				["."      , "vcsp", vcsolutionparserbasename + "D"]
+				["release" , "xml" , xmllibbasename       ],
+				["debug"   , "xml" , xmllibbasename       ],
+				["release" , "vcsp", vcsplibbasename      ],
+				["debug"   , "vcsp", vcsplibbasename      ]
 			];
 			foreach (local libinfo, libsinfo) {
 				local configuration = libinfo[0];
@@ -78,7 +89,7 @@ p = [
 				local libbasename   = libinfo[2];
 				//
 				local src           = makelibpath(libid, configuration, libbasename);
-				local dst           = u.libifyname(libbasename);
+				local dst           = makelibname(libid, configuration, libbasename);
 				u.println("Copying " + src + " to " + dst);
 				u.shellcopy(src, dst);
 			}
@@ -194,7 +205,7 @@ p = [
 			u.becomeLean();
 			
 		// enable or disable the report generator
-		if ( @config.sl_report )
+		if ( @config.report )
 			rg.ReportGenerator_respectReportGenerationRequests();
 		else
 			rg.ReportGenerator_ignoreReportGenerationRequests();

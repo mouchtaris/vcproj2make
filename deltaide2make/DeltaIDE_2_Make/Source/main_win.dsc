@@ -18,8 +18,8 @@ envp = [
 	@unixify		: true,
 	// lean classes
 	@lean_classes	: true,
-	// Solution Loader Report: generate it or not?
-	@sl_report		: false
+	// An HTML Report: generate it or not? (takes time)
+	@report			: false
 ];
 
 args = [
