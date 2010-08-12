@@ -7,7 +7,14 @@ glob:*_build.log
 glob:*.so
 glob:deltaide2make/GNUmakefile
 glob:deltaide2make/output.txt
-glob:deltaide2make/DebugServerPort.txt
 glob:deltaide2make/Solution.xml
-glob:deltaide2make/socketlog.txt
 glob:deltaide2make/solutionData.rc
+glob:deltaide2make/SolutionLoader/Lib/SolutionData.txt
+glob:deltaide2make/DeltaIDE_2_Make/Lib/main_linux.txt
+glob:deltaide2make/ReportGenerator/Lib/ReportGenerator.txt
+glob:deltaide2make/Util/Lib/util.txt
+glob:deltaide2make/SolutionLoader/Lib/SolutionLoader.txt
+glob:deltaide2make/DeltaIDE_2_Make/Lib/main_win.txt
+glob:dallocstats.txt
+glob:deltaide2make/SolutionLoader/Lib/VariableEvaluator.txt
+glob:deltaide2make/DeltaIDE_2_Make/Lib/main.txt
