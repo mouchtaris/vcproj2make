@@ -18,14 +18,14 @@ function ProjectEntry_validProjectID (id) {
 }
 // --------------------------------------------------------------
 function ProjectEntry {
-	static static_variables_defined;
+	static static_variables_initialised;
 	static ProjectEntry_stateFields;
 	static method_toString_for_ProjectEntry;
 	static classy_ProjectEntry_class;
 	static mixinsInstancesStateInitialisersArgumentsFunctors;
 	static light_ProjectEntry_class;
-	if (std::isundefined(static static_variables_defined)) {
-		static_variables_defined = true;
+	if (std::isundefined(static static_variables_initialised)) {
+		static_variables_initialised = true;
 		//
 		ProjectEntry_stateFields = [ #ProjectEntry_parentReference, #ProjectEntry_dependencies ];
 		//
@@ -93,9 +93,9 @@ function ProjectEntry {
 			@Locatable: lambda {["__nopath__"]}
 		];
 		// Mix-ins
-		classy_ProjectEntry_class.mixIn(u.Namable  (), mixinsInstancesStateInitialisersArgumentsFunctors.Namable   );
-		classy_ProjectEntry_class.mixIn(u.IDable   (), mixinsInstancesStateInitialisersArgumentsFunctors.IDable    );
-		classy_ProjectEntry_class.mixIn(u.Locatable(), mixinsInstancesStateInitialisersArgumentsFunctors.Locatable );
+		classy_ProjectEntry_class.mixIn(u.Namable     (), mixinsInstancesStateInitialisersArgumentsFunctors.Namable   );
+		classy_ProjectEntry_class.mixIn(u.IDable      (), mixinsInstancesStateInitialisersArgumentsFunctors.IDable    );
+		classy_ProjectEntry_class.mixIn(u.Locatable   (), mixinsInstancesStateInitialisersArgumentsFunctors.Locatable );
 		//
 		light_ProjectEntry_class = [
 			@createInstance: function createInstance {
@@ -135,6 +135,28 @@ function ProjectEntry_isaProjectEntry (obj) {
 }
 
 
+function ProjectEntryFactory_DumpCore (projectEntry, target) {
+	assert( ::ProjectEntry_isaProjectEntry(projectEntry) );
+	target."$__mm"      = 42;
+	target."$__mm_deps" = u.iterable_to_deltaobject(projectEntry[u.pfield("ProjectEntry_dependencies")]);
+	target."$__mm_pr"   = projectEntry.getParentReference();
+	target."$__mm_name" = projectEntry.getName();
+	target."$__mm_id"   = projectEntry.getID();
+	target."$__mm_path" = projectEntry.getLocation().deltaString();
+	return target;
+}
+function ProjectEntryFactory_CreateFromCore (core) {
+	assert( core."$__mm" == 42 );
+	local result = ::ProjectEntry().createClass();
+	result.setLocation       (core."$__mm_path");
+	result.setID             (core."$__mm_id"  );
+	result.setName           (core."4__mm_name");
+	result.setParentReference(core."$__mm_pr"  );
+	foreach (local dep, core."$__mm_deps")
+		result.addDependency(dep);
+	return result;
+}
+
 
 /////////////////////////////////////////////////////////////////
 // Class ConfigurationManager
@@ -146,6 +168,9 @@ function classy_ConfigurationManager {
 	// Private methods
 	function getconfigmap (this) {
 		return u.dobj_checked_get(this, ConfigurationManager_stateFields, #ConfigurationManager_configurationsMap);
+	}
+	function setconfigmap (this, map) {
+		return u.dobj_checked_set(this, ConfigurationManager_stateFields, #ConfigurationManager_configurationsMap, map);
 	}
 	//
 	function check_configid (this, configid) {
@@ -185,6 +210,7 @@ function classy_ConfigurationManager {
 		return result;
 	}
 	//
+	// f(configID, projmap)
 	function foreachconfiguration (this, f) {
 		local configmap     = getconfigmap(this);
 		local done          = false;
@@ -197,7 +223,7 @@ function classy_ConfigurationManager {
 	}
 	//
 	
-	if (std::isundefined(static ConfigurationManager_class))
+	if (std::isundefined(static ConfigurationManager_class)) {
 		ConfigurationManager_class = u.Class().createInstance(
 			// stateInitialiser
 			function ConfigurationManager_stateInitialiser (new, validFieldsNames) {
@@ -338,6 +364,32 @@ function classy_ConfigurationManager {
 			#ConfigurationManager
 		);
 
+		ConfigurationManager_class.DumpCore = (
+				function DumpCore (this, target) {
+					local result =
+						//	u.dval_copy_into([],
+							getconfigmap(this)
+						//	)
+					;
+					result."$__MAGIC_MUSHROOM_magic_mushroom__" = 43;
+					result."43" = "$__SPORES_spores_SPORES_spores__";
+					return result;
+				});
+		ConfigurationManager_class.CreateFromCore = (
+				function CreateFromCore (from) {
+					assert( from."$__MAGIC_MUSHROOM_magic_mushroom__" == 43 );
+					assert( from."43" == "$__SPORES_spores_SPORES_spores__" );
+					from."$__MAGIC_MUSHROOM_magic_mushroom__" = from."43" = nil;
+					local result = ConfigurationManager_class.createInstance();
+					setconfigmap(result,
+						//	u.dval_copy(
+							from
+						//	)
+					);
+					return result;
+				});
+	}
+
 	return ConfigurationManager_class;
 }
 
@@ -381,6 +433,16 @@ function ConfigurationManager_isaConfigurationManager (obj) {
 	else
 		result = u.Class_isa(obj, confmanag);
 	return result;
+}
+
+
+/////////////////////////////////////////////////////////////////
+// ConfigurationManagerFactory
+function ConfigurationManagerFactory_DumpCore (confman, target) {
+	return ::ConfigurationManager().DumpCore(confman, target);
+}
+function ConfigurationManagerFactory_CreateFromCore (core) {
+	return ::ConfigurationManager().CreateFromCore(core);
 }
 
 
@@ -476,6 +538,22 @@ function ProjectEntryHolder {
 			// class name
 			#ProjectEntryHolder
 		);
+		classy_ProjectEntryHolder_class.DumpCore = (function DumpCore (this, target) {
+			local entries = getentries(this);
+			local mm_entries = [];
+			foreach (local id, u.dobj_keys(entries))
+				::ProjectEntryFactory_DumpCore(entries[id], mm_entries[id] = []);
+			target."$__MM_entries" = mm_entries;
+			target."$__MM"         = 42;
+			return target;
+		});
+		classy_ProjectEntryHolder_class.CreateFromCore = (function CreateFromCore (core) {
+			assert( core."$__MM" == 42 );
+			local result = classy_ProjectEntryHolder_class.createInstance();
+			foreach (local mm_entry, core."$__MM_entries")
+				result.addProjectEntry(::ProjectEntryFactory_CreateFromCore(mm_entry));
+			return result;
+		});
 		
 		
 		light_ProjectEntryHolder_class = [
@@ -509,4 +587,31 @@ function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 }
 
 
-	
+function ProjectEntryHolderFactory_DumpCore (projenthold, target) {
+	return ::ProjectEntryHolder().DumpCore(projenthold, target);
+}
+function ProjectEntryHolderFactory_CreateFromCore (core) {
+	return ::ProjectEntryHolder().CreateFromCore(core);
+}
+
+
+/////////////////////////////////////////////////////////////////
+// SolutionDataFactory
+function SolutionDataFactory_DumpCore (sd, target) {
+	target."))__MM"         = 42;
+	::ConfigurationManagerFactory_DumpCore(
+			sd.ConfigurationManager,
+			target."))__MM_confman" = []);
+	::ProjectEntryHolderFactory_DumpCore(
+			sd.ProjectEntryHolder,
+			target."))__MM_holder" = []);
+	return target;
+}
+function SolutionDataFactory_CreateFromCore (core) {
+	assert( core."))__MM" == 42 );
+	local result = [];
+	result.ConfigurationManager = ::ConfigurationManagerFactory_CreateFromCore(core."))__MM_confman");
+	result.ProjectEntryHolder = ::ProjectEntryHolderFactory_CreateFromCore(core."))__MM_holder");
+	return result;
+}
+

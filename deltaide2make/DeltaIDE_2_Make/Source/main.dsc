@@ -1,22 +1,27 @@
 /////////////////////////////////////////////////////////////
 // VM imports
 // ----------------------------------------------------------
-function importVM(path, id) {
+function importVM(path, id, onfail) {
 	if (not (local vm = std::vmload(path, id)))
-		std::error("Could not import " + id + " from " + path);
+		onfail(path, id);
 	else
 		std::vmrun(vm);
 	return vm;
 }
-local u  = importVM("Util/Lib/util.dbc", "util");
-local rg = importVM("ReportGenerator/Lib/ReportGenerator.dbc", "ReportGenerator");
-local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData");
-local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader");
-
+function onImportVMFail(path, id) {
+	std::error("Could not import " + id + " from " + path);
+}
+local u  = importVM("Util/Lib/util.dbc", "util", onImportVMFail);
+local rg = importVM("ReportGenerator/Lib/ReportGenerator.dbc", "ReportGenerator", onImportVMFail);
+local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData", onImportVMFail);
+local sl_ve = importVM("SolutionLoader/Lib/VariableEvaluator.dbc", "SolutionLoader/VariableEvaluator", onImportVMFail);
+local sl_sdch = importVM("SolutionLoader/Lib/sdata_cache.dsc", "SolutionLoader/SolutionDataCache", u.nothingf);
+local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader", onImportVMFail);
+local pl = importVM("ProjectLoader/Lib/ProjectLoader.dbc", "ProjectLoader", onImportVMFail);
 
 const SolutionXMLpath = "Solution.xml";
 const RootTagName     = "VisualStudioSolution";
-		
+
 p = [
 	/////////////////////////////////////////////////////////////
 	// Load libs
@@ -137,7 +142,7 @@ p = [
 		local data = u.xmlload(SolutionXMLpath);
 		if (not data)
 			u.error().AddError(u.xmlloaderror());
-		return data;
+		return @solutionXML = data;
 	},
 	@bashescape: function bashescape (str) {
 		function squote (str) {
@@ -225,20 +230,71 @@ p = [
 		p.generateSolutionXML(local solutionPath = argv.solution_path);
 	},
 	method cleanup {
+	},
+	method loadSolutionData {
+		const SolutionDataCoreCache_funcname = #SolutiDataCoreCache;
+		if (sl_sdch)
+			@solutionData = sl_sd.SolutionDataFactory_CreateFromCore(
+					sl_sdch[SolutiDataCoreCache_funcname]());
+		else {
+			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML);
+			sl_sd.SolutionDataFactory_DumpCore(@solutionData, local sdcore=[]);
+			u.dobj_dump_delta(
+					sdcore,
+					"./SolutionLoader/Source/SolutionDataCache.dsc"
+					"p__sdcore",
+					nil,
+					"function " + SolutionDataCoreCache_funcname +
+							" { return ::p__sdcore; }");
+		}
 	}
 ];
 
-function main (argc, argv, envp) {
+function main0 (argc, argv, envp) {
 	p.config = envp;
 	p.init(argv);
 	
-	local solutionXML  = p.loadSolutionXML();
-	local solutionData = sl.SolutionLoader_LoadSolution(solutionXML);
-	
+	p.loadSolutionXML();
+	p.loadSolutionData();
+
+	// TMP test code
+	local solutionData = p.solutionData;
+	std::rcstore(solutionData, "./solutionData.rc");
+	pl.ProjectLoader_loadProject(
+			solutionData.ProjectEntryHolder.getProjectEntry(
+					solutionData.ConfigurationManager.Projects(
+							solutionData.ConfigurationManager.Configurations()[0]
+					)[0]
+			).getLocation().deltaString()
+	);
+	// /TMP
+
 	p.generateReport(solutionData);
 	p.cleanup();
 
 	u.println("--done--");
 }
 
+function main1 (argc, argv, envp) {
+	o =[
+		{ 12: "kai oyte ena tilefonima" },
+		{ "Me troei": [ "o", "paraponoooss" ] },
+		{ true: "tha ta fao ola" },
+		{ "ta mpiftekia moy \" \\ \n \t ": false },
+		{ false: [ #kai, @tha: [{4.5: 5.4}] ]},
+		{ "ande und ein autoindex: ": [ 0, #one, #two, #three, 4, false, "$__seven++" ] },
+		{ [ #perierga, "indices mas vazeis"]: 42 }
+	];
+	u.dobj_dump_delta(o, "/tmp/dobj.dsc", "loola", nil,
+		"function getLoola { return ::loola; }"); 
+}
 
+function main (...) {
+	(function(...) {
+		// TODO remove dummy after compiler bug is fixed
+		return (local dummy = std::vmfuncaddr(
+				std::vmthis(),
+				"main" + u.tostring(u.lastarg(arguments))
+		))(|u.firstarg(arguments)|);
+	})(arguments, 1, 2, 0, 1, 0);
+}

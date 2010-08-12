@@ -41,13 +41,13 @@ function argstostring   (...)
 //
 
 
-// functional games
+// Functional games
 function constantf                      (val)
 function bindfront                      (f ...)
 function bindback                       (f ...)
 function argspopback                    (args, popnum)
 function argspopfront                   (args, popnum)
-function fcomposition                   (f1, f2)
+function fcomposition                   (f1, f2)                        // f1(f2(...))
 function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
                                                                         // in the slot with the given membername, passing to it the expanded args
 function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
@@ -55,7 +55,11 @@ function equals                         (val1, val2)
 function equalitypredicate              (val)
 function nothing
 function nothingf                                                       => function nothing
-function ternary                        (cond, val1, val2)
+function success                        (...)                           => true
+function successifier                   (f)                             => f(); true
+function foreachofargs                  (f ...)                         // calls f for each argument given, continuing to iterate over the arguments as long as f returns true
+function firstarg                       (arguments)
+function lastarg                        (arguments)
 //
 function isdeltastring  (val)
 function isdeltaobject  (val)
@@ -63,6 +67,7 @@ function isdeltatable   (val)
 function isdeltanumber  (val)
 function isdeltaboolean (val)
 function isdeltanil     (val)
+function isdeltaundefined(val)
 function isdeltacallable(val)
 function toboolean      (val)
 function tobool         (val)
@@ -100,6 +105,11 @@ function dobj_empty                     (dobj)
 function dobj_copy                      (dob)
 function dobj_replace                   (dobj, key, val)                 => oldval
 //
+function dval_copy                      (dval)                           // deep copy
+function dval_copy_into                 (dst, src)
+//
+function methodinstalled                (dobj, method)                   => method
+//
 function iterable_contains              (iterable, value)
 function list_contains                  (iterable, value)
 function iterable_to_deltaobject        (iterable)
@@ -131,9 +141,14 @@ function strlength                      (str)
 function strchar                        (str, charindex)
 function strmul                         (str, num)
 function strsplit                       (str, split, limit)
+function strdeltaescape                 (str)
 
 // program flow/control utilities
 function orval  (val1, val2)        // val1? val1 : val2
+function ternary                        (cond, val1, val2)
+
+// Serialisatin utils
+function dobj_dump_delta    (dobj, path, objvarname, precode, postcode)
 
 // xml utilities
 function xmlload            (filename_str)
@@ -443,7 +458,7 @@ function ProjectType_isValid(type)
 // keeps track of which projects are to be build in each configuration.
 // --------------------------------------------------------------
 //     <^> createInstance( )
-//     <^> Mixes in: 
+//     <^> Mixes in:
 //     <^> Public methods
 //         - addConfiguration(configurationID:deltastring)
 //               adds the given configuration to the given project.
@@ -492,6 +507,13 @@ function ProjectType_isValid(type)
 //         01. ConfigurationManager_configurationsMap         [sol_conf_id => [ projid => [ confid, buildable ], ...], ...]
 
 /////////////////////////////////////////////////////////////////
+// ConfigurationManagerFactory
+// --------------------------------------------------------------
+//     - DumpCore(configurationManager, core)
+//     - CreateFromCore(core)                       => configurationManager
+
+
+/////////////////////////////////////////////////////////////////
 // Class ProjectEntry
 // A temporary project data holder. It also provides crossing
 // information to and from IDs.
@@ -513,21 +535,58 @@ function ProjectType_isValid(type)
 //         01. ProjectEntry_parentReference
 //         02. ProjectEntry_dependencies
 
+/////////////////////////////////////////////////////////////////
+// ProjectEntryFactory
+// --------------------------------------------------------------
+//     - DumpCore(projectEntry, core)
+//     - CreateFromCore(core)             => projectEntry
 
 /////////////////////////////////////////////////////////////////
-// Class SolutionData
-// Solution data extracted from a Solution File
+// Class ProjectEntryHolder
+// A simple holder for ProjectEntry-s.
 // --------------------------------------------------------------
 //     <^> createInstance( )
+//     <^> Mixes in: 
+//     <^> Public methods
+//         - addProjectEntry(projectEntry)
+//         - getProjectEntry(projectID)
+//         - ProjectEntries
+//     <^> Static
+//     <^> state fields
+//         00. ProjectEntryHolder_entries
+
+/////////////////////////////////////////////////////////////////
+// ProjectEntryHolderFactory
+// --------------------------------------------------------------
+//     - DumpCore(projectEntryHolder, core)
+//     - CreateFromCore(core)                => projectEntryHolder
+
+/////////////////////////////////////////////////////////////////
+// Struct SolutionData
+// Solution data extracted from a Solution File
+// --------------------------------------------------------------
+//     <^> Fields
+//             - ConfigurationManager
+//             - ProjectEntryHolder
+
+/////////////////////////////////////////////////////////////////
+// SolutionDataFactory
+// --------------------------------------------------------------
+//     - DumpCore(solutionData, core)
+//     - CreateFromCore(core)            => solutionData
+
+
+
+/////////////////////////////////////////////////////////////////
+// Class VariableEvaluator
+// Evaluates variables found in VisualStudio project files.
+// --------------------------------------------------------------
+//     <^> createInstance( solutionDirectory:Path_fromPath )
 //     <^> Mixes in:
 //     <^> Public methods
-//         - addProjectEntry(_:ProjectEntry)
-//               adds the given project entry to the solution data.
-//         - ProjectEntries
-//               returns an std::list with all the project entries
-//               of this solution data.
-//         - set/getConfigurationMapper(_:ConfigurationMapper)
-//               sets or gets the solution entry for this solution data.
+//         - eval(varname:deltastring)
+//               returns a deltastring with the value of the given
+//               variable.
 //     <^> state fields
-//         01. SolutionData_projectEntries
-//         02. SolutionData_solutionEntry
+//         00. VariableEvaluator_variables
+//         01. VariableEvaluator_root
