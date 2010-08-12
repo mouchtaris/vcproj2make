@@ -4,7 +4,10 @@ glob:*.dbc
 glob:*.dll
 glob:.*swp
 glob:*_build.log
-
-[glob]
-deltaide2make/GNUmakefile
-deltaide2make/output.txt
+glob:*.so
+glob:deltaide2make/GNUmakefile
+glob:deltaide2make/output.txt
+glob:deltaide2make/DebugServerPort.txt
+glob:deltaide2make/Solution.xml
+glob:deltaide2make/socketlog.txt
+glob:deltaide2make/solutionData.rc
