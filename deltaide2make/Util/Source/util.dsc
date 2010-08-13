@@ -833,8 +833,8 @@ function dobj_dump_delta (dobj, path, objvarname, precode, postcode) {
 		if ( ::isdeltastring(local strval = val) )
 			write("\"", ::strdeltaescape(strval), "\"");
 		else if ( ::isdeltaobject(local objval = val) ) {
-			write("[\n");
-			local previous_element_separator = "";
+			write("[");
+			local previous_element_separator = "\n";
 			foreach (local key, ::dobj_keys(objval)) {
 				write(previous_element_separator);
 				previous_element_separator = ",\n";
@@ -845,8 +845,10 @@ function dobj_dump_delta (dobj, path, objvarname, precode, postcode) {
 				impl(appendable, objval[key], indentationLevel + 1);
 				write("}");
 			}
-			write("\n");
-			indent();
+			if (previous_element_separator != "\n") {
+				write("\n");
+				indent();
+			}
 			write("]");
 		}
 		else if ( ::isdeltaboolean(val) or ::isdeltanumber(val) )

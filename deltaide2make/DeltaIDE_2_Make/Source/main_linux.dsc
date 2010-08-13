@@ -19,7 +19,14 @@ envp = [
 	// lean classes
 	@lean_classes	: false,
 	// An HTML Report: generate it or not? (takes time)
-	@report			: false
+	@report			: false,
+	// Try to load Solution Data from cache
+	@SolutionDataCached: true,
+	// If Solution Data are not loaded from the cache, generate the
+	// solution data cache.
+	@SolutionDataCache : true,
+	// re-create the solution XML file from the .sln file
+	@RegenerateSolutionXML: false
 ];
 
 args = [

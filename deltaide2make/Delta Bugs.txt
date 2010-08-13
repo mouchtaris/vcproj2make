@@ -1,0 +1,13 @@
+Issue_000:
+	* std::vmload() causes errors if loading the requested file could not happen.
+	* std::vmload() causes errors which are reported later (after the first libfunc-call).
+	- Running main_win, after the error occurs, hitting "NO" about debugging, crashes the VM during cleanup.
+Issue_001:
+	* RC-store bug:
+	///////////////////
+	"$_Locatable_path" : [
+		"$_classes" : "In RC write: element '<rc>.ProjectEntryHolder["$_ProjectEntryHolder_entries"]["{4C2AEDE3-8E6A-457B-B047-AB26D7A4E5F4}"]["$_Locatable_path"]["$_classes"]' is of type 'ExternId' not allowed in RC files!",
+		"$_Path_absolute" : FALSE,
+		"$_Path_path" : "..\\Components\\FindResults\\FindResults.vcproj"
+	]
+	///////////////////

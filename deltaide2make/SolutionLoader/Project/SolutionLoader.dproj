@@ -20,4 +20,5 @@
     <Child type="Script">..\Source\SolutionLoader.dsc</Child>
     <Child type="Script">..\Source\SolutionData.dsc</Child>
     <Child type="Script">..\Source\VariableEvaluator.dsc</Child>
+    <Child type="Script">..\Source\SolutionDataCache.dsc</Child>
 </Project>

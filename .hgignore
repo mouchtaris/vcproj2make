@@ -18,3 +18,5 @@ glob:deltaide2make/DeltaIDE_2_Make/Lib/main_win.txt
 glob:dallocstats.txt
 glob:deltaide2make/SolutionLoader/Lib/VariableEvaluator.txt
 glob:deltaide2make/DeltaIDE_2_Make/Lib/main.txt
+glob:deltaide2make/SolutionReport.xhtml
+glob:deltaide2make/SolutionLoader/Lib/SolutionDataCache.txt

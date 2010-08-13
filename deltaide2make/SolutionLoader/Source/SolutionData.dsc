@@ -147,10 +147,10 @@ function ProjectEntryFactory_DumpCore (projectEntry, target) {
 }
 function ProjectEntryFactory_CreateFromCore (core) {
 	assert( core."$__mm" == 42 );
-	local result = ::ProjectEntry().createClass();
+	local result = ::ProjectEntry().createInstance();
 	result.setLocation       (core."$__mm_path");
 	result.setID             (core."$__mm_id"  );
-	result.setName           (core."4__mm_name");
+	result.setName           (core."$__mm_name");
 	result.setParentReference(core."$__mm_pr"  );
 	foreach (local dep, core."$__mm_deps")
 		result.addDependency(dep);
@@ -366,24 +366,23 @@ function classy_ConfigurationManager {
 
 		ConfigurationManager_class.DumpCore = (
 				function DumpCore (this, target) {
-					local result =
-						//	u.dval_copy_into([],
+					target."$__MAGIC_MUSHROOM_magic_mushroom__" = 43;
+					target."43" = "$__SPORES_spores_SPORES_spores__";
+					target."$__MM_confmap" = 
+					//		u.dval_copy_into([],
 							getconfigmap(this)
-						//	)
+					//		)
 					;
-					result."$__MAGIC_MUSHROOM_magic_mushroom__" = 43;
-					result."43" = "$__SPORES_spores_SPORES_spores__";
-					return result;
+					return target;
 				});
 		ConfigurationManager_class.CreateFromCore = (
 				function CreateFromCore (from) {
 					assert( from."$__MAGIC_MUSHROOM_magic_mushroom__" == 43 );
 					assert( from."43" == "$__SPORES_spores_SPORES_spores__" );
-					from."$__MAGIC_MUSHROOM_magic_mushroom__" = from."43" = nil;
 					local result = ConfigurationManager_class.createInstance();
 					setconfigmap(result,
 						//	u.dval_copy(
-							from
+							from."$__MM_confmap"
 						//	)
 					);
 					return result;

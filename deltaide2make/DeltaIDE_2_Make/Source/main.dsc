@@ -11,16 +11,26 @@ function importVM(path, id, onfail) {
 function onImportVMFail(path, id) {
 	std::error("Could not import " + id + " from " + path);
 }
+const SolutionDataCoreCache_filename = "SolutionDataCache";
 local u  = importVM("Util/Lib/util.dbc", "util", onImportVMFail);
 local rg = importVM("ReportGenerator/Lib/ReportGenerator.dbc", "ReportGenerator", onImportVMFail);
 local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData", onImportVMFail);
 local sl_ve = importVM("SolutionLoader/Lib/VariableEvaluator.dbc", "SolutionLoader/VariableEvaluator", onImportVMFail);
-local sl_sdch = importVM("SolutionLoader/Lib/sdata_cache.dsc", "SolutionLoader/SolutionDataCache", u.nothingf);
 local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader", onImportVMFail);
 local pl = importVM("ProjectLoader/Lib/ProjectLoader.dbc", "ProjectLoader", onImportVMFail);
 
 const SolutionXMLpath = "Solution.xml";
 const RootTagName     = "VisualStudioSolution";
+
+
+function time (desc, action) {
+	u.print(desc);
+	local time0 = std::currenttime();
+	action();
+	local time1 = std::currenttime();
+	u.print(" ", time1-time0, "msec\n");
+}
+
 
 p = [
 	/////////////////////////////////////////////////////////////
@@ -107,36 +117,38 @@ p = [
 		return libs_loaded_successfully;
 	},
 	method generateSolutionXML (solutionPath) {
-		local shellcommandGenerator = (function(p){
-			local result = nil;
-			if (u.iswin32())
-				result = p.generateSedCommandWin32;
-			else  if (u.islinux())
-				result = p.generateSedCommandLinux;
-			else
-				u.error().UnknownPlatform();
-			return result;
-		})(self);
-		
-		if (local fh = std::fileopen(SolutionXMLpath, "wt")) {
-			std::filewrite(fh, "<", RootTagName, ">",
-					u.strmul(u.ENDL(), 5));
-			std::fileclose(fh);
-			//
-			@shellverb(shellcommandGenerator(solutionPath, SolutionXMLpath));
-			//
-			if (fh = std::fileopen(SolutionXMLpath, "at")) {
-				std::filewrite(fh, u.strmul(u.ENDL(), 5), 
-						"</", RootTagName, ">", u.ENDL());
+		if (@config.RegenerateSolutionXML) {
+			local shellcommandGenerator = (function(p){
+				local result = nil;
+				if (u.iswin32())
+					result = p.generateSedCommandWin32;
+				else  if (u.islinux())
+					result = p.generateSedCommandLinux;
+				else
+					u.error().UnknownPlatform();
+				return result;
+			})(self);
+			
+			if (local fh = std::fileopen(SolutionXMLpath, "wt")) {
+				std::filewrite(fh, "<", RootTagName, ">",
+						u.strmul(u.ENDL(), 5));
 				std::fileclose(fh);
+				//
+				@shellverb(shellcommandGenerator(solutionPath, SolutionXMLpath));
+				//
+				if (fh = std::fileopen(SolutionXMLpath, "at")) {
+					std::filewrite(fh, u.strmul(u.ENDL(), 5), 
+							"</", RootTagName, ">", u.ENDL());
+					std::fileclose(fh);
+				}
+				else
+					u.error().AddError("Could not (re)open file ", SolutionXMLpath,
+							" for appending text");
 			}
 			else
-				u.error().AddError("Could not (re)open file ", SolutionXMLpath,
-						" for appending text");
+				u.error().AddError("Could not open solution XML file for writing (",
+						SolutionXMLpath, ")");
 		}
-		else
-			u.error().AddError("Could not open solution XML file for writing (",
-					SolutionXMLpath, ")");
 	},
 	method loadSolutionXML {
 		local data = u.xmlload(SolutionXMLpath);
@@ -219,7 +231,7 @@ p = [
 			rg.ReportGenerator_ignoreReportGenerationRequests();
 	},
 	method generateReport (solutionData) {
-		const SolutionReportPath = "SolutioReport.xhtml";
+		const SolutionReportPath = "SolutionReport.xhtml";
 		rg.ReportGenerator_generateReport(
 				SolutionReportPath,
 				u.log,
@@ -236,21 +248,71 @@ p = [
 	},
 	method loadSolutionData {
 		const SolutionDataCoreCache_funcname = #SolutiDataCoreCache;
-		if (sl_sdch)
-			@solutionData = sl_sd.SolutionDataFactory_CreateFromCore(
-					sl_sdch[SolutiDataCoreCache_funcname]());
-		else {
+		local cache_hit = false;
+		if (@config.SolutionDataCached) {
+			@log("Looking for cached solution data...");
+			local op = [
+				method @operator () () {
+					@result = importVM(
+							"SolutionLoader/Lib/" + SolutionDataCoreCache_filename + ".dbc",
+							"SolutionLoader/SolutionDataCache",
+							onImportVMFail);
+				},
+				@result: false
+			];
+			time("loading vm with cached data", op);
+			local sl_sdch = op.result;
+			local cache_func = sl_sdch[SolutionDataCoreCache_funcname];
+			if (cache_func) {
+				local op = [
+					method @operator () { @cache = @cache_func(); },
+					@cache_func: cache_func,
+					@cache: false
+				];
+				time("acquiring cached data from vm", op);
+				local cache = op.cache;
+				op = [
+					method @operator() {
+						@sd = sl_sd.SolutionDataFactory_CreateFromCore(@cache);
+					},
+					@cache: cache,
+					@sd: false
+				];
+				time("recreating Solution data from cache", op);
+				local solutionData = op.cache;
+				if (solutionData) {
+					cache_hit = true;
+					@solutionData = solutionData;
+					@log("SolutionData cache hit");
+				}
+			}
+		}
+		
+		if ( not cache_hit ) {
+			@log("Solution data not cached, generating from files...");
 			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML);
+			@log("Generating solution data core for storage..");
+			local t0 = std::currenttime();
 			sl_sd.SolutionDataFactory_DumpCore(@solutionData, local sdcore=[]);
+			local t1 = std::currenttime();
+			@log("Core generation needed: ", t1-t0, "msec");
+			@log("Writing core as a delta source file...");
+			t0 = std::currenttime();
+			const sdcorecache_varname = "p__sdcore";
 			u.dobj_dump_delta(
 					sdcore,
-					"./SolutionLoader/Source/SolutionDataCache.dsc"
-					"p__sdcore",
+					"./SolutionLoader/Source/" + SolutionDataCoreCache_filename + ".dsc",
+					sdcorecache_varname,
 					nil,
 					"function " + SolutionDataCoreCache_funcname +
-							" { return ::p__sdcore; }");
+							" { return ::" + sdcorecache_varname + "; }");
+			t1 = std::currenttime();
+			@log("Writing cache to delta source needed: ", t1 - t0, "msec");
 		}
-	}
+		
+		assert( @solutionData );
+	},
+	@log: u.bindfront(u.log, "Mainer")
 ];
 
 function main0 (argc, argv, envp) {
@@ -262,8 +324,8 @@ function main0 (argc, argv, envp) {
 
 	// TMP test code
 	local solutionData = p.solutionData;
-	std::rcstore(solutionData, "./solutionData.rc");
-	pl.ProjectLoader_loadProject(
+	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
+	if (false) pl.ProjectLoader_loadProject(
 			solutionData.ProjectEntryHolder.getProjectEntry(
 					solutionData.ConfigurationManager.Projects(
 							solutionData.ConfigurationManager.Configurations()[0]
@@ -278,22 +340,9 @@ function main0 (argc, argv, envp) {
 	u.println("--done--");
 }
 
-function main1 (argc, argv, envp) {
-	o =[
-		{ 12: "kai oyte ena tilefonima" },
-		{ "Me troei": [ "o", "paraponoooss" ] },
-		{ true: "tha ta fao ola" },
-		{ "ta mpiftekia moy \" \\ \n \t ": false },
-		{ false: [ #kai, @tha: [{4.5: 5.4}] ]},
-		{ "ande und ein autoindex: ": [ 0, #one, #two, #three, 4, false, "$__seven++" ] },
-		{ [ #perierga, "indices mas vazeis"]: 42 }
-	];
-	u.dobj_dump_delta(o, "/tmp/dobj.dsc", "loola", nil,
-		"function getLoola { return ::loola; }"); 
-}
 
 function main (...) {
-	(function(...) {
+	(function mains_dispatcher (...) {
 		// TODO remove dummy after compiler bug is fixed
 		return (local dummy = std::vmfuncaddr(
 				std::vmthis(),
