@@ -100,6 +100,7 @@ function isdeltaboolean(val){ return ::typeof(val) == "Bool"  ; }
 function isdeltanil   (val) { return ::typeof(val) == "Nil"   ; }
 function isdeltaundefined(val){return std::isundefined(val)   ; }
 function isdeltacallable(va){ return std::iscallable(va)      ; }
+function isdeltalist  (val) { return val."    "."$__magic_mushroom__type" == "std::list"; }
 function toboolean    (val) { if (val) return true; else return false; }
 function tobool       (val) { return ::toboolean(val)         ; }
 function tostring     (val) { return "" + val                 ; }
@@ -531,30 +532,11 @@ function iterable_contains(iterable, value) {
 			return true;
 	return false;
 }
-function list_contains(iterable, value) {
-	return ::iterable_contains(iterable, value);
-}
-
 function iterable_to_deltaobject(iterable) {
 	local i = 0;
 	local result = [];
 	foreach (local something, iterable)
 		result[i++] = something;
-	return result;
-}
-function list_to_deltaobject(list) {
-	return ::iterable_to_deltaobject(list);
-}
-function list_clone(iterable) {
-	local result = std::list_new();
-	foreach (local something, iterable)
-		result.push_back(something);
-	return result;
-}
-function iterable_map(iterable, mapf) {
-	local result = std::list_new();
-	foreach (local el, iterable)
-		std::list_push_back(result, mapf(el));
 	return result;
 }
 function iterable_find(iterable, predicate) {
@@ -571,6 +553,56 @@ function iterable_get(iterable, index) {
 		if (not index--)
 			return el;
 	return nil;
+}
+function iterable_foreach (iterable, f) {
+	foreach (local element, iterable)
+		if (not f(element))
+			break;
+}
+
+// a simple list wrapper
+p__list = [
+	method getlist (list) {
+		assert( ::isdeltalist(list) );
+		local result = list."    "."$__magic_mushroom__list";
+		::assert_eq( ::typeof(result) , "ExternId" );
+		return result;
+	}
+];
+function list_new {
+	return [
+			{"    ": [
+				{"$__magic_mushroom__type": "std::list"},
+				{"$__magic_mushroom__list": std::list_new()}
+			]}
+	];
+}
+function list_push_back (list, element) {
+	assert( ::isdeltalist(list) );
+	std::list_push_back(::p__list.getlist(list), element);
+}
+function list_append (list, element) {
+	return list_push_back(list, element);
+}
+function list_foreach (list, f) {
+	assert( ::isdeltalist(list) );
+	return ::iterable_foreach(::p__list.getlist(list), f);
+}
+function list_to_stdlist (list) {
+	return ::p__list.getlist(list);
+}
+//
+function iterable_clone_to_list (iterable) {
+	local result = ::list_new();
+	foreach (local something, iterable)
+		::list_push_back(result, something);
+	return result;
+}
+function iterable_map_to_list (iterable, mapf) {
+	local result = ::list_new();
+	foreach (local el, iterable)
+		::list_push_back(result, mapf(el));
+	return result;
 }
 
 /// delta strings utilities
@@ -948,10 +980,10 @@ function Class_isa(obj, a_class) {
 function Class_classRegistry {
 	if (std::isundefined(static classRegistry) )
 		classRegistry = [
-			{ ::pfield(#list) : std::list_new() },
+			{ ::pfield(#list) : ::list_new() },
 			method add(class) {
-				::Assert( not ::list_contains(::dobj_get(self, #list), class) );
-				::dobj_get(self, #list).push_back(class);
+				::Assert( not ::iterable_contains(::dobj_get(self, #list), class) );
+				::list_push_back(::dobj_get(self, #list), class);
 			}
 		];
 	return classRegistry;
@@ -967,7 +999,7 @@ function Object_stateInitialiser {
 			Class_checkedStateInitialisation(
 				newObjectInstance,
 				Object_stateFields(),
-				[ { #classes: std::list_new() } ]
+				[ { #classes: ::list_new() } ]
 			);
 		});
 	return stateInitialiser;
@@ -976,7 +1008,7 @@ function Object_prototype {
 	if (std::isundefined(prototype))
 		prototype = [
 			method getClasses {
-				local classes = ::dobj_get(self, #classes);
+				local classes = ::list_to_stdlist(::dobj_get(self, #classes));
 				local result = [];
 				local i = 0;
 				foreach (local class, classes)
@@ -985,7 +1017,7 @@ function Object_prototype {
 			},
 			method addClass(class) {
 				local classes = ::dobj_get(self, #classes);
-				std::list_push_back(classes, class);
+				::list_push_back(classes, class);
 			}
 		];
 	return prototype;
@@ -1036,7 +1068,7 @@ function Class {
 				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
 				newInstanceState.addClass(self);
 				// perform mixins
-				foreach (local mixin_pair, ::dobj_get(self, #mixInRegistry)) {
+				foreach (local mixin_pair, ::list_to_stdlist(::dobj_get(self, #mixInRegistry))) {
 					local mixin = mixin_pair.class;
 					local createInstanceArgumentsFunctor = mixin_pair.args;
 					local mixin_instance = mixin.createInstance(
@@ -1081,7 +1113,7 @@ function Class {
 			},
 			method stateFieldsClash(another_class) {
 				local another_class_stateFields = another_class.stateFields();
-				foreach (local mixin_pair, ::dobj_get(self, #mixInRegistry))
+				foreach (local mixin_pair, ::list_to_stdlist(::dobj_get(self, #mixInRegistry)))
 					if (::stateFieldsClash(another_class_stateFields, mixin_pair.class.stateFields()))
 						return true;
 				return ::stateFieldsClash(another_class_stateFields, self.stateFields());
@@ -1098,7 +1130,7 @@ function Class {
 					if (not self.stateFieldsClash(another_class))
 						if (not self.prototypesClash(another_class)) {
 							local mixInRegistry = ::dobj_get(self, #mixInRegistry);
-							std::list_push_back(mixInRegistry, [@class:another_class,@args:createInstanceArguments]);
+							::list_push_back(mixInRegistry, [@class:another_class,@args:createInstanceArguments]);
 						}
 						else
 							::assert_fail();
@@ -1141,7 +1173,7 @@ function Class {
 				{ #prototype        : prototype         },
 				{ #mixInRequirements: mixInRequirements },
 				{ #stateFields      : stateFields       },
-				{ #mixInRegistry    : std::list_new()   },
+				{ #mixInRegistry    : ::list_new()      },
 				{ #className        : className         }
 			]
 		);
@@ -1572,12 +1604,12 @@ function CProject {
 					[
 						{ #CProject_type                        : projectType     },
 						{ #CProject_manifestationsConfigurations: []              },
-						{ #CProject_sources                     : std::list_new() },
-						{ #CProject_includes                    : std::list_new() },
-						{ #CProject_dependencies                : std::list_new() },
-						{ #CProject_definitions                 : std::list_new() },
-						{ #CProject_librariesPaths              : std::list_new() },
-						{ #CProject_libraries                   : std::list_new() },
+						{ #CProject_sources                     : ::list_new()    },
+						{ #CProject_includes                    : ::list_new()    },
+						{ #CProject_dependencies                : ::list_new()    },
+						{ #CProject_definitions                 : ::list_new()    },
+						{ #CProject_librariesPaths              : ::list_new()    },
+						{ #CProject_libraries                   : ::list_new()    },
 						{ #CProject_outputName                  : false           },
 						{ #CProject_outputDirectory             : false           },
 						{ #CProject_apidir                      : false           }
@@ -1590,47 +1622,47 @@ function CProject {
 					local p = ::Path_castFromPath(path);
 					::Assert( ::Path_isaPath(p) );
 					::assert_eq( p.Extension(), self.SourceExtension() );
-					::dobj_get(self, #CProject_sources).push_back(p);
+					::list_push_back(::dobj_get(self, #CProject_sources), p);
 				},
 				method Sources {
-					return ::list_clone(::dobj_get(self, #CProject_sources));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_sources));
 				},
 				method addIncludeDirectory(path) {
 					local p = ::Path_castFromPath(path);
 					::Assert( ::Path_isaPath(p) );
-					::dobj_get(self, #CProject_includes).push_back(p);
+					::list_push_back(::dobj_get(self, #CProject_includes), p);
 				},
 				method IncludeDirectories {
-					return ::list_clone(::dobj_get(self, #CProject_includes));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_includes));
 				},
 				method addDependency(project) {
 					::Assert( ::Class_isa(project, ::CProject()) );
-					::dobj_get(self, #CProject_dependencies).push_back(project);
+					::list_push_back(::dobj_get(self, #CProject_dependencies), project);
 				},
 				method Dependencies {
-					return ::list_clone(::dobj_get(self, #CProject_dependencies));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_dependencies));
 				},
 				method addPreprocessorDefinition(definition) {
 					::assert_str( definition );
-					::dobj_get(self, #CProject_definitions).push_back(definition);
+					::list_push_back(::dobj_get(self, #CProject_definitions), definition);
 				},
 				method PreprocessorDefinitions {
-					return ::list_clone(::dobj_get(self, #CProject_definitions));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_definitions));
 				},
 				method addLibraryPath(path) {
 					local p = ::Path_castFromPath(path);
 					::Assert( ::Path_isaPath(p) );
-					::dobj_get(self, #CProject_librariesPaths).push_back(p);
+					::list_push_back(::dobj_get(self, #CProject_librariesPaths), p);
 				},
 				method LibrariesPaths {
-					return ::list_clone(::dobj_get(self, #CProject_librariesPaths));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_librariesPaths));
 				},
 				method addLibrary(libname) {
 					::assert_str( libname );
-					::dobj_get(self, #CProject_libraries).push_back(libname);
+					::list_push_back(::dobj_get(self, #CProject_libraries), libname);
 				},
 				method Libraries {
-					return ::list_clone(::dobj_get(self, #CProject_libraries));
+					return ::iterable_clone_to_list(::dobj_get(self, #CProject_libraries));
 				},
 				method setManifestationConfiguration(manifestationID, configuration) {
 					::assert_str( manifestationID );
@@ -1728,21 +1760,6 @@ function CProject {
 function CProject_isaCProject(obj) {
 	return ::Class_isa(obj, ::CProject());
 }
-function CProject_depthFirstForeachSubproject(proj, f) {
-	function impl(proj, f, keep_going) {
-		::Assert( ::CProject_isaCProject(proj) );
-		if (keep_going.val) {
-			foreach (local subproj, proj.Subprojects()) {
-				@lambda(subproj, f, keep_going);
-				if (keep_going.val and not f(subproj)) {
-					keep_going.val = false;
-					break;
-				}
-			}
-		}
-	}
-	impl(proj, f, [@val: true]);
-}
 
 
 // CSolution
@@ -1756,7 +1773,7 @@ function CSolution {
 					newInstance,
 					validStateFieldsNames,
 					[
-						{ #CSolution_projects: std::list_new() }
+						{ #CSolution_projects: ::list_new() }
 					]
 				);
 			},
@@ -1783,10 +1800,10 @@ function CSolution {
 								"in solution ", self.getName());
 						return;
 					}
-					std::list_push_back(projects, project);
+					::list_push_back(projects, project);
 				},
 				method Projects {
-					return ::list_clone(
+					return ::iterable_clone_to_list(
 						::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
 					);
 				}
@@ -1933,4 +1950,6 @@ function log (from ...) {
 	local str = ::argstostring("[", from, "]: ", |::argspopfront(arguments, 1)|);
 	::println(str);
 }
+
+
 

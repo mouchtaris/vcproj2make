@@ -69,6 +69,7 @@ function isdeltaboolean (val)
 function isdeltanil     (val)
 function isdeltaundefined(val)
 function isdeltacallable(val)
+function isdeltalist    (val)
 function toboolean      (val)
 function tobool         (val)
 //
@@ -111,14 +112,20 @@ function dval_copy_into                 (dst, src)
 function methodinstalled                (dobj, method)                   => method
 //
 function iterable_contains              (iterable, value)
-function list_contains                  (iterable, value)
 function iterable_to_deltaobject        (iterable)
-function list_to_deltaobject            (list)
-function list_clone                     (list)
-function iterable_map                   (iterable, mapf)            // returns an iterable with all the contents
                                                                     // of the original iterable mapped through mapf()
 function iterable_find                  (iterable, predicate)
 function iterable_get                   (iterable, index)           // index begins at 0
+function iterable_foreach               (iterable, f)               // iterate over iterable, passing elements to f(), while f() returns true
+//
+// a simple std::list wrapper
+function list_new                       ()
+function list_append                    (list, element)
+function list_push_back                 (list, element)
+function list_foreach                   (list, f)
+function list_to_stdlist                (list)
+function iterable_clone_to_list         (iterable)
+function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)

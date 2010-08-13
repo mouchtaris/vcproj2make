@@ -22,3 +22,5 @@ glob:deltaide2make/SolutionReport.xhtml
 glob:deltaide2make/SolutionLoader/Lib/SolutionDataCache.txt
 glob:DebugServerPort.txt
 glob:socketlog.txt
+glob:output.txt
+

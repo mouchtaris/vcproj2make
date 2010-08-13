@@ -48,7 +48,7 @@ function ProjectEntry {
 				u.Class_checkedStateInitialisation(new, validFieldsNames,
 					[
 						{ #ProjectEntry_parentReference: ""              },
-						{ #ProjectEntry_dependencies   : std::list_new() }
+						{ #ProjectEntry_dependencies   : u.list_new() }
 					]);
 			},
 			// prototype
@@ -66,7 +66,7 @@ function ProjectEntry {
 					local dops = deps(self);
 					local deps = dops;
 					u.Assert( not u.iterable_contains(deps, projID) );
-					std::list_push_back(deps, projID);
+					u.list_push_back(deps, projID);
 				},
 				method Dependencies {
 					return u.list_clone(deps(self));
@@ -104,13 +104,13 @@ function ProjectEntry {
 					method setID  (id)   { @id = id; },
 					method setParentReference(pr) { @pr = pr; },
 					method setLocation(path) { @path = [@path:path, method deltaString { return @path; }]; },
-					method addDependency(projID) { @deps.push_back(projID); },
-					@deps: std::list_new(),
+					method addDependency(projID) { u.list_push_back(@deps, projID); },
+					@deps: u.list_new(),
 					method getName { return @name; },
 					method getID { return @id; },
 					method getParentReference { return @pr; },
 					method getLocation { return @path; },
-					method Dependencies { return u.list_clone(@deps); },
+					method Dependencies { return u.iterable_clone_to_list(@deps); },
 					{"()": method_toString_for_ProjectEntry_installed(@self)}
 				];
 			},
