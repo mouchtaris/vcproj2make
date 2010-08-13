@@ -21,7 +21,7 @@ envp = [
 	// An HTML Report: generate it or not? (takes time)
 	@report					: false,
 	// Try to load Solution Data from cache
-	@SolutionDataCached		: false,
+	@SolutionDataCached		: true,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache		: true,
@@ -32,7 +32,9 @@ envp = [
 args = [
 	@progname:		"deltaide2make",
 	@solution_name:	"IDE",
-	@solution_path: "../../../deltux/deltaide/IDE/IDE.sln"
+	@solution_path:
+			//	"../../../deltux/deltaide/IDE/IDE.sln"
+				"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

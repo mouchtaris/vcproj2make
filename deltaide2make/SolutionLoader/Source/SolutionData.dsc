@@ -138,7 +138,7 @@ function ProjectEntry_isaProjectEntry (obj) {
 function ProjectEntryFactory_DumpCore (projectEntry, target) {
 	assert( ::ProjectEntry_isaProjectEntry(projectEntry) );
 	target."$__mm"      = 42;
-	target."$__mm_deps" = u.iterable_to_deltaobject(projectEntry[u.pfield("ProjectEntry_dependencies")]);
+	target."$__mm_deps" = u.iterable_to_deltaobject(u.list_to_stdlist(projectEntry[u.pfield("ProjectEntry_dependencies")]));
 	target."$__mm_pr"   = projectEntry.getParentReference();
 	target."$__mm_name" = projectEntry.getName();
 	target."$__mm_id"   = projectEntry.getID();
@@ -605,6 +605,7 @@ function SolutionDataFactory_DumpCore (sd, target) {
 			sd.ProjectEntryHolder,
 			target."))__MM_holder" = []);
 	return target;
+	// TODO think about dumping and restoring intact objects
 }
 function SolutionDataFactory_CreateFromCore (core) {
 	assert( core."))__MM" == 42 );

@@ -13,7 +13,7 @@ envp = [
 	//@strict_delta       : "linux_debug",
 	//@strict_delta	      : "linux_release",
 	// Copy libraries from predefined paths, so as to have the latest versions
-	@update_libs	      : false,
+	@update_libs	      : true,
 	// unixify sources
 	@unixify		      : true,
 	// lean classes
@@ -26,15 +26,15 @@ envp = [
 	// solution data cache.
 	@SolutionDataCache    : true,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML: false
+	@RegenerateSolutionXML: true
 ];
 
 args = [
 	@progname:		"deltaide2make",
 	@solution_name:	"IDE",
 	@solution_path:
-					"../../../../thesis_new/deltaide/IDE/IDE.sln"
-				//	"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
+					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

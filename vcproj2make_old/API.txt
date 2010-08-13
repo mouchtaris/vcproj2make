@@ -70,6 +70,8 @@ function isdeltanil     (val)
 function isdeltaundefined(val)
 function isdeltacallable(val)
 function isdeltalist    (val)
+function isdeltafunction(val)
+function isdeltamethod  (val)
 function toboolean      (val)
 function tobool         (val)
 //

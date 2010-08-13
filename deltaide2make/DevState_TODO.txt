@@ -1,2 +1,2 @@
-﻿- SolutionLoader/Trimmer:
+- SolutionLoader/Trimmer:
     * Trim away .ActiveCnf entries from configuration map.
