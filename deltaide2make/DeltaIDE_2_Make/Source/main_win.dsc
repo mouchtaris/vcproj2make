@@ -19,22 +19,22 @@ envp = [
 	// lean classes
 	@lean_classes	      : false,
 	// An HTML Report: generate it or not? (takes time)
-	@report			      : false,
+	@report			      : true,
 	// Try to load Solution Data from cache
 	@SolutionDataCached   : true,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache    : true,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML: true
+	@RegenerateSolutionXML: false
 ];
 
 args = [
 	@progname:		"deltaide2make",
 	@solution_name:	"IDE",
 	@solution_path:
-				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
-					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+					"../../../../thesis_new/deltaide/IDE/IDE.sln"
+				//	"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

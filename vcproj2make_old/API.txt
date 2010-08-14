@@ -126,6 +126,7 @@ function list_append                    (list, element)
 function list_push_back                 (list, element)
 function list_foreach                   (list, f)
 function list_to_stdlist                (list)
+function list_clone                     (list)
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
 //

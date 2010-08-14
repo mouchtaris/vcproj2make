@@ -54,24 +54,11 @@ function SolutionLoader_LoadSolution (solutionXML) {
 	function xmlgetchildwithindex (parent, childindex) {
 		return [ childindex, xmlgetchild(parent, childindex) ];
 	}
-	function xmlismultiple (element) {
-		// only mutiple elements will have arithmetic indeces.
-		// Arithmetic indeces have no way of being produced from
-		// normal XML parsing.
-		return u.isdeltanumber(u.dobj_keys( element )[0]);
-	}
-	function xmlchildismultiple (parent, childindex) {
-		return xmlismultiple(xmlgetchild(parent, childindex));
-	}
 	// f(parent, childindex, child, childismany) => keep_iterating
 	function xmlforeachchild (parent, childindex, f) {
-		if (local childismultiple = xmlchildismultiple(parent, childindex)) {
-			foreach (local key, u.dobj_keys(local children = xmlgetchild(parent, childindex)))
-				if (not f(children, key, children[key], childismultiple))
-					break;
-		}
-		else
-			f(parent, childindex, parent[childindex], childismultiple);
+		foreach (local key, u.dobj_keys(local children = xmlgetchild(parent, childindex)))
+			if (not f(children, key, children[key], true))
+				break;
 	}
 	
 	
@@ -100,7 +87,10 @@ function SolutionLoader_LoadSolution (solutionXML) {
 		return solutionXML;
 	}
 	function xGlobal (solutionXML) {
-		return xmlgetchild(xGlobal_parent(solutionXML), Global_ElementName);
+		local Global_elements = xmlgetchild(xGlobal_parent(solutionXML), Global_ElementName);
+		// there is supposed to be only one <Global> element
+		assert( u.dobj_length(Global_elements) == 1);
+		return u.assert_def(Global_elements[0]);
 	}
 	function xfreeGlobal (solutionXML) {
 		xfree(xGlobal_parent(solutionXML), Global_ElementName);
@@ -127,13 +117,7 @@ function SolutionLoader_LoadSolution (solutionXML) {
 		return resulter.result;
 	}
 	function xGlobalSectionOfType_parent (solutionXML) { // parent for GlobalSection-s of a specific type
-		local parent = nil;
-		local globalSectionElement = xGlobalSection(solutionXML);
-		if (xmlismultiple(globalSectionElement))
-			parent = globalSectionElement;
-		else
-			parent = xGlobalSection_parent(solutionXML);
-		return parent;
+		return xGlobalSection(solutionXML);
 	}
 	// --------------------------------------------------------------
 	function xSolutionConfigurationPlatforms_parent (solutionXML) {

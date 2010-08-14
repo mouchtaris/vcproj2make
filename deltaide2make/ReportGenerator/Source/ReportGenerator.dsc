@@ -200,7 +200,7 @@ function ReportGenerator_generateReport (report_file_path, outer_log, configurat
 					append("</a>");
 				}
 				local comma = "";
-				foreach (local depid, projectEntry.Dependencies()) {
+				foreach (local depid, u.list_to_stdlist(projectEntry.Dependencies())) {
 					append(comma);
 					appendDep(append, depid, makeprojhtmlid, isBuildable, conf, projectEntryHolder.getProjectEntry);
 					comma = ", ";

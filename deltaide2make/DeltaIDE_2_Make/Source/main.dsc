@@ -58,7 +58,7 @@ p = [
 			function xml_libpathcomponents(configuration) {
 				local result = nil;
 				if (u.iswin32())
-					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools", 
+					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
 							"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
 				else if (u.islinux())
 					result = ["..", "..", "..", "deltux", "psp", "projects", "Tools", 
@@ -70,7 +70,7 @@ p = [
 			function vcsp_libpathcomponents(configuration) {
 				local result = nil;
 				if (u.iswin32())
-					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
+					result = ["..", "..", "..", "..", "thesis_new",
 							"Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
 				else if (u.islinux())
 					result = [ "..", "..", "..", "deltux", "psp", "projects", "Tools",
@@ -279,7 +279,7 @@ p = [
 					@sd: false
 				];
 				time("recreating Solution data from cache", op);
-				local solutionData = op.cache;
+				local solutionData = op.sd;
 				if (solutionData) {
 					cache_hit = true;
 					@solutionData = solutionData;
@@ -301,11 +301,12 @@ p = [
 			const sdcorecache_varname = "p__sdcore";
 			u.dobj_dump_delta(
 					sdcore,
-					"./SolutionLoader/Source/" + SolutionDataCoreCache_filename + ".dsc",
+					(local fileappender = u.func_FileAppender("./SolutionLoader/Source/" + SolutionDataCoreCache_filename + ".dsc").init()).append,
 					sdcorecache_varname,
 					nil,
 					"function " + SolutionDataCoreCache_funcname +
 							" { return ::" + sdcorecache_varname + "; }");
+			fileappender.cleanup();
 			t1 = std::currenttime();
 			@log("Writing cache to delta source needed: ", t1 - t0, "msec");
 		}
@@ -316,9 +317,6 @@ p = [
 ];
 
 function main0 (argc, argv, envp) {
-	p.config = envp;
-	p.init(argv);
-	
 	p.loadSolutionXML();
 	p.loadSolutionData();
 
@@ -335,18 +333,47 @@ function main0 (argc, argv, envp) {
 	// /TMP
 
 	p.generateReport(solutionData);
-	p.cleanup();
-
-	u.println("--done--");
 }
 
+function main1 (argc, argv, envp) {
+	local xml = u.xmlparse("
+			<root> 
+				<parent attr=\"lal\">
+					<choild/>
+					<contoild>  Halloa  </contoild>
+					<contoild> Holla hop </contoild>
+					<choild/>
+					<choild/>
+					<choild loik_a=\"ruby\" />
+					<choild the_size_of_a=\"tagerine\" />
+				</parent>
+			</root>");
+	(local appender = u.func_StringAppender()).init();
+	if (xml)
+		u.dobj_dump_delta(
+			xml,
+			appender.append,
+			"xml",
+			nil,
+			nil);
+	u.println("XML: ", xml, "\n", "VUF!: ", appender.deltastring(), "\n",
+			"Error: ", u.xmlparseerror());
+}
+	
 
-function main (...) {
+function main (argc, argv, envp) {
+	p.config = envp;
+	p.init(argv);
+	
 	(function mains_dispatcher (...) {
 		// TODO remove dummy after compiler bug is fixed
 		return (local dummy = std::vmfuncaddr(
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 1, 2, 0, 1, 0);
+	})(arguments, 0);
+	
+	p.cleanup();
+
+	u.println("--done--");
 }
