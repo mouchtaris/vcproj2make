@@ -107,6 +107,7 @@ function dobj_keys                      (dobj)
 function dobj_empty                     (dobj)
 function dobj_copy                      (dob)
 function dobj_replace                   (dobj, key, val)                 => oldval
+function dobj_equal                     (dobj1, dobj2)                   // unoverloaded equality check
 //
 function dval_copy                      (dval)                           // deep copy
 function dval_copy_into                 (dst, src)

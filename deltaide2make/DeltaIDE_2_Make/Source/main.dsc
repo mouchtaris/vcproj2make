@@ -38,7 +38,7 @@ p = [
 	// ----------------------------------------------------------
 	method LoadLibs {
 		// Copy libs first
-		function copylibs {
+		function copylibs (deltaRoot) {
 			function win32debugSuffix (libid, configuration, basename) {
 				local isdebug = configuration == "debug";
 				local win32debugSuffix = u.ternary(isdebug, "D", "");
@@ -55,23 +55,21 @@ p = [
 					u.error().UnknownPlatform();
 				return result;
 			}
-			function xml_libpathcomponents(configuration) {
+			function xml_libpathcomponents(root, configuration) {
 				local result = nil;
 				if (u.iswin32())
-					result = ["..", "..", "..", "..", "thesis_new", "deltaide", "Tools",
-							"Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
+					result = [root, "Delta", "DeltaExtraLibraries", "XMLParser", "lib", configuration];
 				else if (u.islinux())
-					result = ["..", "..", "..", "deltux", "psp", "projects", "Tools", 
+					result = [root, "..", "..", "..", "deltux", "psp", "projects", "Tools", 
 						"Delta", "DeltaExtraLibraries", "XMLParserPSP", "Project"];
 				else
 					u.error().UnknownPlatform();
 				return result;
 			}
-			function vcsp_libpathcomponents(configuration) {
+			function vcsp_libpathcomponents(root, configuration) {
 				local result = nil;
 				if (u.iswin32())
-					result = ["..", "..", "..", "..", "thesis_new",
-							"Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
+					result = [root, "Delta", "DeltaExtraLibraries", "VCSolutionParser", "lib", configuration];
 				else if (u.islinux())
 					result = [ "..", "..", "..", "deltux", "psp", "projects", "Tools",
 							"Delta", "DeltaExtraLibraries", "VCSolutionParser", "Project"];
@@ -79,9 +77,9 @@ p = [
 					u.error().UnknownPlatform();
 				return result;
 			}
-			function makelibpath(libid, configuration, basename) {
+			function makelibpath(libid, configuration, basename, root) {
 				local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "_libpathcomponents");
-				local result = u.file_pathconcatenate(|libpathcomponents(configuration)|) + libifyname(libid, configuration, basename);
+				local result = u.file_pathconcatenate(|libpathcomponents(root, configuration)|) + libifyname(libid, configuration, basename);
 				return result;
 			}
 			function makelibname (libid, configuration, basename) {
@@ -103,14 +101,14 @@ p = [
 				local libid         = libinfo[1];
 				local libbasename   = libinfo[2];
 				//
-				local src           = makelibpath(libid, configuration, libbasename);
+				local src           = makelibpath(libid, configuration, libbasename, deltaRoot);
 				local dst           = makelibname(libid, configuration, libbasename);
 				u.println("Copying " + src + " to " + dst);
 				u.shellcopy(src, dst);
 			}
 		};
 		if (@config.update_libs)
-			copylibs();
+			copylibs(@config.DeltaBuildRoot);
 		local libs_loaded_successfully = u.loadlibs();
 		if (not libs_loaded_successfully)
 			u.error().AddError("Could not load required libs");
@@ -336,30 +334,11 @@ function main0 (argc, argv, envp) {
 }
 
 function main1 (argc, argv, envp) {
-	local xml = u.xmlparse("
-			<root> 
-				<parent attr=\"lal\">
-					<choild/>
-					<contoild>  Halloa  </contoild>
-					<contoild> Holla hop </contoild>
-					<choild/>
-					<choild/>
-					<choild loik_a=\"ruby\" />
-					<choild the_size_of_a=\"tagerine\" />
-				</parent>
-			</root>");
-	(local appender = u.func_StringAppender()).init();
-	if (xml)
-		u.dobj_dump_delta(
-			xml,
-			appender.append,
-			"xml",
-			nil,
-			nil);
-	u.println("XML: ", xml, "\n", "VUF!: ", appender.deltastring(), "\n",
-			"Error: ", u.xmlparseerror());
-}
-	
+	local p1 = u.Point().createInstance(20, 30, "tam");
+	local p2 = u.Point().createInstance(40, 50, "smoth");
+	local p3 = u.Point().createInstance(60, 70, "semora");
+	u.println(p1.ObjectID(), p2.ObjectID(), p3.ObjectID());
+}	
 
 function main (argc, argv, envp) {
 	p.config = envp;
@@ -371,7 +350,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0);
+	})(arguments, 0, 1);
 	
 	p.cleanup();
 

@@ -227,7 +227,7 @@ function error {
 
 function print(...) {
 	::foreacharg(arguments,
-			function(arg){
+			function print(arg){
 				std::print(arg);
 				return true;
 			}
@@ -442,6 +442,18 @@ function dval_copy_into (dst, src) {
 	foreach (local key, ::dobj_keys(src))
 		dst[key] = ::dval_copy(src[key]);
 	return dst;
+}
+function dobj_equal (one, two) {
+	local previousOverloadingEnabled1 = std::tabisoverloadingenabled(one);
+	local previousOverloadingEnabled2 = std::tabisoverloadingenabled(two);
+	std::tabdisableoverloading(one);
+	std::tabdisableoverloading(two);
+	local result = one == two;
+	if (previousOverloadingEnabled1)
+		std::tabenableoverloading(one);
+	if (previousOverloadingEnabled2)
+		std::tabenableoverloading(two);
+	return result;
 }
 
 //
@@ -1054,18 +1066,28 @@ function Class_classRegistry {
 	return classRegistry;
 }
 // Object-class-elements
+p__Object = [
+	method nextID { return @id++; },
+	@id: 0
+];
 function Object_stateFields {
-	return [ #classes ];
+	if (std::isundefined(static stateFields))
+		stateFields = [ #classes, #Object_ID ];
+	return stateFields;
 }
 function Object_stateInitialiser {
 	if (std::isundefined(static stateInitialiser))
-		stateInitialiser = (function (newObjectInstance) {
+		stateInitialiser = (function Object_stateInitialiser (newObjectInstance) {
 			::assert_obj( newObjectInstance );
 			Class_checkedStateInitialisation(
 				newObjectInstance,
 				Object_stateFields(),
-				[ { #classes: ::list_new() } ]
+				[
+					{ #classes : ::list_new()         },
+					{ #Object_ID: ::p__Object.nextID() }
+				]
 			);
+
 		});
 	return stateInitialiser;
 }
@@ -1083,6 +1105,9 @@ function Object_prototype {
 			method addClass(class) {
 				local classes = ::dobj_get(self, #classes);
 				::list_push_back(classes, class);
+			},
+			method ObjectID {
+				return ::dobj_checked_get(self, ::Object_stateFields(), #Object_ID);
 			}
 		];
 	return prototype;
@@ -1170,7 +1195,8 @@ function Class {
 				for (std::tableiter_setbegin(req_ite, mixInRequirements); allFulfilled and not std::tableiter_checkend(req_ite, mixInRequirements); std::tableiter_fwd(req_ite)) {
 					singleRequirement[0] = std::tableiter_getval(req_ite);
 					allFulfilled = false;
-					for (mixin_ite.setbegin(mixInRegistry); not allFulfilled and not mixin_ite.checkend(mixInRegistry); mixin_ite.fwd())
+					local mixInRegistry_stdlist = ::list_to_stdlist(mixInRegistry);
+					for (mixin_ite.setbegin(mixInRegistry_stdlist); not allFulfilled and not mixin_ite.checkend(mixInRegistry_stdlist); mixin_ite.fwd())
 						allFulfilled = ::mixinRequirementsFulfilled( mixin_ite.getval().class.getPrototype(), singleRequirement);
 					allFulfilled = allFulfilled or ::mixinRequirementsFulfilled(myPrototype, singleRequirement);
 				}
