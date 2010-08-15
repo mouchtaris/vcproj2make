@@ -960,12 +960,6 @@ function dobj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		else if ( ::isdeltaboolean(val) or ::isdeltanumber(val) )
 			write(::tostring(val));
 
-//		// --- Delta functions and methods
-//		else if ( ::isdeltafunction(val) )
-//			impl(appendable, "cannot serialise functions: " + val, indentationLevel + 1, visited);
-//		else if ( ::isdeltamethod(val) )
-//			impl(appendable, "cannot serialise methods: " + val, indentationLevel + 1, visited);
-
 		// --- Other
 		else
 			::error().AddError("Cannot serialise a value of type ",
@@ -1051,18 +1045,76 @@ function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, f
 		::dobj_set(newObjectInstance, validFieldName, value);
 	}
 }
+p__Class_classRegistry = [
+	method seatClassObjectID (Class_objid) {
+		assert( ::isdeltanumber(Class_objid) );
+		self."                                        _______      " = Class_objid;
+	},
+	method ClassObjectID {
+		local result = self."                                        _______      ";
+		assert( ::isdeltanumber(result) );
+		return result;
+	}
+];
 function Class_isa(obj, a_class) {
-	return ::isdeltaobject(obj) and ::dobj_contains(obj.getClasses(), a_class);
+	if ( obj.ObjectID() == local Class_objid = ::p__Class_classRegistry.ClassObjectID())
+		local result = a_class.ObjectID() == Class_objid; // class Class is-a Class
+	else
+		result = (::isdeltaobject(obj))                                 and 
+				(local instanceOf = obj.instanceOf)                     and
+				instanceOf(a_class)
+		;
+	return result;
 }
 function Class_classRegistry {
-	if (std::isundefined(static classRegistry) )
+	static classRegistry;
+	const  classRegistry_stateField_reg = #reg;
+	static classRegistry_stateFields;
+	if (std::isundefined(static static_variables_initialised) ) {
+		classRegistry_stateFields = [ classRegistry_stateField_reg ];
+		//
+		function getreg (this) { return ::dobj_checked_get(this, classRegistry_stateFields, classRegistry_stateField_reg); };
+		function Class {
+			if (std::isundefined(static Class))
+				Class = std::vmfuncaddr(std::vmthis(), #Class);
+			else
+				Class = Class;
+			return Class();
+		}
 		classRegistry = [
-			{ ::pfield(#list) : ::list_new() },
-			method add(class) {
-				::Assert( not ::iterable_contains(::dobj_get(self, #list), class) );
-				::list_push_back(::dobj_get(self, #list), class);
-			}
+			{ ::pfield(classRegistry_stateField_reg) : [] },
+			// It's a bit of mindfuck and on-the-edge, but we can actually test
+			// through Class_isa() whether the given class is-a Class or not.
+			// (What in fact if passed as a Class instance to the methods below
+			// [and therefore to Class_isa() too] if a fully Class-qualified instance
+			// except for being registered in the class registry, which is what we
+			// do here).
+			// UPDATE
+			// ... and that's exactly why it fails. Class_isa() relies on the
+			// class registry to retrieve classes, but as class Class is not
+			// even registered yet, it cannot be tested against itself.
+			// The problem is resolved by introducing a static ID field reserved
+			// for class Class.
+			method add (class) {
+				local class_objid = class.ObjectID();
+				assert( ::Class_isa(class, Class()) );
+				assert( ::isdeltanumber(class_objid) );
+				local reg = getreg(self);
+				::Assert( not ::dobj_contains_key(reg, class_objid) );
+				reg[class_objid] = class;
+			},
+			method get (class_objid) {
+				assert( ::isdeltanumber(class_objid) );
+				local result = (local reg = getreg(self))[class_objid];
+				assert( result.ObjectID() == class_objid);
+				assert( ::Class_isa(result, Class()) );
+				return result;
+			},
+			@class_Class_id: false
 		];
+		//
+		static_variables_initialised = true;
+	}
 	return classRegistry;
 }
 // Object-class-elements
@@ -1092,19 +1144,31 @@ function Object_stateInitialiser {
 	return stateInitialiser;
 }
 function Object_prototype {
+	function getclasses (this ) {
+		return ::list_to_stdlist(::dobj_get(this, #classes));
+	}
+	function Class {
+		if ( std::isundefined(static c) ) local Class = std::vmfuncaddr(std::vmthis(), #Class);
+		else Class = Class;
+		return Class();
+	}
 	if (std::isundefined(prototype))
 		prototype = [
 			method getClasses {
-				local classes = ::list_to_stdlist(::dobj_get(self, #classes));
+				local classes = getclasses(self);
 				local result = [];
 				local i = 0;
-				foreach (local class, classes)
-					result[i++] = class;
+				foreach (local class_objid, classes)
+					result[i++] = ::Class_classRegistry().get(class_objid);
 				return result;
 			},
 			method addClass(class) {
 				local classes = ::dobj_get(self, #classes);
-				::list_push_back(classes, class);
+				::list_push_back(classes, class.ObjectID());
+			},
+			method instanceOf (class) {
+				assert( ::Class_isa(class, Class()) );
+				return ::iterable_contains(getclasses(self), class.ObjectID());
 			},
 			method ObjectID {
 				return ::dobj_checked_get(self, ::Object_stateFields(), #Object_ID);
@@ -1144,19 +1208,23 @@ function Class {
 
 				// New state
 				newInstanceState = [];
-				// initialise
+				//
+				// FIRST, the new instance has to be a valid Object instance.
+				// So, manually mix-in the object class (by default)
+				::mixinObject(newInstanceState, self.stateFields(), prototype);
+				// no need to register the "object" class in the classes list. (we also cannot do it)
+				//
+				////
+				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
+				newInstanceState.addClass(self);
+				////
+				// initialise as an object of the given class
 				stateInitialiser(newInstanceState, self_stateFields, ...);
 				// Link to prototype
 				std::delegate(newInstanceState, prototype);
 				// new instance is initialised and linked to its original class,
 				// so the class' API can be used after this point.
 				////
-				// manually mix-in the object class (by default)
-				::mixinObject(newInstanceState, self.stateFields(), prototype);
-				// no need to register the "object" class in the classes list. (we also cannot do it)
-				//
-				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
-				newInstanceState.addClass(self);
 				// perform mixins
 				foreach (local mixin_pair, ::list_to_stdlist(::dobj_get(self, #mixInRegistry))) {
 					local mixin = mixin_pair.class;
@@ -1274,12 +1342,21 @@ function Class {
 	}
 	if (std::isundefined(static Class_state)) {
 		Class_state = [];
-		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields, #Class);
-		std::delegate(Class_state, Class_prototype);
-		// mix-in object
+		// mix-in object before initialising as a class
 		::mixinObject(Class_state, Class_stateFields, Class_prototype);
 		// add "self" as this class' class.
 		Class_state.addClass(Class_state);
+		// register Class' object id (since it is so special and it needs its own reserved seat)
+		::p__Class_classRegistry.seatClassObjectID(Class_state.ObjectID());
+		// link to the class prototype
+		std::delegate(Class_state, Class_prototype);
+		// initialise state
+		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields, #Class);
+		// The order of initialisation is important: this way it is ensured that
+		// what is that the last element of Class' initialisation is registering
+		// itself as a class, which requires that it can be tested for Class-ness.
+		// Testing for Class-ness requires only that the Class is a full Object (OK)
+		// and that it has itself registered as a class of itself (also OK).
 	}
 	return Class_state;
 }

@@ -15,18 +15,18 @@ envp = [
 	// Copy libraries from predefined paths, so as to have the latest versions
 	@update_libs	      : true,
 	// unixify sources
-	@unixify		      : false,
+	@unixify		      : true,
 	// lean classes
 	@lean_classes	      : false,
-	// An HTML Report: generate it or not? (takes time)
-	@report			      : true,
 	// Try to load Solution Data from cache
 	@SolutionDataCached   : true,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache    : true,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML: false,
+	@RegenerateSolutionXML: not @self.SolutionDataCached,
+	// An HTML Report: generate it or not? (takes time)
+	@report			      : @self.SolutionDataCached,
 	// Root directory of the Delta build used to run this script
 	// (should contain DeltaExtraLibraries/, etc...)
 	@DeltaBuildRoot	      : 	"..\\..\\..\\..\\thesis_new\\deltaide\\Tools"

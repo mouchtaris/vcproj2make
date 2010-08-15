@@ -28,7 +28,7 @@ function time (desc, action) {
 	local time0 = std::currenttime();
 	action();
 	local time1 = std::currenttime();
-	u.print(" ", time1-time0, "msec\n");
+	u.println(" ", time1-time0, "msec");
 }
 
 
@@ -333,13 +333,6 @@ function main0 (argc, argv, envp) {
 	p.generateReport(solutionData);
 }
 
-function main1 (argc, argv, envp) {
-	local p1 = u.Point().createInstance(20, 30, "tam");
-	local p2 = u.Point().createInstance(40, 50, "smoth");
-	local p3 = u.Point().createInstance(60, 70, "semora");
-	u.println(p1.ObjectID(), p2.ObjectID(), p3.ObjectID());
-}	
-
 function main (argc, argv, envp) {
 	p.config = envp;
 	p.init(argv);
@@ -350,7 +343,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0, 1);
+	})(arguments, 0);
 	
 	p.cleanup();
 
