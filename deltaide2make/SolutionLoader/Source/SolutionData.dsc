@@ -596,22 +596,31 @@ function ProjectEntryHolderFactory_CreateFromCore (core) {
 
 /////////////////////////////////////////////////////////////////
 // SolutionDataFactory
+expr = true;
 function SolutionDataFactory_DumpCore (sd, target) {
-	target."))__MM"         = 42;
-	::ConfigurationManagerFactory_DumpCore(
-			sd.ConfigurationManager,
-			target."))__MM_confman" = []);
-	::ProjectEntryHolderFactory_DumpCore(
-			sd.ProjectEntryHolder,
-			target."))__MM_holder" = []);
-	return target;
+	if (::expr)
+		return std::tabextend(target, sd);
+	else {
+		target."))__MM"         = 42;
+		::ConfigurationManagerFactory_DumpCore(
+				sd.ConfigurationManager,
+				target."))__MM_confman" = []);
+		::ProjectEntryHolderFactory_DumpCore(
+				sd.ProjectEntryHolder,
+				target."))__MM_holder" = []);
+		return target;
+	}
 	// TODO think about dumping and restoring intact objects
 }
 function SolutionDataFactory_CreateFromCore (core) {
-	assert( core."))__MM" == 42 );
-	local result = [];
-	result.ConfigurationManager = ::ConfigurationManagerFactory_CreateFromCore(core."))__MM_confman");
-	result.ProjectEntryHolder = ::ProjectEntryHolderFactory_CreateFromCore(core."))__MM_holder");
-	return result;
+	if (::expr)
+		return core;
+	else {
+		assert( core."))__MM" == 42 );
+		local result = [];
+		result.ConfigurationManager = ::ConfigurationManagerFactory_CreateFromCore(core."))__MM_confman");
+		result.ProjectEntryHolder = ::ProjectEntryHolderFactory_CreateFromCore(core."))__MM_holder");
+		return result;
+	}
 }
 

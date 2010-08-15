@@ -185,7 +185,7 @@ function assert_fail {
 const nl = "
 ";
 const pref = " ****** ";
-function foreacharg(args, f) {
+function foreacharg (args, f) {
 	local args_start = args.start;
 	local args_total = args.total;
 	local args_end   = args_start + args_total;
@@ -544,6 +544,25 @@ function firstarg (args) {
 function lastarg (args) {
 	return args[args.start + args.total - 1];
 }
+function argumentSelector (f ...) {
+	return [
+		@f: f,
+		@args_indices: ::argspopfront(arguments, 1), // all minus f
+		method @operator () (...) {
+			// collect arguments
+			::foreacharg(@args_indices, local argCollector = [
+				@args: [], // collected result
+				@args_index: 0,
+				@all_args: arguments,
+				method @operator () (argindex) {
+					assert( ::isdeltanumber(argindex) );
+					@args[@args_index++] = @all_args[argindex];
+				}
+			]);
+			return @f(|argCollector.args|);
+		}
+	];
+}
 
 //
 // Utilities for iterables
@@ -635,6 +654,100 @@ function iterable_map_to_list (iterable, mapf) {
 	foreach (local el, iterable)
 		::list_push_back(result, mapf(el));
 	return result;
+}
+//
+function forall (iterable, predicate) {
+	for (local ite = iterable.iterator(); ite.hasNext(); ite.next())
+		if ( not predicate(ite.key(), ite.value()) )
+			return false;
+	return true;
+}
+function forany (iterable, predicate) {
+	for (local ite = iterable.iterator(); ite.hasNext(); ite.next())
+		if (predicate(ite.key(), ite.value()))
+			return true;
+	return false;
+}
+function Iterable_fromList (list) {
+	assert( ::isdeltalist(list) );
+	if (std::isundefined(static iterator_prototype))
+		prototype = [ // state fields [ #list:stdlist, #ite:listiter ]
+			method end {
+				return std::listiter_checkend(::dobj_get(self, #ite), ::dobj_get(self, #list));
+			},
+			method key { return nil; },
+			method value {
+				assert( not self.end() );
+				return std::listiter_getval(::dobj_get(self, #ite));
+			},
+			method next {
+				assert( not self.end() );
+				std::listiter_fwd(::dobj_get(self, #ite));
+			}
+		];
+	if (std::isundefined(static iterable_prototype))
+		iterable_prototype = [ // state fields [ #list:wrapped_list ]
+			method iterator {
+				local ite = [
+					{ ::pfield(#list): ::list_to_stdlist(::dobj_get(self, #list)) },
+					{ ::pfield(#ite) : std::list_iterator(::dobj_get(@self, #list)) }
+				];
+				::del(ite, iterator_prototype);
+				return ite;
+			}
+		];
+	local iterable = [ { ::pfield(#list): list } ];
+	::del(iterable, iterable_prototype);
+	return iterable;
+}
+
+function Iterable_fromDObj (dobj) {
+	assert( ::isdeltaobject(dobj) );
+	if (std::isundefined(static iterator_prototype))
+		iterator_prototype = [ // state fields [ #ite:tabiter, #obj:deltaobj ]
+			method end {
+				return std::tableiter_checkend(
+						::dobj_get(self, #ite),
+						::dobj_get(self, #obj));
+			},
+			method key {
+				assert( not self.end() );
+				local key = std::tableiter_getindex(::dobj_get(self, #ite));
+				return ::assert_def(key);
+			},
+			method value {
+				assert( not self.end() );
+				local value = std::tableiter_getval(::dobj_get(self, #ite));
+				return ::assert_def(value);
+			},
+			method next {
+				std::tableiter_fwd(::dobj_get(self, #ite));
+			}
+		];
+	if (std::isundefined(static iterable_prototype))
+		iterable_prototype = [ // state fields [ #dobj:deltaobj ]
+			method iterator {
+				local ite = [
+					{ ::pfield(#obj): ::dobj_get(self, #dobj) },
+					{ ::pfield(#ite): (function makeTableIter (obj) {
+							local ite = std::tableiter_new();
+							std::tableiter_setbegin(ite, obj);
+							return ite;
+						})(::dobj_get(@self, #obj)) }
+				];
+				::del(ite, iterator_prototype);
+				return ite;
+			}
+		];
+	local iterable = [ { ::pfield(#dobj): dobj } ];
+	::del(iterable, iterable_prototype);
+	return iterable;
+}
+function Iterable_foreach (iterable, f) {
+	local ite = iterable.iterator();
+	local keep_iterating = true;
+	while (keep_iterating and not ite.end())
+		keep_iterating = f(ite.key(), ite.value());
 }
 
 /// delta strings utilities
@@ -881,102 +994,6 @@ function ternary (cond, val1, val2) {
 		return val2;
 }
 
-// Serialisation utils
-function dobj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
-	const INDENT = "    ";
-	local visited = [
-		method visited (something) { @selfmap[something] = something; },
-		method isVisited(something){ return not not @selfmap[something]; },
-		@selfmap: []
-	];
-	local append = appendf;
-	
-	function impl (append, val, indentationLevel, visited) {
-		::Assert( ::isdeltacallable(append) );
-		::assert_def( val );
-		::assert_num( indentationLevel );
-		::assert_ge( indentationLevel , 0 );
-
-		local indent = ::bindfront(::assert_clb(append),
-				::strmul(INDENT, indentationLevel));
-		local write = ::bindfront(::foreachofargs,
-				::successifier(::fcomposition(::assert_clb(append), ::assert_def)));
-
-		// --- Delta String
-		if ( ::isdeltastring(local strval = val) )
-			write("\"", ::strdeltaescape(strval), "\"");
-
-		// --- Delta List
-		//     (delta list HAS TO come before objects, because it qualifies
-		//     as both -- in fact, it is a subset of objects)
-		else if ( ::isdeltalist(val) ) {
-			if ( not visited.isVisited(val) ) {
-				visited.visited(val);
-				// write an expression which when evaluated will regenerate
-				// to a wrapped std::list again (as provided by the util lib)
-				// TODO use the new lib:: std api for lib acquiring
-				write("(function {\n");
-				indent(); write("local u = std::vmget(\"util\"); assert( u ); "
-						"local result = u.list_new();\n");
-				::list_foreach (val, [
-					method @operator () (list_elem) {
-						@indent(); @write("u.list_push_back(");
-						@impl(list_elem);
-						@write(");\n");
-					},
-					@write: write,
-					@indent: indent,
-					@impl: ::bindback(::bindfront(impl, append), indentationLevel + 1, visited)
-				]);
-				indent(); write("})()");
-			}
-		}
-
-		// -- Delta Objects
-		else if ( ::isdeltaobject(local objval = val) ) {
-			if ( not visited.isVisited(objval) ) {
-				visited.visited(objval);
-				write("[");
-				local previous_element_separator = "\n";
-				foreach (local key, ::dobj_keys(objval)) {
-					write(previous_element_separator);
-					previous_element_separator = ",\n";
-					indent();
-					write("{");
-					impl(append, key, indentationLevel + 1, visited);
-					write(": ");
-					impl(append, objval[key], indentationLevel + 1, visited);
-					write("}");
-				}
-				if (previous_element_separator != "\n") {
-					write("\n");
-					indent();
-				}
-				write("]");
-			}
-		}
-
-		// --- Delta Value
-		else if ( ::isdeltaboolean(val) or ::isdeltanumber(val) )
-			write(::tostring(val));
-
-		// --- Other
-		else
-			::error().AddError("Cannot serialise a value of type ",
-					::typeof(val));
-	}
-
-	if (precode)
-		append(precode);
-	append("\n\n// Autogenerated:\n", objvarname, " = ");
-	impl(append, dobj, 1, visited);
-	append(";\n\n");
-	if (postcode)
-		append(postcode);
-
-	return result;
-}
-
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {
@@ -1069,11 +1086,13 @@ function Class_isa(obj, a_class) {
 function Class_classRegistry {
 	static classRegistry;
 	const  classRegistry_stateField_reg = #reg;
+	const  classRegistry_stateField_regbyname = #regbyname;
 	static classRegistry_stateFields;
 	if (std::isundefined(static static_variables_initialised) ) {
-		classRegistry_stateFields = [ classRegistry_stateField_reg ];
+		classRegistry_stateFields = [ classRegistry_stateField_reg, classRegistry_stateField_regbyname ];
 		//
 		function getreg (this) { return ::dobj_checked_get(this, classRegistry_stateFields, classRegistry_stateField_reg); };
+		function getregbyname (this) { return ::dobj_checked_get(this, classRegistry_stateFields, classRegistry_stateField_regbyname); };
 		function Class {
 			if (std::isundefined(static Class))
 				Class = std::vmfuncaddr(std::vmthis(), #Class);
@@ -1083,6 +1102,7 @@ function Class_classRegistry {
 		}
 		classRegistry = [
 			{ ::pfield(classRegistry_stateField_reg) : [] },
+			{ ::pfield(classRegistry_stateField_regbyname): [] },
 			// It's a bit of mindfuck and on-the-edge, but we can actually test
 			// through Class_isa() whether the given class is-a Class or not.
 			// (What in fact if passed as a Class instance to the methods below
@@ -1100,8 +1120,19 @@ function Class_classRegistry {
 				assert( ::Class_isa(class, Class()) );
 				assert( ::isdeltanumber(class_objid) );
 				local reg = getreg(self);
-				::Assert( not ::dobj_contains_key(reg, class_objid) );
-				reg[class_objid] = class;
+				if( ::dobj_contains_key(reg, class_objid) )
+					::error().AddError("A class with a duplicate object ID is being registered: ",
+							class_objid, ". Disregarding.");
+				else {
+					local regbyname = getregbyname(self);
+					if ( ::dobj_contains(regbyname, local class_name = class.getName()) )
+						::error().AddError("A class with a duplicate name is being registered: ",
+								class_name, ". Disregarding.");
+					else {
+						reg[class_objid] = class;
+						regbyname[class_name] = class;
+					}
+				}
 			},
 			method get (class_objid) {
 				assert( ::isdeltanumber(class_objid) );
@@ -1110,7 +1141,13 @@ function Class_classRegistry {
 				assert( ::Class_isa(result, Class()) );
 				return result;
 			},
-			@class_Class_id: false
+			method getByName (class_name) {
+				assert( ::isdeltastring(class_name) );
+				local result (local regbyname = getregbyname(self))[class_name];
+				assert( result.getName() == class_name );
+				assert( ::Class_isa(result, Class() );
+				return result;
+			}
 		];
 		//
 		static_variables_initialised = true;
@@ -1196,6 +1233,11 @@ function unmixinObject(instance) {
 }
 
 function Class {
+	if (std::isundefined(static Class_stateFields))
+		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry, #className];
+	function getmixinregistry (this) {
+		return ::dobj_checked_get(this, Class_stateFields, #mixInRegistry);
+	}
 	if (std::isundefined(static Class_prototype))
 		Class_prototype = [
 			// Public API
@@ -1288,7 +1330,7 @@ function Class {
 				if (self.fulfillsRequirements(another_class))
 					if (not self.stateFieldsClash(another_class))
 						if (not self.prototypesClash(another_class)) {
-							local mixInRegistry = ::dobj_get(self, #mixInRegistry);
+							local mixInRegistry = getmixinregistry(self);
 							::list_push_back(mixInRegistry, [@class:another_class,@args:createInstanceArguments]);
 						}
 						else
@@ -1297,6 +1339,13 @@ function Class {
 						::assert_fail();
 				else
 					::assert_fail();
+			},
+			method mixedIn {
+				::list_foreach(getmixinregistry(self), local classCollector = [
+					method @operator () (el) { @classes[el.class] = el.args; },
+					@classes: []
+				]);
+				return classCollector.classes;
 			},
 			method getPrototype {
 				return ::dobj_get(self, #prototype);
@@ -1318,8 +1367,6 @@ function Class {
 				return "Class " + self.getClassName();
 			}
 		];
-	if (std::isundefined(static Class_stateFields))
-		Class_stateFields = [#stateInitialiser, #prototype, #mixInRequirements, #stateFields, #mixInRegistry, #className];
 	function Class_stateInitialiser(newClassInstance, validStateFieldsNames, stateInitialiser, prototype, mixInRequirements, stateFields, className) {
 		::assert_obj( prototype );
 		::assert_obj( mixInRequirements );
@@ -1361,6 +1408,44 @@ function Class {
 	return Class_state;
 }
 
+function Class_linkState(state, class) {
+	assert( ::Class_isa(class, ::Class()) );
+	// state must have initialised fields for all the state fields
+	// of the given class (plus all the mix-ins)
+	function hasAllFieldsInitialised (state, fields) {
+		foreach (local field, fields)
+			if ( not ::dobj_get(state, field) )
+				return false;
+		return true;
+	}
+	
+	if ( // fullfils state requiresments 
+		::forall(
+			local mixedInIterable = ::Iterable_fromDObj(class.mixedIn()),
+			::argumentSelector(
+				::fcomposition(
+					::bindfront(hasAllFieldsInitialised, state), // check state for every given fields-collection
+					::membercalltransformer(#stateFields, []) // tranform class to its state fields
+				),
+				0 // select only key (which is the class)
+			)
+		)
+		and hasAllFieldsInitialised(state, class.stateFields())
+	) {
+		// link to given class and all its mix-ins prototypes
+		(function behaviourLinker (state, prototype) {
+			::del(state, prototype); return true;
+		})(state, class.getPrototype());
+		::Iterable_foreach(
+				mixedInIterable,
+				::argumentSelector(
+						::bindfront(behaviourLinker, state),
+						0
+				)
+		);
+	}
+}
+
 
 p__classyClasses = true;
 function becomeClassy {
@@ -1375,6 +1460,104 @@ function beClassy {
 function beLean {
 	return not ::beClassy();
 }
+
+///////////////////
+// Object serialisation utils
+function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
+	const INDENT = "    ";
+	local visited = [
+		method visited (something) { @selfmap[something] = something; },
+		method isVisited(something){ return not not @selfmap[something]; },
+		@selfmap: []
+	];
+	local append = appendf;
+	
+	function impl (append, val, indentationLevel, visited) {
+		::Assert( ::isdeltacallable(append) );
+		::assert_def( val );
+		::assert_num( indentationLevel );
+		::assert_ge( indentationLevel , 0 );
+
+		local indent = ::bindfront(::assert_clb(append),
+				::strmul(INDENT, indentationLevel));
+		local write = ::bindfront(::foreachofargs,
+				::successifier(::fcomposition(::assert_clb(append), ::assert_def)));
+
+		// --- Delta String
+		if ( ::isdeltastring(local strval = val) )
+			write("\"", ::strdeltaescape(strval), "\"");
+
+		// --- Delta List
+		//     (delta list HAS TO come before objects, because it qualifies
+		//     as both -- in fact, it is a subset of objects)
+		else if ( ::isdeltalist(val) ) {
+			if ( not visited.isVisited(val) ) {
+				visited.visited(val);
+				// write an expression which when evaluated will regenerate
+				// to a wrapped std::list again (as provided by the util lib)
+				// TODO use the new lib:: std api for lib acquiring
+				write("(function {\n");
+				indent(); write("local u = std::vmget(\"util\"); assert( u ); "
+						"local result = u.list_new();\n");
+				::list_foreach (val, [
+					method @operator () (list_elem) {
+						@indent(); @write("u.list_push_back(result, ");
+						@impl(list_elem);
+						@write(");\n");
+					},
+					@write: write,
+					@indent: indent,
+					@impl: ::bindback(::bindfront(impl, append), indentationLevel + 1, visited)
+				]);
+				indent(); write("})()");
+			}
+		}
+
+		// -- Delta Objects
+		else if ( ::isdeltaobject(local objval = val) ) {
+			if ( not visited.isVisited(objval) ) {
+				visited.visited(objval);
+				write("[");
+				local previous_element_separator = "\n";
+				foreach (local key, ::dobj_keys(objval)) {
+					write(previous_element_separator);
+					previous_element_separator = ",\n";
+					indent();
+					write("{");
+					impl(append, key, indentationLevel + 1, visited);
+					write(": ");
+					impl(append, objval[key], indentationLevel + 1, visited);
+					write("}");
+				}
+				if (previous_element_separator != "\n") {
+					write("\n");
+					indent();
+				}
+				write("]");
+			}
+		}
+
+		// --- Delta Value
+		else if ( ::isdeltaboolean(val) or ::isdeltanumber(val) )
+			write(::tostring(val));
+
+		// --- Other
+		else
+			::error().AddError("Cannot serialise a value of type ",
+					::typeof(val));
+	}
+
+	if (precode)
+		append(precode);
+	append("\n\n// Autogenerated:\n", objvarname, " = ");
+	impl(append, dobj, 1, visited);
+	append(";\n\n");
+	if (postcode)
+		append(postcode);
+
+	return result;
+}
+
 
 function TESTING_THE_CLASS_MODEL {
 ///////////// TESTING THE CLASS MODEL /////////////
@@ -2158,3 +2341,4 @@ function func_StringAppender () {
 		@vuffer: ""
 	];
 }
+

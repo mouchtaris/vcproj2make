@@ -321,7 +321,7 @@ function main0 (argc, argv, envp) {
 	// TMP test code
 	local solutionData = p.solutionData;
 	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
-	if (false) pl.ProjectLoader_loadProject(
+	if (u.False()) pl.ProjectLoader_loadProject(
 			solutionData.ProjectEntryHolder.getProjectEntry(
 					solutionData.ConfigurationManager.Projects(
 							solutionData.ConfigurationManager.Configurations()[0]
@@ -331,6 +331,12 @@ function main0 (argc, argv, envp) {
 	// /TMP
 
 	p.generateReport(solutionData);
+}
+
+
+function main1 {
+	a = [ @self ];
+	u.println(a);
 }
 
 function main (argc, argv, envp) {
@@ -343,7 +349,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0);
+	})(arguments, 0, 1);
 	
 	p.cleanup();
 

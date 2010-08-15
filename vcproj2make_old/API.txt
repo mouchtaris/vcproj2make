@@ -60,6 +60,8 @@ function successifier                   (f)                             => f(); 
 function foreachofargs                  (f ...)                         // calls f for each argument given, continuing to iterate over the arguments as long as f returns true
 function firstarg                       (arguments)
 function lastarg                        (arguments)
+function argumentSelector               (f, ...)                        // calls f with arguments selected from the actual arguments
+                                                                        // by the (numerical) indices passed as variable arguments to this function
 //
 function isdeltastring  (val)
 function isdeltaobject  (val)
@@ -131,6 +133,12 @@ function list_clone                     (list)
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
 //
+function forall                         (Iterable, predicate)
+function forany                         (Iterable, predicate)
+function Iterable_fromList              (wrapped_list)
+function Iterable_fromDObj              (dobj)
+function Iterable_foreach               (Iterable, f)
+//
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
 function file_hidden                    (filename)
@@ -159,7 +167,7 @@ function orval  (val1, val2)        // val1? val1 : val2
 function ternary                        (cond, val1, val2)
 
 // Serialisatin utils
-function dobj_dump_delta    (dobj, path, objvarname, precode, postcode)
+function dobj_dump_delta    (dobj, appendf, objvarname, precode, postcode)
 
 // xml utilities
 function xmlload            (filename_str)
@@ -242,6 +250,9 @@ function unmixinObject              (instance)
 //               a delta object with arguments to be passed
 //               to the given class' "createInstance()" method in order to create an object
 //               for merging with a new object of this class.
+//         - mixedIn
+//               returns a deltaobject with pairs (simple deltaobjects) of classes registered
+//               to be mixed in along with their respective createInstanceArguments-generators-functors.
 //         - getPrototype
 //               returns this class' prototype for inspection and possible alteration.
 //         - stateFields
@@ -255,6 +266,7 @@ function unmixinObject              (instance)
 //         - stateFields
 //         - mixInRegistry
 //         - className
+function Class_linkState     (state, class)
 
 // Classiness
 function becomeClassy
