@@ -62,3 +62,9 @@ Issue_003:
 	];
 	std::delegate(state, proto);
 	std::print(state.Val);
+	
+Issue_004:
+	* fails at cleanup: issue004.rar
+	* (for simple reproduction: set set:error() as the callback for dynamic compilation)
+	
+	

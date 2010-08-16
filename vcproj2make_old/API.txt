@@ -74,8 +74,11 @@ function isdeltacallable(val)
 function isdeltalist    (val)
 function isdeltafunction(val)
 function isdeltamethod  (val)
+function isdeltaidentifier(val)
 function toboolean      (val)
 function tobool         (val)
+function tostring       (val)
+function tostringunoverloaded(val)
 //
 function assert_notnil      (val)
 function assert_notundef    (val)
@@ -110,6 +113,7 @@ function dobj_empty                     (dobj)
 function dobj_copy                      (dob)
 function dobj_replace                   (dobj, key, val)                 => oldval
 function dobj_equal                     (dobj1, dobj2)                   // unoverloaded equality check
+function dobj_getaddress                (dobj)                           => string representation of the object's internal memory address
 //
 function dval_copy                      (dval)                           // deep copy
 function dval_copy_into                 (dst, src)
@@ -125,11 +129,12 @@ function iterable_foreach               (iterable, f)               // iterate o
 //
 // a simple std::list wrapper
 function list_new                       ()
-function list_append                    (list, element)
 function list_push_back                 (list, element)
 function list_foreach                   (list, f)
 function list_to_stdlist                (list)
 function list_clone                     (list)
+function list_cardinality               (list)
+//
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
 //
@@ -151,7 +156,7 @@ function shell                          (command)
 function shellcopy                      (srcpath, destpath)
 //
 function strslice                       (str, start_index, end_index)
-function strsubstr                      (str, start_index ...)
+function strsubstr                      (str, start_index, [length] )
 function strsub                         (string, pattern, replacement)
 function strgsub                        (string, pattern, replacement)
 function strindex						(hay, needle)
@@ -165,9 +170,6 @@ function strdeltaescape                 (str)
 // program flow/control utilities
 function orval  (val1, val2)        // val1? val1 : val2
 function ternary                        (cond, val1, val2)
-
-// Serialisatin utils
-function dobj_dump_delta    (dobj, appendf, objvarname, precode, postcode)
 
 // xml utilities
 function xmlload            (filename_str)
@@ -267,6 +269,10 @@ function unmixinObject              (instance)
 //         - mixInRegistry
 //         - className
 function Class_linkState     (state, class)
+
+// Object Serialisatin utils
+function obj_dump_delta    (obj, appendf, objvarname, precode, postcode)
+
 
 // Classiness
 function becomeClassy

@@ -1,7 +1,7 @@
 // Get util library
-u = std::vmget("util");
-sd = std::vmget("SolutionLoader/SolutionData");
-rg = std::vmget("ReportGenerator");
+u  = std::libs::import("util");
+sd = std::libs::import("SolutionLoader/SolutionData");
+rg = std::libs::import("ReportGenerator");
 if (not u or not sd or not rg)
 	std::error("Could not acquire necessary VMs");
 

@@ -2,11 +2,12 @@
 // VM imports
 // ----------------------------------------------------------
 function importVM(path, id, onfail) {
-	if (not (local vm = std::vmload(path, id)))
+	std::libs::registershared(id, path);
+	if (not std::libs::isregisteredshared(id))
 		onfail(path, id);
 	else
-		std::vmrun(vm);
-	return vm;
+		local result = std::libs::import(id);
+	return result;
 }
 function onImportVMFail(path, id) {
 	std::error("Could not import " + id + " from " + path);
@@ -297,7 +298,7 @@ p = [
 			@log("Writing core as a delta source file...");
 			t0 = std::currenttime();
 			const sdcorecache_varname = "p__sdcore";
-			u.dobj_dump_delta(
+			u.obj_dump_delta(
 					sdcore,
 					(local fileappender = u.func_FileAppender("./SolutionLoader/Source/" + SolutionDataCoreCache_filename + ".dsc").init()).append,
 					sdcorecache_varname,
@@ -328,15 +329,62 @@ function main0 (argc, argv, envp) {
 					)[0]
 			).getLocation().deltaString()
 	);
-	// /TMP
+	
 
 	p.generateReport(solutionData);
 }
 
 
 function main1 {
-	a = [ @self ];
-	u.println(a);
+	local l1 = u.list_new();
+	u.list_push_back(l1, l1);
+	local a = [ 
+		@self,
+		l1,
+		l1,
+		@self[0],
+		@self[2],
+		[//a
+			[ {false:local tooEarly = @self}, {false:nil},
+				[//c
+					[//d
+						// how to ref b??
+						tooEarly,
+						l1
+					]
+				]
+			]
+		]
+	];
+	u.list_push_back(l1, a[5]            );
+	u.list_push_back(l1, a[5][0]         );
+	u.list_push_back(l1, a[5][0][0]      );
+	u.list_push_back(l1, a[5][0][0][0]   );
+	u.list_push_back(l1, a[5][0][0][0][0]);
+	u.list_push_back(l1, l1);
+	a[1] = l1;
+
+	// Do the ultimate test
+	const test_file_path = "./SolutionLoader/Source/SolutionDataCache.dsc";
+	local strappender = u.func_StringAppender().init();
+	u.obj_dump_delta( a, strappender.append, "boolis",
+			u.ENDL() + ::u.ENDL() + "function Boolis {", " return boolis; }");
+	local bytecode_outbuf = std::vmcompstringtooutputbuffer(
+				local boolis = strappender.deltastring(), u.println, false);
+	std::strsavetofile( boolis, test_file_path );
+	local bytecode_inbuf = std::inputbuffer_new(bytecode_outbuf);
+	std::libs::registershared("Bob", bytecode_inbuf);
+	local Bob = std::libs::import("Bob");
+	assert( Bob );
+	local Bob_initialised = Bob.Initialise();
+	assert( Bob_initialised );
+	local a_new = Bob.Boolis();
+	Bob.CleanUp();
+	std::libs::unimport(Bob);
+	local strappender2 = u.func_StringAppender().init();
+	u.obj_dump_delta( a_new, strappender2.append, "coolis", "function Coolis {", " return coolis; }");
+	local coolis = strappender2.deltastring();
+	u.println( coolis );
 }
 
 function main (argc, argv, envp) {
@@ -349,7 +397,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0, 1);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0);
 	
 	p.cleanup();
 

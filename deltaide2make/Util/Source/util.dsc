@@ -1,3 +1,5 @@
+////////////////////////
+// Module private 
 const plat_win32 = "win32";
 const plat_linux = "linux";
 const conf_debug = "debug";
@@ -79,6 +81,18 @@ ASsafeAlternatives = [
 	]}
 ];
 
+p__util = [
+	method forward (id) {
+		return std::vmfuncaddr(std::vmthis(), id);
+	}
+];
+forward = p__util.forward;
+
+//////////////////////////////////////////////////////////
+
+////////////////////////////
+// Module public
+
 function False {
 	return false;
 }
@@ -110,9 +124,18 @@ function isdeltalist  (val) {
 }
 function isdeltafunction (val) { return std::typeof(val) == "ProgramFunc"; }
 function isdeltamethod   (val) { return std::typeof(val) == "MethodFunc" ; }
+function isdeltaidentifier(val) { return std::strisident(val)            ; }
 function toboolean    (val) { if (val) return true; else return false; }
 function tobool       (val) { return ::toboolean(val)         ; }
 function tostring     (val) { return "" + val                 ; }
+function tostringunoverloaded (val) {
+	local wasOperatorOverloadingEnabled = std::tabisoverloadingenabled(val);
+	std::tabdisableoverloading(val);
+	local str = ::tostring(val);
+	if (wasOperatorOverloadingEnabled)
+		std::tabenableoverloading(val);
+	return str;
+}
 //
 // assertion utils
 function Assert(cond) {
@@ -360,6 +383,129 @@ function getcwd {
 	return p__DoNotASsafeCall(#getcwd, #isi, #std, [], "");
 }
 
+/// delta strings utilities
+function strslice(str, start_index, end_index) {
+	local result = nil;
+	if (start_index >= std::strlen(str))
+		result = "";
+	else if (start_index == end_index)
+		result = std::strchar(str, start_index);
+	else {
+		::assert_gt_or_eq( end_index , start_index , end_index , 0 );
+		result = std::strslice(str, start_index, end_index);
+	}
+	return result;
+}
+function strsubstr(str, start_index ...) {
+	local result = nil;
+	local end_index = nil;
+	local length = nil;
+	if (local arg3 = arguments[2]) {
+		if ( not std::typeof(arg3) == "Number" )
+			std::error("substring() expects length of type Number but " + arg3 + "(" + std::typeof(arg3) + ") given");
+		length = arg3;
+	}
+	::assert_num(start_index);
+	if ( start_index >= 0 ) {
+		if (::isdeltanumber(length)) {
+			::assert_num(length);
+			::assert_ge( length , 0 );
+			if (length)
+				end_index = start_index + length - 1;
+			else
+				end_index = -1;
+		}
+		else
+			end_index = 0;
+		if (end_index < 0)
+			result = "";
+		else {
+			::assert_ge_or_eq( end_index , start_index , end_index , 0 );
+			result = ::strslice(str, start_index, end_index);
+		}
+	}
+	return result;
+}
+function strsub(string, pattern, replacement) {
+	local result = string;
+	local pattern_index = std::strsub(string, pattern);
+	if (pattern_index >= 0) {
+		::println("&&&strsub&&& looking for \"", pattern, "\" in \"", string, "\"");
+		local initial_part = ::strslice(string, 0, pattern_index - 1);
+		::assert_str(initial_part);
+		local rest = ::strslice(string, pattern_index + std::strlen(pattern), 0);
+		::assert_str(rest);
+		result = initial_part + replacement + rest;
+	}
+	return result;
+}
+function strgsub(string, pattern, replacement) {
+	::assert_str(pattern);
+	if (pattern == "")
+			return string;
+	local string_to_check = string;
+	local result = "";
+	while ((local pattern_index = std::strsub(string_to_check, pattern)) >= 0) {
+		local initial_part = nil;
+		if (pattern_index == 0)
+			initial_part = "";
+		else
+			initial_part = ::strslice(string_to_check, 0, pattern_index - 1);
+		::assert_str(initial_part);
+		string_to_check = ::strsubstr(string_to_check, pattern_index + std::strlen(pattern));
+		::assert_str(string_to_check);
+
+		result += initial_part + replacement;
+	}
+	return result + string_to_check;
+}
+function strindex(hay, needle) {
+	return std::strsub(hay, needle);
+}
+function strrindex(hay, needle) {
+	::assert_str(hay);
+	::assert_str(needle);
+	for (local i = std::strlen(hay); i >= 0 and std::strsub(::strsubstr(hay, i), needle) == -1; --i)
+		;
+	return i;
+}
+function strlength(str) {
+	return std::strlen(str);
+}
+function strchar(str, charindex) {
+	return std::strchar(str, charindex);
+}
+function strmul(str, times) {
+	return std::strrep(str, times);
+}
+function strsplit(str, pattern, max) {
+	::assert_str( str );
+	::assert_str( pattern );
+	::assert_num( max );
+	
+	local pattern_length = ::strlength(pattern);
+	local pieces_index = 0;
+	local result = [];
+	local times_left = max;
+	local done = false;
+	local search_in = str;
+	while ( not done and search_in != "" and (times_left-- > 0 or max <= 0)) {
+		local end = ::strindex(search_in, pattern);
+		// if pattern found
+		if ( not ( done = (end < 0)) ) {
+			result[pieces_index++] = ::strsubstr(search_in, 0, end);
+			search_in = ::strsubstr(search_in, end + pattern_length);
+		}
+	}
+	// Append rest of the string as a piece
+	result[pieces_index++] = search_in;
+	::assert_eq( pieces_index, ::forward(#dobj_length)(result) );
+	return result;
+}
+function strdeltaescape (str) {
+	return ::strgsub(::strgsub(::strgsub(::strgsub(str, 
+			"\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\t", "\\t");
+}
 //
 // "private field"
 function pfield(field_name) {
@@ -424,6 +570,14 @@ function dobj_replace (dobj, index, newval) {
 	local prev = dobj[index];
 	dobj[index] = newval;
 	return prev;
+}
+function dobj_getaddress (dobj) {
+	local str = ::tostringunoverloaded(dobj);
+	local addr_begin = ::strindex(str, "Object(") + 7;
+	local addr_end = ::strindex(str, ")") - 1;
+	::assert_gt( addr_end , addr_begin );
+	local addr = ::strsubstr(str, addr_begin, addr_end - addr_begin + 1);
+	return addr;
 }
 //
 function dval_copy (val) {
@@ -621,9 +775,6 @@ function list_push_back (list, element) {
 	assert( ::isdeltalist(list) );
 	std::list_push_back(::p__list.getlist(list), element);
 }
-function list_append (list, element) {
-	return list_push_back(list, element);
-}
 function list_foreach (list, f) {
 	assert( ::isdeltalist(list) );
 	return ::iterable_foreach(::p__list.getlist(list), f);
@@ -642,6 +793,10 @@ function list_clone (list) {
 			]}
 	];
 }
+function list_cardinality (list) {
+	return std::list_total(::p__list.getlist(list));
+}
+
 //
 function iterable_clone_to_list (iterable) {
 	local result = ::list_new();
@@ -748,125 +903,6 @@ function Iterable_foreach (iterable, f) {
 	local keep_iterating = true;
 	while (keep_iterating and not ite.end())
 		keep_iterating = f(ite.key(), ite.value());
-}
-
-/// delta strings utilities
-function strslice(str, start_index, end_index) {
-	local result = nil;
-	if (start_index >= std::strlen(str))
-		result = "";
-	else if (start_index == end_index)
-		result = std::strchar(str, start_index);
-	else {
-		::assert_gt_or_eq( end_index , start_index , end_index , 0 );
-		result = std::strslice(str, start_index, end_index);
-	}
-	return result;
-}
-function strsubstr(str, start_index ...) {
-	local result = nil;
-	local end_index = nil;
-	local length = nil;
-	if (local arg3 = arguments[2]) {
-		if ( not std::typeof(arg3) == "Number" )
-			std::error("substring() expects length of type Number but " + arg3 + "(" + std::typeof(arg3) + ") given");
-		length = arg3;
-	}
-	::assert_num(start_index);
-	if ( start_index >= 0 ) {
-		if (length) {
-			::assert_num(length);
-			::assert_ge( length , 0 );
-			end_index = start_index + length;
-		}
-		else
-			end_index = 0;
-		::assert_ge_or_eq( end_index , start_index , end_index , 0 );
-		result = ::strslice(str, start_index, end_index);
-	}
-	return result;
-}
-function strsub(string, pattern, replacement) {
-	local result = string;
-	local pattern_index = std::strsub(string, pattern);
-	if (pattern_index >= 0) {
-		::println("&&&strsub&&& looking for \"", pattern, "\" in \"", string, "\"");
-		local initial_part = ::strslice(string, 0, pattern_index - 1);
-		::assert_str(initial_part);
-		local rest = ::strslice(string, pattern_index + std::strlen(pattern), 0);
-		::assert_str(rest);
-		result = initial_part + replacement + rest;
-	}
-	return result;
-}
-function strgsub(string, pattern, replacement) {
-	::assert_str(pattern);
-	if (pattern == "")
-			return string;
-	local string_to_check = string;
-	local result = "";
-	while ((local pattern_index = std::strsub(string_to_check, pattern)) >= 0) {
-		local initial_part = nil;
-		if (pattern_index == 0)
-			initial_part = "";
-		else
-			initial_part = ::strslice(string_to_check, 0, pattern_index - 1);
-		::assert_str(initial_part);
-		string_to_check = ::strsubstr(string_to_check, pattern_index + std::strlen(pattern));
-		::assert_str(string_to_check);
-
-		result += initial_part + replacement;
-	}
-	return result + string_to_check;
-}
-function strindex(hay, needle) {
-	return std::strsub(hay, needle);
-}
-function strrindex(hay, needle) {
-	::assert_str(hay);
-	::assert_str(needle);
-	for (local i = std::strlen(hay); i >= 0 and std::strsub(::strsubstr(hay, i), needle) == -1; --i)
-		;
-	return i;
-}
-function strlength(str) {
-	return std::strlen(str);
-}
-function strchar(str, charindex) {
-	return std::strchar(str, charindex);
-}
-function strmul(str, times) {
-	return std::strrep(str, times);
-}
-function strsplit(str, pattern, max) {
-	::assert_str( str );
-	::assert_str( pattern );
-	::assert_num( max );
-	
-	local pattern_length = ::strlength(pattern);
-	local pieces_index = 0;
-	local result = [];
-	local times_left = max;
-	local done = false;
-	local search_in = str;
-	while ( not done and search_in != "" and (times_left-- > 0 or max <= 0)) {
-		local end = ::strindex(search_in, pattern);
-		// if pattern found
-		if ( not ( done = (end < 0)) ) {
-			if ( end > 0 )
-				--end;
-			result[pieces_index++] = ::strsubstr(search_in, 0, end);
-			search_in = ::strsubstr(search_in, end + 1 + pattern_length);
-		}
-	}
-	// Append rest of the string as a piece
-	result[pieces_index++] = search_in;
-	::assert_eq( pieces_index, ::dobj_length(result) );
-	return result;
-}
-function strdeltaescape (str) {
-	return ::strgsub(::strgsub(::strgsub(::strgsub(str, 
-			"\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\t", "\\t");
 }
 
 /// File utilities
@@ -1125,7 +1161,7 @@ function Class_classRegistry {
 							class_objid, ". Disregarding.");
 				else {
 					local regbyname = getregbyname(self);
-					if ( ::dobj_contains(regbyname, local class_name = class.getName()) )
+					if ( ::dobj_contains(regbyname, local class_name = class.getClassName()) )
 						::error().AddError("A class with a duplicate name is being registered: ",
 								class_name, ". Disregarding.");
 					else {
@@ -1143,9 +1179,9 @@ function Class_classRegistry {
 			},
 			method getByName (class_name) {
 				assert( ::isdeltastring(class_name) );
-				local result (local regbyname = getregbyname(self))[class_name];
+				local result = (local regbyname = getregbyname(self))[class_name];
 				assert( result.getName() == class_name );
-				assert( ::Class_isa(result, Class() );
+				assert( ::Class_isa(result, Class()) );
 				return result;
 			}
 		];
@@ -1260,10 +1296,10 @@ function Class {
 				// now the new object is also an Object, we can register ourselves and mix-ins as its classes.
 				newInstanceState.addClass(self);
 				////
-				// initialise as an object of the given class
-				stateInitialiser(newInstanceState, self_stateFields, ...);
 				// Link to prototype
 				std::delegate(newInstanceState, prototype);
+				// initialise as an object of the given class
+				stateInitialiser(newInstanceState, self_stateFields, ...);
 				// new instance is initialised and linked to its original class,
 				// so the class' API can be used after this point.
 				////
@@ -1465,9 +1501,44 @@ function beLean {
 // Object serialisation utils
 function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 	const INDENT = "    ";
+	// ------------------------------------------------------
+	const                     utilLib_VariableName = #u                                 ;
+	const           privateStaticData_VariableName = #p_________________________________;
+	const classObjectIdToClassNameMap_MemberName   = "Class Object ID to Class Name Map";
+	const              objectRegistry_MemberName   = "Object registry"                  ;
+	const              registerObject_MemberName   = "Register Object Method"           ;
+	const                   getObject_MemberName   = "Get A Registered Object"          ;
+	const      registerObjectShortcut_VariableName = #registerObject                    ;
+	const            getObjectShortut_VariableName = #getObject                         ;
+	const                  objectSave_VariableName = #objSaverFor__                     ;
+	// ------------------------------------------------------
+	function withObjectRegistering { return true; }
+	// ------------------------------------------------------
+	function objid   (obj) { return        ::dobj_getaddress(obj       )       ; }
+	function strobjid(obj) { return "\"" + ::strdeltaescape (objid(obj)) + "\""; }
+	// ------------------------------------------------------
 	local visited = [
-		method visited (something) { @selfmap[something] = something; },
-		method isVisited(something){ return not not @selfmap[something]; },
+		method visitingStarting (something) {
+			assert( ::isdeltanil(@selfmap[something]) );
+			@selfmap[something] = [
+				@beingVisited: true,
+				@id          : objid(something)
+			];
+		},
+		method visitingEnded (something) {
+			assert( @isBeingVisited(something) );
+			local entry = @selfmap[[something]];
+			assert( entry.id == objid(something) );
+			entry.beingVisited = false;
+		},
+		method isBeingVisited (something) {
+			local entry = @selfmap[[something]];
+			::assert_def( entry );
+			return entry..beingVisited;
+		},
+		method isEncountered (something) {
+			return not not @selfmap[[something]];
+		},
 		@selfmap: []
 	];
 	local append = appendf;
@@ -1482,6 +1553,41 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 				::strmul(INDENT, indentationLevel));
 		local write = ::bindfront(::foreachofargs,
 				::successifier(::fcomposition(::assert_clb(append), ::assert_def)));
+		function registerObjectEpxressionOpening (obj) {
+			if (withObjectRegistering()) {
+				return "::" + registerObjectShortcut_VariableName + "(" + strobjid(obj) + ", ";
+			}
+			else
+				return "";
+		}
+		function registerObjectExpressionClosing {
+			if (withObjectRegistering())
+				return ")";
+			else
+				return "";
+		}
+		function registerObjectExpression (obj, newObjExpr) {
+			return registerObjectEpxressionOpening(obj) + newObjExpr + registerObjectExpressionClosing();
+		}
+		function fetchRegisteredObjectExpression (visited, obj) {
+			function fetchFromRegistry (visited, obj) {
+				assert( visited.isEncountered(obj) );
+				assert( not visited.isBeingVisited(obj) );
+				return "::" + getObjectShortut_VariableName + "(" + strobjid(obj) + ")";
+			}
+			function fetchFromObjectSaverVariable (visited, obj) {
+				assert( visited.isEncountered(obj) );
+				assert( visited.isBeingVisited(obj) );
+				return objectSave_VariableName + objid(obj);
+			}
+			assert( ::isdeltalist(obj) or ::isdeltaobject(obj) );
+			local result = nil;
+			if (visited.isBeingVisited(obj))
+				result = fetchFromObjectSaverVariable(visited, obj);
+			else
+				result = fetchFromRegistry(visited, obj);
+			return result;
+		}
 
 		// --- Delta String
 		if ( ::isdeltastring(local strval = val) )
@@ -1491,37 +1597,59 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		//     (delta list HAS TO come before objects, because it qualifies
 		//     as both -- in fact, it is a subset of objects)
 		else if ( ::isdeltalist(val) ) {
-			if ( not visited.isVisited(val) ) {
-				visited.visited(val);
-				// write an expression which when evaluated will regenerate
-				// to a wrapped std::list again (as provided by the util lib)
-				// TODO use the new lib:: std api for lib acquiring
-				write("(function {\n");
-				indent(); write("local u = std::vmget(\"util\"); assert( u ); "
-						"local result = u.list_new();\n");
-				::list_foreach (val, [
-					method @operator () (list_elem) {
-						@indent(); @write("u.list_push_back(result, ");
-						@impl(list_elem);
-						@write(");\n");
-					},
-					@write: write,
-					@indent: indent,
-					@impl: ::bindback(::bindfront(impl, append), indentationLevel + 1, visited)
-				]);
-				indent(); write("})()");
+			local newListExpression = registerObjectExpression(val,
+					"::" + utilLib_VariableName + ".list_new()"); 
+			if ( not visited.isEncountered(val) ) {
+				// register in our own visited list
+				visited.visitingStarting(val);
+				// a list can be used from the object registry right away
+				visited.visitingEnded(val);
+				// register in the generatd object registry also (done below)
+				if (::list_cardinality(val)) {
+					// write an expression which when evaluated will regenerate
+					// to a wrapped std::list again (as provided by the util lib)
+					write("(function {", ::ENDL());
+					const list_VariableName = #result;
+					indent(); write("local ", list_VariableName, " = ", newListExpression,
+							";", ::ENDL());
+					::list_foreach (val, [
+						method @operator () (list_elem) {
+							@indent(); @write("::", utilLib_VariableName, ".list_push_back(",
+									list_VariableName, ", ");
+							@impl(list_elem);
+							@write(");", ::ENDL());
+							return true; // keep iterating
+						},
+						@write : write,
+						@indent: indent,
+						@impl  : ::bindback(::bindfront(impl, append), indentationLevel + 1, visited)
+					]);
+					indent(); write("return ", list_VariableName, ";", ::ENDL());
+					indent(); write("})()");
+				}
+				else // empty list, no need for a function-expression
+					write(newListExpression);
 			}
+			else // list has been encountered before, simply fetch it from the object registry
+				write(fetchRegisteredObjectExpression(visited, val));
 		}
 
 		// -- Delta Objects
 		else if ( ::isdeltaobject(local objval = val) ) {
-			if ( not visited.isVisited(objval) ) {
-				visited.visited(objval);
-				write("[");
-				local previous_element_separator = "\n";
+			if ( not visited.isEncountered(objval) ) {
+				// register in our own visited list
+				visited.visitingStarting(objval);
+				// register in the generatd object registry also (done below)
+				write(registerObjectEpxressionOpening(objval), "[");
+				// also store object cheatingly to an obj-saver var for quick
+				// resolution to self references
+				local objsaver_var = objectSave_VariableName + objid(objval);
+				assert( ::isdeltaidentifier(objsaver_var) );
+				write("{\"chica bom\": local " + objsaver_var + " = @self}, {\"chica bom\": nil},");
+				local previous_element_separator = ::ENDL();
 				foreach (local key, ::dobj_keys(objval)) {
 					write(previous_element_separator);
-					previous_element_separator = ",\n";
+					previous_element_separator = "," + ::ENDL();
 					indent();
 					write("{");
 					impl(append, key, indentationLevel + 1, visited);
@@ -1529,12 +1657,16 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 					impl(append, objval[key], indentationLevel + 1, visited);
 					write("}");
 				}
-				if (previous_element_separator != "\n") {
-					write("\n");
+				if (previous_element_separator != ::ENDL()) {
+					write(::ENDL());
 					indent();
 				}
-				write("]");
+				write("]", registerObjectExpressionClosing());
+				// note that visiting ended
+				visited.visitingEnded(objval);
 			}
+			else // obj has been encountered before, simply fetch it from the objet registry
+				write(fetchRegisteredObjectExpression(visited, objval));
 		}
 
 		// --- Delta Value
@@ -1545,6 +1677,60 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		else
 			::error().AddError("Cannot serialise a value of type ",
 					::typeof(val));
+	}
+
+	//
+	// ---------- Intro: write our prelude ------------------
+	{
+		// Create a global variable to hold the Util lib VM ref
+		append(utilLib_VariableName, " = nil;", ::ENDL());
+		// Private static data
+		append(privateStaticData_VariableName, " = ");
+		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": []}");
+		if (withObjectRegistering())
+			append(
+				",", ::ENDL(),
+				INDENT, "{\"", objectRegistry_MemberName, "\": [", ::ENDL(),
+				INDENT, INDENT, "{\"", registerObject_MemberName, "\": method registerObject (id, obj) {", ::ENDL(),
+				INDENT, INDENT, INDENT, "::", utilLib_VariableName, ".assert_str(id);", ::ENDL(),
+				INDENT, INDENT, INDENT, "return @objects[id] = obj;", ::ENDL(),
+				INDENT, INDENT, "}},", ::ENDL(),
+				INDENT, INDENT, "{\"objects\": []},", ::ENDL(),
+				INDENT, INDENT, "{\"", getObject_MemberName, "\": method getObject (id) {", ::ENDL(),
+				INDENT, INDENT, INDENT, "::", utilLib_VariableName, ".assert_str( id );", ::ENDL(),
+				INDENT, INDENT, INDENT, "local result = @objects[id];", ::ENDL(),
+				INDENT, INDENT, INDENT, "::", utilLib_VariableName, ".assert_def(result);", ::ENDL(),
+				INDENT, INDENT, INDENT, "return result;", ::ENDL(),
+				INDENT, INDENT, "}}", ::ENDL(),
+				INDENT, "]}", ::ENDL()
+			);
+		append("];", ::ENDL());
+		// Write the shortcuts for registering objects and getting objects
+		if (withObjectRegistering())
+			append(registerObjectShortcut_VariableName, " = ", privateStaticData_VariableName,
+				".\"", objectRegistry_MemberName, "\".\"", registerObject_MemberName, "\";", ::ENDL(),
+				getObjectShortut_VariableName, " = ", privateStaticData_VariableName,
+				".\"", objectRegistry_MemberName, "\".\"", getObject_MemberName, "\";", ::ENDL()
+			);
+		// Write our init() and cleanup() functions
+		append(
+				// ::errorDescription and InitialisationErrorDescription()
+				"errorDescription = nil;", ::ENDL(),
+				"function InitialisationErrorDescription {", ::ENDL(),
+				INDENT, "return ::errorDescription;", ::ENDL(),
+				"}", ::ENDL(),
+				// UtilLIbId, Initialise() and CleanUp()
+				"const UtilLibId = \"util\";", ::ENDL(),
+				"function Initialise {", ::ENDL(),
+				INDENT, "::", utilLib_VariableName, " = std::libs::import(UtilLibId);", ::ENDL(),
+				INDENT, "if (not local result = not not ", utilLib_VariableName, ")", ::ENDL(),
+				INDENT, INDENT, " ::errorDescription = \"Could not import Util lib with id "
+						"\\\"\" + UtilLibId + \"\\\"\";", ::ENDL(),
+				INDENT, "return result;", ::ENDL(),
+				"}", ::ENDL(),
+				"function CleanUp {", ::ENDL(),
+				INDENT, "std::libs::unimport(::", utilLib_VariableName, ");", ::ENDL(),
+				"}");
 	}
 
 	if (precode)

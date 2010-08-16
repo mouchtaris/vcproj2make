@@ -1,5 +1,5 @@
 // Get util library
-u = std::vmget("util");
+u = std::libs::import("util");
 assert( u );
 
 
