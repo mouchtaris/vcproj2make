@@ -261,28 +261,33 @@ p = [
 			];
 			time("loading vm with cached data", op);
 			local sl_sdch = op.result;
-			local cache_func = sl_sdch[SolutionDataCoreCache_funcname];
-			if (cache_func) {
-				local op = [
-					method @operator () { @cache = @cache_func(); },
-					@cache_func: cache_func,
-					@cache: false
-				];
-				time("acquiring cached data from vm", op);
-				local cache = op.cache;
-				op = [
-					method @operator() {
-						@sd = sl_sd.SolutionDataFactory_CreateFromCore(@cache);
-					},
-					@cache: cache,
-					@sd: false
-				];
-				time("recreating Solution data from cache", op);
-				local solutionData = op.sd;
-				if (solutionData) {
-					cache_hit = true;
-					@solutionData = solutionData;
-					@log("SolutionData cache hit");
+			if (sl_sdch.Initialise()) {
+				local cache_func = sl_sdch[SolutionDataCoreCache_funcname];
+				if (cache_func) {
+					local op = [
+						method @operator () { @cache = @cache_func(); },
+						@cache_func: cache_func,
+						@cache: false
+					];
+					time("acquiring cached data from vm", op);
+					op.() = u.methodinstalled(op, method { @sl_sdch.CleanUp(); });
+					op.sl_sdch = sl_sdch;
+					time("Cleaning Up cache-data vm", op);
+					local cache = op.cache;
+					op = [
+						method @operator() {
+							@sd = sl_sd.SolutionDataFactory_CreateFromCore(@cache);
+						},
+						@cache: cache,
+						@sd: false
+					];
+					time("recreating Solution data from cache", op);
+					local solutionData = op.sd;
+					if (solutionData) {
+						cache_hit = true;
+						@solutionData = solutionData;
+						@log("SolutionData cache hit");
+					}
 				}
 			}
 		}
@@ -300,11 +305,16 @@ p = [
 			const sdcorecache_varname = "p__sdcore";
 			u.obj_dump_delta(
 					sdcore,
-					(local fileappender = u.func_FileAppender("./SolutionLoader/Source/" + SolutionDataCoreCache_filename + ".dsc").init()).append,
+					(local fileappender =
+							u.func_FileAppender(
+									"./SolutionLoader/Source/" +
+											SolutionDataCoreCache_filename + ".dsc"
+							).init()
+					).append,
 					sdcorecache_varname,
-					nil,
 					"function " + SolutionDataCoreCache_funcname +
-							" { return ::" + sdcorecache_varname + "; }");
+							" { " + u.ENDL(),
+					u.ENDL() + " return local " + sdcorecache_varname + ";" + u.ENDL() + "}");
 			fileappender.cleanup();
 			t1 = std::currenttime();
 			@log("Writing cache to delta source needed: ", t1 - t0, "msec");
