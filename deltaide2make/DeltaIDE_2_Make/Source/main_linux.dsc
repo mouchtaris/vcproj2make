@@ -13,20 +13,23 @@ envp = [
 	//@strict_delta			: "linux_debug",
 	//@strict_delta			: "linux_release",
 	// Copy libraries from predefined paths, so as to have the latest versions
-	@update_libs			: true,
+	@update_libs	      : true,
 	// unixify sources
-	@unixify				: false,
+	@unixify		      : false,
 	// lean classes
-	@lean_classes			: false,
-	// An HTML Report: generate it or not? (takes time)
-	@report					: false,
+	@lean_classes	      : false,
 	// Try to load Solution Data from cache
-	@SolutionDataCached		: true,
+	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
-	@SolutionDataCache		: true,
+	@SolutionDataCache    : true,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML	: true
+	@RegenerateSolutionXML: not @self.SolutionDataCached,
+	// An HTML Report: generate it or not? (takes time)
+	@report			      : @self.SolutionDataCached,
+	// Root directory of the Delta build used to run this script
+	// (should contain DeltaExtraLibraries/, etc...)
+	@DeltaBuildRoot	      : 	"."
 ];
 
 args = [

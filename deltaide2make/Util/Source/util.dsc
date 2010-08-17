@@ -1183,6 +1183,9 @@ function Class_classRegistry {
 				assert( result.getName() == class_name );
 				assert( ::Class_isa(result, Class()) );
 				return result;
+			},
+			method Classes {
+				return ::dobj_copy(getregbyname(self));
 			}
 		];
 		//
@@ -1195,9 +1198,11 @@ p__Object = [
 	method nextID { return @id++; },
 	@id: 0
 ];
+const p__Object__stateField__classes   = #classes;
+const p__Object__stateField__Object_ID = #Object_ID;
 function Object_stateFields {
 	if (std::isundefined(static stateFields))
-		stateFields = [ #classes, #Object_ID ];
+		stateFields = [ ::p__Object__stateField__classes, ::p__Object__stateField__Object_ID ];
 	return stateFields;
 }
 function Object_stateInitialiser {
@@ -1251,6 +1256,15 @@ function Object_prototype {
 }
 function Object_mixinRequirements {
 	return [];
+}
+function Object_looksLikeAnObject (obj) {
+	assert( ::dobj_length(::Object_stateFields()) == 2 );
+	return
+			(local classes = ::dobj_get(obj, ::p__Object__stateField__classes))    and
+			::isdeltalist(classes)                                                 and
+			(local ObjectID = ::dobj_get(obj, ::p__Object__stateField__Object_ID)) and
+			::isdeltanumber(ObjectID)                                              and
+	true;
 }
 function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) {
 	// manually mix-in the object class (by default)
@@ -1686,7 +1700,16 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		append(utilLib_VariableName, " = nil;", ::ENDL());
 		// Private static data
 		append(privateStaticData_VariableName, " = ");
-		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": []}");
+		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": ");
+		::Iterable_foreach(::Iterable_fromDObj(::Class_classRegistry().Classes()),
+				local classObjId2NameMapCreator = [
+					method @operator () (class_name, class) {
+						@map[class.ObjectID()] = class.getClassName();
+					},
+					@map: []
+		]);
+		impl(append, classObjId2NameMapCreator.map, 1, visited);
+		append("}");
 		if (withObjectRegistering())
 			append(
 				",", ::ENDL(),
@@ -1741,6 +1764,25 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 	if (postcode)
 		append(postcode);
 
+	return result;
+}
+// TODO:
+// - dump class objid->name map by hand
+// - return true in the dumping iterator's functor
+function obj_load_delta (core) {
+	function updateObjectID (obj) {
+		::dobj_checked_set(
+				obj,
+				::Object_stateFields,
+				::p__Object__stateField__Object_ID,
+				::p__Object.nextID()
+		);
+	}
+	local result = nil;
+	if (::Object_looksLikeAnObject(core)) {
+		 updateObjectID(core);
+		// TODO continue here with class linking
+	}
 	return result;
 }
 

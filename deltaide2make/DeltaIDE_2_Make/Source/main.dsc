@@ -397,6 +397,43 @@ function main1 {
 	u.println( coolis );
 }
 
+function main2 { // Issue 001
+	std::vmload("No path", "Non-existant VM");
+	foreach (local dummy_table_iteration, [1,2,3])
+		std::print(dummy_table_iteration);
+}
+
+function main3 { // Issue 002
+	const p__Object__Object_id_attribute_name = "$_ObjectID";
+	local o = [];
+	std::tabnewattribute(o, p__Object__Object_id_attribute_name,
+		function Object_setObjectID { std::error("Setting an object ID is not allowed"); },
+		// PROBLEM HERE ---> doing a std::tabget() for an attribute
+		std::tabmethodonme(o, method Object_getObjectID { return std::tabget(self, p__Object__Object_id_attribute_name); })
+	);
+	std::tabsetattribute(o, p__Object__Object_id_attribute_name, 34);
+	std::print(o."$_ObjectID");
+}
+
+
+function main4 { // Issue 3
+	local state = [ @val: 8 ];
+	local proto = [ 
+		@Val {
+			@set method (val) { self.val = val; }
+			@get method { return self.val; }
+		}
+	];
+	std::delegate(state, proto);
+	std::print(state.Val);
+}
+
+
+function main5 { // Issue 4
+	local ob = std::vmcompstringtooutputbuffer("std::print(\"Hello\\n\");", std::error, false);
+}
+
+
 function main (argc, argv, envp) {
 	p.config = envp;
 	p.init(argv);
@@ -407,7 +444,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3);
 	
 	p.cleanup();
 

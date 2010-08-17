@@ -217,6 +217,7 @@ function Object_stateFields
 function Object_stateInitialiser
 function Object_prototype
 function Object_mixinRequirements
+function Object_looksLikeAnObject   (dobj)
 function mixinObject                (newInstance, newInstanceStateFields, newInstancePrototype)
 function unmixinObject              (instance)
 
@@ -272,6 +273,7 @@ function Class_linkState     (state, class)
 
 // Object Serialisatin utils
 function obj_dump_delta    (obj, appendf, objvarname, precode, postcode)
+function obj_load_delta    (core)
 
 
 // Classiness
