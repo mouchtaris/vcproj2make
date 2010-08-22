@@ -29,16 +29,16 @@ envp = [
 	@report			      : @self.SolutionDataCached,
 	// Root directory of the Delta build used to run this script
 	// (should contain DeltaExtraLibraries/, etc...)
-	@DeltaBuildRoot	      : 	"..\\..\\..\\..\\thesis_new\\deltaide\\Tools"
-							//	"..\\..\\..\\..\\thesis_new\\SkriptBarbarian"
+	@DeltaBuildRoot	      : //	"..\\..\\..\\..\\thesis_new\\deltaide\\Tools"
+								"..\\..\\..\\..\\thesis_new\\SkriptBarbarian"
 ];
 
 args = [
 	@progname:		"deltaide2make",
 	@solution_name:	"IDE",
 	@solution_path:
-					"../../../../thesis_new/deltaide/IDE/IDE.sln"
-				//	"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
+					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

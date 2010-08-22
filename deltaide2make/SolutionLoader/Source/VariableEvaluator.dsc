@@ -75,3 +75,24 @@ function VariableEvaluator {
 		static_variables_intialised = true;
 	}
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Module Initialisation and clean up
+////////////////////////////////////////////////////////////////////////////////////
+init_helper = u.InitialisableModuleHelper("SolutionLoader/VariableEvaluator",
+	[ method @operator () {
+		::VariableEvaluator();
+		return true;
+	}]."()",
+	nil
+);
+
+function Initialise {
+	return ::init_helper.Initialise();
+}
+
+function CleanUp {
+	return ::init_helper.CleanUp();
+}
+////////////////////////////////////////////////////////////////////////////////////

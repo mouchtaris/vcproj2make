@@ -2,15 +2,19 @@
 // VM imports
 // ----------------------------------------------------------
 function importVM(path, id, onfail) {
+	local result = nil;
 	std::libs::registershared(id, path);
 	if (not std::libs::isregisteredshared(id))
-		onfail(path, id);
-	else
-		local result = std::libs::import(id);
+		onfail(path, id, "not registered");
+	else {
+		result = std::libs::import(id);
+		if (not result.Initialise())
+			onfail(path, id, "initialisation failed");
+	}
 	return result;
 }
-function onImportVMFail(path, id) {
-	std::error("Could not import " + id + " from " + path);
+function onImportVMFail(path, id, reason) {
+	std::error("Could not import " + id + " from " + path + ". Reason: " + reason);
 }
 const SolutionDataCoreCache_filename = "SolutionDataCache";
 local u  = importVM("Util/Lib/util.dbc", "util", onImportVMFail);
@@ -444,7 +448,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0);
 	
 	p.cleanup();
 

@@ -624,3 +624,22 @@ function SolutionDataFactory_CreateFromCore (core) {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// Module Initialisation and clean up
+////////////////////////////////////////////////////////////////////////////////////
+init_helper = u.InitialisableModuleHelper("SolutionLoader/SolutionData",
+	[ method @operator () {
+		::ProjectEntry(), ::ConfigurationManager(), ::ProjectEntryHolder();
+		return true;
+	}]."()",
+	nil
+);
+
+function Initialise {
+	return ::init_helper.Initialise();
+}
+
+function CleanUp {
+	return ::init_helper.CleanUp();
+}
+////////////////////////////////////////////////////////////////////////////////////

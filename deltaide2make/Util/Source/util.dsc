@@ -241,6 +241,8 @@ function error {
 				{ error_AddError("Could not find a *::" + libfuncname + " libfunc. " + extraerrmsg); },
 			@UnknownConfiguration: function error_UnknownConfiguration
 				{ error_AddError("Unknown configuration: " + std::vmfuncaddr(std::vmthis(), #deltaconfiguration)()); },
+			@MoreCleanUpsThanInitialisations: function error_MoreCleanUpsThanInitialisation (moduleName)
+				{ error_AddError("Module \"", moduleName, "\" Cleaned-Up() more times than Initialise()d"); },
 				
 			@Die: function error_Die(...)
 				{ error_AddError(...); }
@@ -901,7 +903,7 @@ function Iterable_fromDObj (dobj) {
 function Iterable_foreach (iterable, f) {
 	local ite = iterable.iterator();
 	local keep_iterating = true;
-	while (keep_iterating and not ite.end())
+	for (; keep_iterating and not ite.end(); ite.next())
 		keep_iterating = f(ite.key(), ite.value());
 }
 
@@ -1700,16 +1702,24 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		append(utilLib_VariableName, " = nil;", ::ENDL());
 		// Private static data
 		append(privateStaticData_VariableName, " = ");
-		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": ");
+		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": [");
 		::Iterable_foreach(::Iterable_fromDObj(::Class_classRegistry().Classes()),
 				local classObjId2NameMapCreator = [
 					method @operator () (class_name, class) {
-						@map[class.ObjectID()] = class.getClassName();
+						@append(@comma, ::ENDL(), INDENT, INDENT, "{");
+						local objid = class.ObjectID();
+						if (objid < 10)
+							@append("  ");
+						else if (objid < 100)
+							@append(" ");
+						@append(objid, ": \"", ::strdeltaescape(class.getClassName()), "\"}");
+						@comma = ",";
+						return true; // keep iterating
 					},
-					@map: []
+					@append: append,
+					@comma : ""
 		]);
-		impl(append, classObjId2NameMapCreator.map, 1, visited);
-		append("}");
+		append(::ENDL(), INDENT, "]}");
 		if (withObjectRegistering())
 			append(
 				",", ::ENDL(),
@@ -1766,10 +1776,7 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 
 	return result;
 }
-// TODO:
-// - dump class objid->name map by hand
-// - return true in the dumping iterator's functor
-function obj_load_delta (core) {
+function obj_load_delta (core, classMap) {
 	function updateObjectID (obj) {
 		::dobj_checked_set(
 				obj,
@@ -1778,6 +1785,7 @@ function obj_load_delta (core) {
 				::p__Object.nextID()
 		);
 	}
+	
 	local result = nil;
 	if (::Object_looksLikeAnObject(core)) {
 		 updateObjectID(core);
@@ -2569,4 +2577,62 @@ function func_StringAppender () {
 		@vuffer: ""
 	];
 }
+
+
+
+/////////////////////////////////////////////////
+// InitialisableModuleHelper
+/////////////////////////////////////////////////
+function InitialisableModuleHelper (moduleName, initHook, cleanupHook) {
+	if (std::isundefined(static proto))
+		proto = [
+			method Initialise (...) {
+				if (not self.initialisationCounter++ and local initialise = self.initialise)
+					local result = initialise(...);
+				else
+					result = true;
+				return result;
+			},
+			method CleanUp {
+				if (--self.initialisationCounter < 0)
+					::error().MoreCleanUpsThanInitialisations(self.moduleName);
+				else if (self.initialisationCounter == 0 and local cleanup = self.cleanup)
+					cleanup();
+			}
+		];
+	initHook    = ::orval(initHook   , false);
+	cleanupHook = ::orval(cleanupHook, false);
+	local result = [
+		.moduleName           : moduleName ,
+		.initialisationCounter: 0          ,
+		.initialise           : initHook   ,
+		.cleanup              : cleanupHook
+	];
+	::del(result, proto);
+	return result;
+}
+
+
+
+///////////////////////////////////////////
+// Module initialisation & clean-up
+///////////////////////////////////////////
+init_helper = InitialisableModuleHelper("Util", 
+		// init
+		[method @operator () {
+			::CProject(), ::CSolution();
+			return true;
+		}]."()", // TODO bug report: no @operator orphan methods
+		// clean-up
+		nil
+);
+
+function Initialise {
+	return ::init_helper.Initialise();
+}
+
+function CleanUp {
+	return ::init_helper.CleanUp();
+}
+
 

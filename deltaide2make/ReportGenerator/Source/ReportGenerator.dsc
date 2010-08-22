@@ -232,3 +232,17 @@ function ReportGenerator_generateReport (report_file_path, outer_log, configurat
 		log("Could not open ", report_file_path, " for writing");
 	return result;
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+// Module Initialisation and clean up
+////////////////////////////////////////////////////////////////////////////////////
+init_helper = u.InitialisableModuleHelper("ReportGenerator", nil, nil);
+
+function Initialise {
+	return ::init_helper.Initialise();
+}
+
+function CleanUp {
+	return ::init_helper.CleanUp();
+}
+////////////////////////////////////////////////////////////////////////////////////

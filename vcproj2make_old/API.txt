@@ -138,6 +138,18 @@ function list_cardinality               (list)
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
 //
+///////////////////////////
+// Iterator interface
+// ------------
+// end()
+// key()
+// value()
+// next()
+// -----------
+// Iterable interface
+// -----------
+// iterator()
+///////////////////////////
 function forall                         (Iterable, predicate)
 function forany                         (Iterable, predicate)
 function Iterable_fromList              (wrapped_list)
