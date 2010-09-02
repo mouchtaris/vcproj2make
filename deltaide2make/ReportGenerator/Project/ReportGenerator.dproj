@@ -7,11 +7,10 @@
         <symbolic>22 serialization::archive 4 0 0 1 0 80 22 serialization::archive 4 0 0 45 ReportGenerator/Project/ReportGenerator.dproj</symbolic>
         <startup>22 serialization::archive 4 0 0 1 0 64 22 serialization::archive 4 0 0 29 ..\Source\ReportGenerator.dsc</startup>
         <output_path>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 ../Lib/</output_path>
-        <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
         <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</icode>
         <hostd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </hostd>
         <host>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </host>
-        <funcfile>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </funcfile>
+        <funcfiles>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </funcfiles>
         <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
         <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
         <argsd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </argsd>

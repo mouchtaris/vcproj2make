@@ -17,12 +17,12 @@ function onImportVMFail(path, id, reason) {
 	std::error("Could not import " + id + " from " + path + ". Reason: " + reason);
 }
 const SolutionDataCoreCache_filename = "SolutionDataCache";
-local u  = importVM("Util/Lib/util.dbc", "util", onImportVMFail);
-local rg = importVM("ReportGenerator/Lib/ReportGenerator.dbc", "ReportGenerator", onImportVMFail);
-local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc", "SolutionLoader/SolutionData", onImportVMFail);
+local u     = importVM("Util/Lib/util.dbc"                       , "util"                            , onImportVMFail);
+local rg    = importVM("ReportGenerator/Lib/ReportGenerator.dbc" , "ReportGenerator"                 , onImportVMFail);
+local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc"     , "SolutionLoader/SolutionData"     , onImportVMFail);
 local sl_ve = importVM("SolutionLoader/Lib/VariableEvaluator.dbc", "SolutionLoader/VariableEvaluator", onImportVMFail);
-local sl = importVM("SolutionLoader/Lib/SolutionLoader.dbc", "SolutionLoader", onImportVMFail);
-local pl = importVM("ProjectLoader/Lib/ProjectLoader.dbc", "ProjectLoader", onImportVMFail);
+local sl    = importVM("SolutionLoader/Lib/SolutionLoader.dbc"   , "SolutionLoader"                  , onImportVMFail);
+local pl    = importVM("ProjectLoader/Lib/ProjectLoader.dbc"     , "ProjectLoader"                   , onImportVMFail);
 
 const SolutionXMLpath = "Solution.xml";
 const RootTagName     = "VisualStudioSolution";
@@ -250,7 +250,8 @@ p = [
 	method cleanup {
 	},
 	method loadSolutionData {
-		const SolutionDataCoreCache_funcname = #SolutiDataCoreCache;
+		const SolutionDataCoreCache_funcname = #SolutionDataCoreCache;
+		const SolutionDataCoreCache_classMapperAccessorFuncname = #ClassMapper;
 		local cache_hit = false;
 		if (@config.SolutionDataCached) {
 			@log("Looking for cached solution data...");
@@ -266,20 +267,36 @@ p = [
 			time("loading vm with cached data", op);
 			local sl_sdch = op.result;
 			if (sl_sdch.Initialise()) {
-				local cache_func = sl_sdch[SolutionDataCoreCache_funcname];
+				local cache_func       = sl_sdch[SolutionDataCoreCache_funcname];
+				local classMapper_func = sl_sdch[SolutionDataCoreCache_classMapperAccessorFuncname];
 				if (cache_func) {
 					local op = [
-						method @operator () { @cache = @cache_func(); },
+						method @operator () {
+							@cache       = @cache_func();
+							@classMapper = @classMapperFunc();
+						},
 						@cache_func: cache_func,
-						@cache: false
+						@classMapperFunc: classMapper_func,
+						@cache: false,
+						@classMapper: false
 					];
 					time("acquiring cached data from vm", op);
+					local cache       = op.cache;
+					local classMapper = op.classMapper;
+					//
 					op.() = u.methodinstalled(op, method { @sl_sdch.CleanUp(); });
 					op.sl_sdch = sl_sdch;
 					time("Cleaning Up cache-data vm", op);
-					local cache = op.cache;
+					//
+					op.() = [
+						method @operator () { u.obj_load_delta(@core, @classMapper); },
+						@core: cache,
+						@classMapper: classMapper
+					];
+					time("Relinking loaded core", op);
+					//
 					op = [
-						method @operator() {
+						method @operator () {
 							@sd = sl_sd.SolutionDataFactory_CreateFromCore(@cache);
 						},
 						@cache: cache,

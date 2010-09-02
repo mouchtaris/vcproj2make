@@ -51,6 +51,7 @@ function fcomposition                   (f1, f2)                        // f1(f2
 function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
                                                                         // in the slot with the given membername, passing to it the expanded args
 function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
+function memberaccesstranformer         (memberindex)                   // returns a functor that takes an object and returns the element found at index "memberindex"
 function equals                         (val1, val2)
 function equalitypredicate              (val)
 function nothing
@@ -134,6 +135,7 @@ function list_foreach                   (list, f)
 function list_to_stdlist                (list)
 function list_clone                     (list)
 function list_cardinality               (list)
+function list_clean                     (list)
 //
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
@@ -145,15 +147,16 @@ function iterable_map_to_list           (iterable, mapf)            // returns a
 // key()
 // value()
 // next()
+// (optional) rewind()
 // -----------
 // Iterable interface
 // -----------
 // iterator()
 ///////////////////////////
 function forall                         (Iterable, predicate)
-function forany                         (Iterable, predicate)
-function Iterable_fromList              (wrapped_list)
-function Iterable_fromDObj              (dobj)
+function forany                         (Iterable, predicate)       // returns the Iterator for which predicate() holds, false otherwise
+function Iterable_fromList              (wrapped_list)              // implements rewind()
+function Iterable_fromDObj              (dobj)                      // implements rewind()
 function Iterable_foreach               (Iterable, f)
 //
 function file_isreadable                (filepath)
@@ -210,6 +213,16 @@ function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, f
                         fields           : a delta object which maps field-names to values
 function Class_isa              (obj, a_class)
 function Class_classRegistry
+// Class Registry API
+// ------------------
+// - add(class:Class)
+//       registers the given class.
+// - get(classObjectID:deltanumber)
+//       returns the class instance of the class with the given Object-ID.
+// - getByName(className:deltastring)
+//       returns the class instance of the class with the given name.
+// - Classes()
+//       returns a delta object with all the registered classed, mapped like [ClassName: ClassInstance, ...]
 
 //////////////////////////////
 // Object-class-elements
@@ -221,10 +234,26 @@ function Class_classRegistry
 //         - getClasses()
 //           returns a delta object containing references to all the classes
 //           mixed-in into this object.
+//         - getClassesIDs()
+//           same as above, except for the fact that instead of Class instances,
+//           the returned delta object contains the Object-IDs of the classes
+//           mixed-in into this object. The returned d-object is a self-map.
 //         - addClass(class)
-//           adds a class to the registery of classes mixed-in into this Object.`
+//           adds a class to the registery of classes mixed-in into this Object.
+//         - clearClasses
+//           clears the record of what classes are mixed into this object.
+//           WARNING: this should be used only when relinking states to new classes.
+//           It's NOT a method to dynamically mix in and out classes to an object!
+//         - instanceOf(class)
+//           checks of the given class is one of this object's classes.
+//         - ObjectID
+//           returns this object's (numerical) Id.
+//         - createdBy
+//           returns the class' object id which created this object.
 //     <^> state fields
 //         - classes : std::list
+//         - Object_ID: deltanumber
+//         - createdBy: deltanumber(class objid)
 function Object_stateFields
 function Object_stateInitialiser
 function Object_prototype
@@ -232,6 +261,8 @@ function Object_mixinRequirements
 function Object_looksLikeAnObject   (dobj)
 function mixinObject                (newInstance, newInstanceStateFields, newInstancePrototype)
 function unmixinObject              (instance)
+function Object
+functiob Objcet_isObjectClass       (class)
 
 //////////////////////////////
 // *** Class class - hand made
@@ -281,7 +312,8 @@ function unmixinObject              (instance)
 //         - stateFields
 //         - mixInRegistry
 //         - className
-function Class_linkState     (state, class)
+function Class_linkState     (state, classMap)               // classMap is a simple deltaobject that maps object IDs (deltanumbers)
+                                                             // to class-names (deltastrings)
 
 // Object Serialisatin utils
 function obj_dump_delta    (obj, appendf, objvarname, precode, postcode)

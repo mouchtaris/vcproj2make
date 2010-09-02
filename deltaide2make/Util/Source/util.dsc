@@ -519,8 +519,14 @@ function pfield(field_name) {
 function dobj_get(dobj, fname) {
 	return std::tabget(dobj, ::pfield(fname));
 }
+function dobj_normal_get (dobj, fname) {
+	return dobj[fname];
+}
 function dobj_set(dobj, fname, val) {
 	return std::tabset(dobj, ::pfield(fname), val);
+}
+function dobj_normal_set (dobj, fname, val) {
+	return dobj[fname] = val;
 }
 //
 function dobj_contains(dobj, val) {
@@ -674,6 +680,14 @@ function membercalltransformer(membername, args) {
 		@args       : args
 	];
 }
+function memberaccesstransformer (memberindex) {
+	return [
+		method @operator () (obj) {
+			return obj[@memberindex];
+		},
+		@memberindex: memberindex
+	];
+}
 function equals(val1, val2) {
 	return val1 == val2;
 }
@@ -798,6 +812,9 @@ function list_clone (list) {
 function list_cardinality (list) {
 	return std::list_total(::p__list.getlist(list));
 }
+function list_clear (list) {
+	std::list_clear(::p__list.getlist(list));
+}
 
 //
 function iterable_clone_to_list (iterable) {
@@ -814,15 +831,15 @@ function iterable_map_to_list (iterable, mapf) {
 }
 //
 function forall (iterable, predicate) {
-	for (local ite = iterable.iterator(); ite.hasNext(); ite.next())
+	for (local ite = iterable.iterator(); not ite.end(); ite.next())
 		if ( not predicate(ite.key(), ite.value()) )
 			return false;
 	return true;
 }
 function forany (iterable, predicate) {
-	for (local ite = iterable.iterator(); ite.hasNext(); ite.next())
+	for (local ite = iterable.iterator(); not ite.end(); ite.next())
 		if (predicate(ite.key(), ite.value()))
-			return true;
+			return ite;
 	return false;
 }
 function Iterable_fromList (list) {
@@ -840,6 +857,9 @@ function Iterable_fromList (list) {
 			method next {
 				assert( not self.end() );
 				std::listiter_fwd(::dobj_get(self, #ite));
+			},
+			method rewind {
+				std::listiter_setbegin(::dobj_get(self, #ite), ::dobj_get(self, #list));
 			}
 		];
 	if (std::isundefined(static iterable_prototype))
@@ -879,6 +899,9 @@ function Iterable_fromDObj (dobj) {
 			},
 			method next {
 				std::tableiter_fwd(::dobj_get(self, #ite));
+			},
+			method rewind {
+				std::tableiter_setbegin(::dobj_get(self, #ite), ::dobj_get(self, #obj));
 			}
 		];
 	if (std::isundefined(static iterable_prototype))
@@ -1182,7 +1205,7 @@ function Class_classRegistry {
 			method getByName (class_name) {
 				assert( ::isdeltastring(class_name) );
 				local result = (local regbyname = getregbyname(self))[class_name];
-				assert( result.getName() == class_name );
+				assert( result.getClassName() == class_name );
 				assert( ::Class_isa(result, Class()) );
 				return result;
 			},
@@ -1200,23 +1223,26 @@ p__Object = [
 	method nextID { return @id++; },
 	@id: 0
 ];
-const p__Object__stateField__classes   = #classes;
-const p__Object__stateField__Object_ID = #Object_ID;
+const p__Object__stateField__classes      = #classes;
+const p__Object__stateField__Object_ID    = #Object_ID;
+const p__Object__stateField__createdBy    = #createdBy;
 function Object_stateFields {
 	if (std::isundefined(static stateFields))
-		stateFields = [ ::p__Object__stateField__classes, ::p__Object__stateField__Object_ID ];
+		stateFields = [ ::p__Object__stateField__classes, ::p__Object__stateField__Object_ID,
+				::p__Object__stateField__createdBy ];
 	return stateFields;
 }
 function Object_stateInitialiser {
 	if (std::isundefined(static stateInitialiser))
-		stateInitialiser = (function Object_stateInitialiser (newObjectInstance) {
+		stateInitialiser = (function Object_stateInitialiser (newObjectInstance, validStateFieldsNames, createdByClass) {
 			::assert_obj( newObjectInstance );
 			Class_checkedStateInitialisation(
 				newObjectInstance,
-				Object_stateFields(),
+				validStateFieldsNames,
 				[
-					{ #classes : ::list_new()         },
-					{ #Object_ID: ::p__Object.nextID() }
+					{ p__Object__stateField__classes  : ::list_new()         },
+					{ p__Object__stateField__Object_ID: ::p__Object.nextID() },
+					{ p__Object__stateField__createdBy: createdByClass       }
 				]
 			);
 
@@ -1224,16 +1250,23 @@ function Object_stateInitialiser {
 	return stateInitialiser;
 }
 function Object_prototype {
-	function getclasses (this ) {
+	function getclasses (this) {
 		return ::list_to_stdlist(::dobj_get(this, #classes));
 	}
-	function Class {
-		if ( std::isundefined(static c) ) local Class = std::vmfuncaddr(std::vmthis(), #Class);
-		else Class = Class;
-		return Class();
+	function Class { // has to be a function in order to be accessible in Object#instanceOf, defined below
+		return ::forward(#Class)();
 	}
 	if (std::isundefined(prototype))
 		prototype = [
+			method getClassesIDs {
+				local classes = getclasses(self);
+				local result = [];
+				foreach (local class, classes) {
+					assert( ::isdeltanil(result[class]) );
+					result[class] = class;
+				}
+				return result;
+			},
 			method getClasses {
 				local classes = getclasses(self);
 				local result = [];
@@ -1246,12 +1279,18 @@ function Object_prototype {
 				local classes = ::dobj_get(self, #classes);
 				::list_push_back(classes, class.ObjectID());
 			},
+			method clearClasses {
+				::list_clear(::dobj_get(self, #classes));
+			},
 			method instanceOf (class) {
 				assert( ::Class_isa(class, Class()) );
 				return ::iterable_contains(getclasses(self), class.ObjectID());
 			},
 			method ObjectID {
 				return ::dobj_checked_get(self, ::Object_stateFields(), #Object_ID);
+			},
+			method CreatedBy {
+				return ::dobj_checked_get(self, ::Object_stateFields(), #createdBy);
 			}
 		];
 	return prototype;
@@ -1260,21 +1299,22 @@ function Object_mixinRequirements {
 	return [];
 }
 function Object_looksLikeAnObject (obj) {
-	assert( ::dobj_length(::Object_stateFields()) == 2 );
+	assert( ::dobj_length(::Object_stateFields()) == 3 );
 	return
+			(::isdeltaobject(obj))                                                 and
 			(local classes = ::dobj_get(obj, ::p__Object__stateField__classes))    and
 			::isdeltalist(classes)                                                 and
 			(local ObjectID = ::dobj_get(obj, ::p__Object__stateField__Object_ID)) and
 			::isdeltanumber(ObjectID)                                              and
 	true;
 }
-function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype) {
+function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype, createdByClassObjID) {
 	// manually mix-in the object class (by default)
 	::Assert( not ::stateFieldsClash( Object_stateFields(), newInstanceStateFields ) );
 	::Assert( not ::prototypesClash( Object_prototype(), newInstancePrototype ) );
 	::Assert(     ::mixinRequirementsFulfilled(newInstancePrototype, Object_mixinRequirements()) );
 	objectInstance = [];
-	Object_stateInitialiser()(objectInstance);
+	Object_stateInitialiser()(objectInstance, ::Object_stateFields(), createdByClassObjID);
 	std::delegate(objectInstance, Object_prototype());
 	::mixin(newInstance, objectInstance, Object_prototype());
 }
@@ -1282,6 +1322,33 @@ function unmixinObject(instance) {
 	local objectValidStateFields = Object_stateFields();
 	foreach (local field, objectValidStateFields)
 		::dobj_set(instance, field, nil);
+}
+
+// Object pseudoclass. Not to be used as a real class. Just there to group
+// common Object class properties
+function Object {
+	if (std::isundefined(static pseudoclass))
+		pseudoclass = [
+			method createInstance { assert( not "Not allowed to use Object#createInstance() directly" ); },
+			method mixInRequirements { return Object_mixinRequirements(); },
+			method fulfillsRequirements { assert( not "Not allowed to use method Object#fulillsRequirements()"); },
+			method stateFieldsClash { assert( not "Not allowed to use method Object#stateFieldsClash()"); },
+			method prototypesClash { assert( not "Not allowed to use method Object#prototypesClash()"); },
+			method mixIn { assert( not "Not allowed to mix in classes to the Object class"); },
+			method mixedIn { if (std::isundefined(static object_mixed_ins)) object_mixed_ins = []; return object_mixed_ins; },
+			method getPrototype { return Object_prototype(); },
+			method stateFields { return Object_stateFields(); },
+			method getClassName { return #Object; },
+			method setClassName { assert( not "Not allowed to set the Object's class' name" ); }
+		];
+	return pseudoclass;
+}
+
+function Object_isObjectClass (class) {
+	return 
+			::isdeltaobject(class)          and
+			::dobj_equal(::Object(), class) and
+	true;
 }
 
 function Class {
@@ -1305,7 +1372,7 @@ function Class {
 				//
 				// FIRST, the new instance has to be a valid Object instance.
 				// So, manually mix-in the object class (by default)
-				::mixinObject(newInstanceState, self.stateFields(), prototype);
+				::mixinObject(newInstanceState, self.stateFields(), prototype, self.ObjectID());
 				// no need to register the "object" class in the classes list. (we also cannot do it)
 				//
 				////
@@ -1394,7 +1461,7 @@ function Class {
 			},
 			method mixedIn {
 				::list_foreach(getmixinregistry(self), local classCollector = [
-					method @operator () (el) { @classes[el.class] = el.args; },
+					method @operator () (el) { @classes[el.class] = el.args; return true; },
 					@classes: []
 				]);
 				return classCollector.classes;
@@ -1440,9 +1507,10 @@ function Class {
 		::Class_classRegistry().add(newClassInstance);
 	}
 	if (std::isundefined(static Class_state)) {
+		const Class_className = #Class;
 		Class_state = [];
 		// mix-in object before initialising as a class
-		::mixinObject(Class_state, Class_stateFields, Class_prototype);
+		::mixinObject(Class_state, Class_stateFields, Class_prototype, Class_className);
 		// add "self" as this class' class.
 		Class_state.addClass(Class_state);
 		// register Class' object id (since it is so special and it needs its own reserved seat)
@@ -1450,7 +1518,7 @@ function Class {
 		// link to the class prototype
 		std::delegate(Class_state, Class_prototype);
 		// initialise state
-		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields, #Class);
+		Class_stateInitialiser(Class_state, Class_stateFields, Class_stateInitialiser, Class_prototype, [], Class_stateFields, Class_className);
 		// The order of initialisation is important: this way it is ensured that
 		// what is that the last element of Class' initialisation is registering
 		// itself as a class, which requires that it can be tested for Class-ness.
@@ -1460,44 +1528,98 @@ function Class {
 	return Class_state;
 }
 
-function Class_linkState(state, class) {
-	assert( ::Class_isa(class, ::Class()) );
+function Class_linkState (state, classMap) {
 	// state must have initialised fields for all the state fields
 	// of the given class (plus all the mix-ins)
 	function hasAllFieldsInitialised (state, fields) {
 		foreach (local field, fields)
-			if ( not ::dobj_get(state, field) )
+			if ( ::isdeltanil(::dobj_get(state, field)) )
 				return false;
 		return true;
 	}
-	
-	if ( // fullfils state requiresments 
-		::forall(
-			local mixedInIterable = ::Iterable_fromDObj(class.mixedIn()),
-			::argumentSelector(
-				::fcomposition(
-					::bindfront(hasAllFieldsInitialised, state), // check state for every given fields-collection
-					::membercalltransformer(#stateFields, []) // tranform class to its state fields
-				),
-				0 // select only key (which is the class)
-			)
-		)
-		and hasAllFieldsInitialised(state, class.stateFields())
-	) {
-		// link to given class and all its mix-ins prototypes
-		(function behaviourLinker (state, prototype) {
-			::del(state, prototype); return true;
-		})(state, class.getPrototype());
-		::Iterable_foreach(
-				mixedInIterable,
+	function hasAllMixedInClassesStateFieldsInitialised (state, class) {
+		return
+			::forall(
+				::Iterable_fromDObj(class.mixedIn()),
 				::argumentSelector(
-						::bindfront(behaviourLinker, state),
-						0
+					::fcomposition(
+						::bindfront(hasAllFieldsInitialised, state), // check state for every given fields-collection
+						::membercalltransformer(#stateFields, []) // tranform class to its state fields
+					),
+					0 // select only key (which is the class)
+				)
+			);
+	}
+	function hasAllRequiredStateFieldsInitialised (state, class) {
+		return hasAllMixedInClassesStateFieldsInitialised(state, class)
+			and hasAllFieldsInitialised(state, class.stateFields());
+	}
+	function classIsOldMixInAndPopIt (mixedInClassesObjectIDs, class, classMap) {
+		local result = ::forany(
+				::Iterable_fromDObj(mixedInClassesObjectIDs),
+			//	oldObjID -> reg.getByName(classMap[oldObjID]).getObjectID() == class.getObjectID()
+				::argumentSelector(
+						::fcomposition(
+								::equalitypredicate(class.ObjectID()),
+								::fcomposition(
+										::membercalltransformer(#ObjectID, []),
+										::fcomposition(
+												::Class_classRegistry().getByName,
+												::bindfront(::dobj_normal_get, classMap)
+										)
+								)
+						),
+						1
 				)
 		);
+		if (local ite = result) {
+			// result(ite) is a DObject iterator pointing to the element for which the predicate
+			// was true.
+			assert( ::Class_classRegistry().getByName(classMap[ite.value()]).ObjectID() == class.ObjectID() );
+			mixedInClassesObjectIDs[ite.value()] = nil;
+			result = true;
+		}
+		return result;
 	}
+	function relinkClass (state, oldMixIns, classMap, class) {
+		if ( hasAllRequiredStateFieldsInitialised(state, class) ) {
+			// link to given class and all its mix-ins prototypes
+			function behaviourLinkerForMortals (state, oldMixIns, classMap, class) {
+				assert( classIsOldMixInAndPopIt(oldMixIns, class, classMap));
+				::del(state, class.getPrototype());
+				state.addClass(class);
+				return true;
+			}
+			function behaviourLinkerForObject (state, oldMixIns, classMap, class) {
+				assert( ::Object_isObjectClass(class) );
+				assert( ::isdeltanil(oldMixIns) );
+				::del(state, class.getPrototype());
+				return true;
+			}
+			if (::Object_isObjectClass(class))
+				local behaviourLinker = behaviourLinkerForObject;
+			else
+				behaviourLinker = behaviourLinkerForMortals;
+			behaviourLinker(state, oldMixIns, classMap, class);
+			::Iterable_foreach(
+					::Iterable_fromDObj(class.mixedIn()),
+					::argumentSelector(
+							::bindfront(behaviourLinker, state, oldMixIns, classMap),
+							0
+					)
+			);
+		}
+	}
+	// first link to Object, so that we are dealing with a sane Object
+	relinkClass(state, nil, classMap, ::Object());
+	local oldMixIns = state.getClassesIDs();
+	state.clearClasses();
+	// now "state" is at least an object. Get CreatedBy() and link that and its mix-ins too
+	local class = ::Class_classRegistry().getByName(classMap[state.CreatedBy()]);
+	assert( ::Class_isa(class, ::Class()) );
+	relinkClass(state, oldMixIns, classMap, class);
+	assert( ::dobj_empty(oldMixIns) );
 }
-
 
 p__classyClasses = true;
 function becomeClassy {
@@ -1527,6 +1649,7 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 	const      registerObjectShortcut_VariableName = #registerObject                    ;
 	const            getObjectShortut_VariableName = #getObject                         ;
 	const                  objectSave_VariableName = #objSaverFor__                     ;
+	const                 ClassMapper_VariableName = #ClassMapper                       ;
 	// ------------------------------------------------------
 	function withObjectRegistering { return true; }
 	// ------------------------------------------------------
@@ -1702,6 +1825,7 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		append(utilLib_VariableName, " = nil;", ::ENDL());
 		// Private static data
 		append(privateStaticData_VariableName, " = ");
+		// write the class-objid-to-class-name mapper
 		append("[", ::ENDL(), INDENT, "{\"", classObjectIdToClassNameMap_MemberName, "\": [");
 		::Iterable_foreach(::Iterable_fromDObj(::Class_classRegistry().Classes()),
 				local classObjId2NameMapCreator = [
@@ -1721,6 +1845,7 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 		]);
 		append(::ENDL(), INDENT, "]}");
 		if (withObjectRegistering())
+			// write the object holder
 			append(
 				",", ::ENDL(),
 				INDENT, "{\"", objectRegistry_MemberName, "\": [", ::ENDL(),
@@ -1764,6 +1889,11 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 				"function CleanUp {", ::ENDL(),
 				INDENT, "std::libs::unimport(::", utilLib_VariableName, ");", ::ENDL(),
 				"}");
+		// write the class-mapper accessor function
+		append(::ENDL(), "function ", ClassMapper_VariableName, " {", ::ENDL(),
+				INDENT, "return ", privateStaticData_VariableName, ".\"", classObjectIdToClassNameMap_MemberName,
+						"\";", ::ENDL(),
+				"}");
 	}
 
 	if (precode)
@@ -1780,7 +1910,7 @@ function obj_load_delta (core, classMap) {
 	function updateObjectID (obj) {
 		::dobj_checked_set(
 				obj,
-				::Object_stateFields,
+				::Object_stateFields(),
 				::p__Object__stateField__Object_ID,
 				::p__Object.nextID()
 		);
@@ -1788,9 +1918,12 @@ function obj_load_delta (core, classMap) {
 	
 	local result = nil;
 	if (::Object_looksLikeAnObject(core)) {
-		 updateObjectID(core);
-		// TODO continue here with class linking
+		updateObjectID(core);
+		Class_linkState(core, classMap);
 	}
+	if (::isdeltaobject(core))
+		foreach (local member, core)
+			::obj_load_delta(member, classMap);
 	return result;
 }
 
@@ -2620,7 +2753,7 @@ function InitialisableModuleHelper (moduleName, initHook, cleanupHook) {
 init_helper = InitialisableModuleHelper("Util", 
 		// init
 		[method @operator () {
-			::CProject(), ::CSolution();
+			::Path(), ::CProject(), ::CSolution();
 			return true;
 		}]."()", // TODO bug report: no @operator orphan methods
 		// clean-up
