@@ -135,29 +135,6 @@ function ProjectEntry_isaProjectEntry (obj) {
 }
 
 
-function ProjectEntryFactory_DumpCore (projectEntry, target) {
-	assert( ::ProjectEntry_isaProjectEntry(projectEntry) );
-	target."$__mm"      = 42;
-	target."$__mm_deps" = u.iterable_to_deltaobject(u.list_to_stdlist(projectEntry[u.pfield("ProjectEntry_dependencies")]));
-	target."$__mm_pr"   = projectEntry.getParentReference();
-	target."$__mm_name" = projectEntry.getName();
-	target."$__mm_id"   = projectEntry.getID();
-	target."$__mm_path" = projectEntry.getLocation().deltaString();
-	return target;
-}
-function ProjectEntryFactory_CreateFromCore (core) {
-	assert( core."$__mm" == 42 );
-	local result = ::ProjectEntry().createInstance();
-	result.setLocation       (core."$__mm_path");
-	result.setID             (core."$__mm_id"  );
-	result.setName           (core."$__mm_name");
-	result.setParentReference(core."$__mm_pr"  );
-	foreach (local dep, core."$__mm_deps")
-		result.addDependency(dep);
-	return result;
-}
-
-
 /////////////////////////////////////////////////////////////////
 // Class ConfigurationManager
 // --------------------------------------------------------------
@@ -435,17 +412,6 @@ function ConfigurationManager_isaConfigurationManager (obj) {
 }
 
 
-/////////////////////////////////////////////////////////////////
-// ConfigurationManagerFactory
-function ConfigurationManagerFactory_DumpCore (confman, target) {
-	return ::ConfigurationManager().DumpCore(confman, target);
-}
-function ConfigurationManagerFactory_CreateFromCore (core) {
-	return ::ConfigurationManager().CreateFromCore(core);
-}
-
-
-
 function ProjectEntryHolder {
 	static mixy_ProjectEntryHolder_class;
 	static classy_ProjectEntryHolder_class;
@@ -537,23 +503,6 @@ function ProjectEntryHolder {
 			// class name
 			#ProjectEntryHolder
 		);
-		classy_ProjectEntryHolder_class.DumpCore = (function DumpCore (this, target) {
-			local entries = getentries(this);
-			local mm_entries = [];
-			foreach (local id, u.dobj_keys(entries))
-				::ProjectEntryFactory_DumpCore(entries[id], mm_entries[id] = []);
-			target."$__MM_entries" = mm_entries;
-			target."$__MM"         = 42;
-			return target;
-		});
-		classy_ProjectEntryHolder_class.CreateFromCore = (function CreateFromCore (core) {
-			assert( core."$__MM" == 42 );
-			local result = classy_ProjectEntryHolder_class.createInstance();
-			foreach (local mm_entry, core."$__MM_entries")
-				result.addProjectEntry(::ProjectEntryFactory_CreateFromCore(mm_entry));
-			return result;
-		});
-		
 		
 		light_ProjectEntryHolder_class = [
 			method createInstance {
@@ -586,42 +535,26 @@ function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 }
 
 
-function ProjectEntryHolderFactory_DumpCore (projenthold, target) {
-	return ::ProjectEntryHolder().DumpCore(projenthold, target);
+/////////////////////////////////////////////////////////////////
+// SolutionData
+function SolutionData_make (configurationManager, projectEntryHolder, solutionDirectory) {
+	assert( u.Class_isa(configurationManager, ::ConfigurationManager()) );
+	assert( ProjectEntryHolder_isaProjectEntryHolder(projectEntryHolder) );
+	assert( u.isdeltastring(solutionDirectory) );
+	return [
+		@ConfigurationManager: configurationManager,
+		@ProjectEntryHolder  : projectEntryHolder  ,
+		@SolutionDirectory   : solutionDirectory
+	];
 }
-function ProjectEntryHolderFactory_CreateFromCore (core) {
-	return ::ProjectEntryHolder().CreateFromCore(core);
-}
-
 
 /////////////////////////////////////////////////////////////////
 // SolutionDataFactory
-expr = true;
 function SolutionDataFactory_DumpCore (sd, target) {
-	if (::expr)
 		return std::tabextend(target, sd);
-	else {
-		target."))__MM"         = 42;
-		::ConfigurationManagerFactory_DumpCore(
-				sd.ConfigurationManager,
-				target."))__MM_confman" = []);
-		::ProjectEntryHolderFactory_DumpCore(
-				sd.ProjectEntryHolder,
-				target."))__MM_holder" = []);
-		return target;
-	}
-	// TODO think about dumping and restoring intact objects
 }
 function SolutionDataFactory_CreateFromCore (core) {
-	if (::expr)
 		return core;
-	else {
-		assert( core."))__MM" == 42 );
-		local result = [];
-		result.ConfigurationManager = ::ConfigurationManagerFactory_CreateFromCore(core."))__MM_confman");
-		result.ProjectEntryHolder = ::ProjectEntryHolderFactory_CreateFromCore(core."))__MM_holder");
-		return result;
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

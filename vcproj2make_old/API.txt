@@ -581,12 +581,6 @@ function ProjectType_isValid(type)
 //     <^> state fields
 //         01. ConfigurationManager_configurationsMap         [sol_conf_id => [ projid => [ confid, buildable ], ...], ...]
 
-/////////////////////////////////////////////////////////////////
-// ConfigurationManagerFactory
-// --------------------------------------------------------------
-//     - DumpCore(configurationManager, core)
-//     - CreateFromCore(core)                       => configurationManager
-
 
 /////////////////////////////////////////////////////////////////
 // Class ProjectEntry
@@ -611,12 +605,6 @@ function ProjectType_isValid(type)
 //         02. ProjectEntry_dependencies
 
 /////////////////////////////////////////////////////////////////
-// ProjectEntryFactory
-// --------------------------------------------------------------
-//     - DumpCore(projectEntry, core)
-//     - CreateFromCore(core)             => projectEntry
-
-/////////////////////////////////////////////////////////////////
 // Class ProjectEntryHolder
 // A simple holder for ProjectEntry-s.
 // --------------------------------------------------------------
@@ -631,25 +619,24 @@ function ProjectType_isValid(type)
 //         00. ProjectEntryHolder_entries
 
 /////////////////////////////////////////////////////////////////
-// ProjectEntryHolderFactory
-// --------------------------------------------------------------
-//     - DumpCore(projectEntryHolder, core)
-//     - CreateFromCore(core)                => projectEntryHolder
-
-/////////////////////////////////////////////////////////////////
 // Struct SolutionData
 // Solution data extracted from a Solution File
 // --------------------------------------------------------------
 //     <^> Fields
 //             - ConfigurationManager
 //             - ProjectEntryHolder
+//             - SolutionDirectory : deltastring
+function SolutionData_make(
+		configurationManager: ConfigurationManager
+		projectEntryHolder  : ProjectEntryHolder
+		solutionDirectory   : deltastring
+)
 
 /////////////////////////////////////////////////////////////////
 // SolutionDataFactory
 // --------------------------------------------------------------
 //     - DumpCore(solutionData, core)
 //     - CreateFromCore(core)            => solutionData
-
 
 
 /////////////////////////////////////////////////////////////////
@@ -665,3 +652,10 @@ function ProjectType_isValid(type)
 //     <^> state fields
 //         00. VariableEvaluator_variables
 //         01. VariableEvaluator_root
+
+
+/////////////////////////////////////////////////////////////////
+// ProjectData
+// A map from solution configuration IDs to CSolution objects
+// --------------------------------------------------------------
+//     [ sol_conf_id => cSolution, ... ]

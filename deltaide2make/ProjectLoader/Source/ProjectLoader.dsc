@@ -1,14 +1,18 @@
 u = std::libs::import("util");
 assert( u );
 
-function ProjectLoader_loadProject (projectPath, variableEvaluator) {
-	if (local projectXML = u.xmlload(projectPath)) {
-		u.println(projectXML);
+function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
+	local result = [];
+	local configurationManager = solutionData.ConfigurationManager;
+	foreach (local configuration, configurationManager.Configuration()) {
+		//result[configuration] = local csol = u.CSolution().
+		foreach (local projectID, configurationManager.Projects(configuration)) {
+			if (configurationManager.isBuildable(configuration, projectID)) {
+				
+			}
+		}
 	}
-	else
-		u.error().AddError("Could not load project file (XML) from ", projectPath);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Module Initialisation and clean up
