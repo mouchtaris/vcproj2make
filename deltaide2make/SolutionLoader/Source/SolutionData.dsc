@@ -537,15 +537,45 @@ function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 
 /////////////////////////////////////////////////////////////////
 // SolutionData
-function SolutionData_make (configurationManager, projectEntryHolder, solutionDirectory) {
+function SolutionData_make (configurationManager, projectEntryHolder, solutionDirectory, solutionName) {
 	assert( u.Class_isa(configurationManager, ::ConfigurationManager()) );
 	assert( ProjectEntryHolder_isaProjectEntryHolder(projectEntryHolder) );
 	assert( u.isdeltastring(solutionDirectory) );
-	return [
+	assert( u.isdeltastring(solutionName) );
+//	const F_ConfigurationManager = #ConfigurationManager;
+//	const F_ProjectEntryHolder   = #ProjectEntryHolder  ;
+//	const F_SolutionDirectory    = #SolutionDirectory   ;
+//	const F_SolutionName         = #SolutionName        ;
+//	if (std::isundefined(static FIELDS))
+//		FIELDS = [
+//				[F_ConfigurationManager, configurationManager],
+//				[F_ProjectEntryHolder  , projectEntryHolder  ],
+//				[F_SolutionDirectory   , solutionDirectory   ],
+//				[F_SolutionName        , solutionName        ]
+//		];
+	local result = [
 		@ConfigurationManager: configurationManager,
 		@ProjectEntryHolder  : projectEntryHolder  ,
-		@SolutionDirectory   : solutionDirectory
+		@SolutionDirectory   : solutionDirectory   ,
+		@SolutionName        : solutionName        
 	];
+	// TODO check this bug
+	// result = 
+//	[
+//		@ConfigurationManager {
+//					@set u.assert_fail
+//					@get u.bindfront(std::tabgetattribute, @self, #configurationManager) },
+//		@ProjectEntryHolder {
+//					@set u.assert_fail
+//					@get u.bindfront(std::tabgetattribute, @self, #projectEntryHolder  ) },
+//		@SolutionDirectory {
+//					@set u.assert_fail
+//					@get u.bindfront(std::tabgetattribute, @self, #solutionDirectory   ) },
+//		@SolutionName {
+//					@set u.assert_fail
+//					@get u.bindfront(std::tabgetattribute, @self, #solutionName        ) }
+//	];
+	return result;
 }
 
 /////////////////////////////////////////////////////////////////

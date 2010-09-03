@@ -1055,6 +1055,14 @@ function ternary (cond, val1, val2) {
 		return val2;
 }
 
+////////////////////////////////////////
+// attribute helpers
+function defaultattributesetter (dobj, attrname) {
+	return ::bindfront(std::tabsetattribute, dobj, attrname);
+}
+function defaultattributegetter (dobj, attrname) {
+	return ::bindfront(std::tabgetattribute, dobj, attrname);
+}
 
 ///////////////////////// No-inheritance, delegation classes with mix-in support //////////////////////
 function mixin_state(state, mixin) {

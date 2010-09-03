@@ -4,14 +4,16 @@ assert( u );
 function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 	local result = [];
 	local configurationManager = solutionData.ConfigurationManager;
-	foreach (local configuration, configurationManager.Configuration()) {
-		//result[configuration] = local csol = u.CSolution().
-		foreach (local projectID, configurationManager.Projects(configuration)) {
+	foreach (local configuration, configurationManager.Configurations()) {
+		result[configuration] = local csol = u.CSolution().createInstance(
+				u.Path_fromPath(solutionData.SolutionDirectory),
+				solutionData.SolutionName + "_" + configuration);
+		foreach (local projectID, configurationManager.Projects(configuration))
 			if (configurationManager.isBuildable(configuration, projectID)) {
 				
 			}
-		}
 	}
+	return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

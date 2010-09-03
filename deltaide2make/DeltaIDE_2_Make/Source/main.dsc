@@ -247,6 +247,7 @@ p = [
 		p.LoadLibs();
 		p.generateSolutionXML(local solutionPath = argv.solution_path);
 		@solutionDirectory = argv.solution_path;
+		@solutionName      = argv.solution_name;
 	},
 	method cleanup {
 	},
@@ -316,7 +317,7 @@ p = [
 		
 		if ( not cache_hit ) {
 			@log("Solution data not cached, generating from files...");
-			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML, @solutionDirectory);
+			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML, @solutionDirectory, @solutionName);
 			@log("Generating solution data core for storage..");
 			local t0 = std::currenttime();
 			sl_sd.SolutionDataFactory_DumpCore(@solutionData, local sdcore=[]);
@@ -354,7 +355,8 @@ function main0 (argc, argv, envp) {
 	// TMP test code
 	local solutionData = p.solutionData;
 	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
-	pl.ProjectLoader_loadProjectsFromSolutionData(solutionData);
+	local projectData = pl.ProjectLoader_loadProjectsFromSolutionData(solutionData);
+	u.println(projectData);
 
 	p.generateReport(solutionData);
 }
