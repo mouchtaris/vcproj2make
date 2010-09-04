@@ -1,5 +1,7 @@
 ////////////////////////
 // Module private 
+EMPTY_OBJ = [];
+
 const plat_win32 = "win32";
 const plat_linux = "linux";
 const conf_debug = "debug";
@@ -316,11 +318,11 @@ local p__DoNotASsafeCall = (method(funcname, ns1, ns2, args, extraerrmsg) {
 
 // NOT an as-safe function
 function platform {
-	return ::p__DoNotASsafeCall(#platform, #isi, #std, [], "");
+	return ::p__DoNotASsafeCall(#platform, #isi, #std, ::EMPTY_OBJ, "");
 }
 // NOT an as-safe function
 function deltaconfiguration {
-	return ::p__DoNotASsafeCall(#getconfiguration, #isi, #std, [], "");
+	return ::p__DoNotASsafeCall(#getconfiguration, #isi, #std, ::EMPTY_OBJ, "");
 }
 function iswin32  { return ::platform() == "win32"; }
 function islinux  { return ::platform() == "linux"; }
@@ -382,7 +384,7 @@ function libsloaded {
 }
 // NOT an as-safe function
 function getcwd {
-	return p__DoNotASsafeCall(#getcwd, #isi, #std, [], "");
+	return p__DoNotASsafeCall(#getcwd, #isi, #std, ::EMPTY_OBJ, "");
 }
 
 /// delta strings utilities
@@ -640,6 +642,34 @@ function argspopfront(args, popnum) {
 	::argspopback(args, popnum).start += popnum;
 	return args;
 }
+function foreachofargs (f ...) {
+	return ::foreacharg(::argspopfront(arguments, 1), f);
+}
+function firstarg (args) {
+	return args[args.start];
+}
+function lastarg (args) {
+	return args[args.start + args.total - 1];
+}
+function argumentSelector (f ...) {
+	return [
+		@f: f,
+		@args_indices: ::argspopfront(arguments, 1), // all minus f
+		method @operator () (...) {
+			// collect arguments
+			::foreacharg(@args_indices, local argCollector = [
+				@args: [], // collected result
+				@args_index: 0,
+				@all_args: arguments,
+				method @operator () (argindex) {
+					assert( ::isdeltanumber(argindex) );
+					@args[@args_index++] = @all_args[argindex];
+				}
+			]);
+			return @f(|argCollector.args|);
+		}
+	];
+}
 function bindfront(f ...) {
 	return [
 		method @operator () (...) {
@@ -666,6 +696,31 @@ function fcomposition (f1, f2) {
 		@f1: f1,
 		@f2: f2
 	];
+}
+function fncomposition (...) {
+	function lastargument_postdecrement (this) {
+		local result = ::lastarg(this);
+		::argspopback(this, 1);
+		return result;
+	}
+	if (arguments.total < 2)
+		::error().AddError("At least two functions have to be given to fncomposition()");
+	else
+	// optimised implementation: don't do fcomposition(fcomposition(...))
+	local result = [
+		method @operator () (...) {
+			local functions = @functions;
+			local result;
+			for (
+					result = lastargument_postdecrement(functions)(...);
+					functions.total;
+					result = lastargument_postdecrement(functions)(result)
+			);
+			return result;
+		},
+		@functions: arguments
+	];
+	return result;
 }
 function membercalltransformation(object, membername, args) {
 	return object[membername](|args|);
@@ -704,34 +759,6 @@ function success (...) {
 }
 function successifier (f) {
 	return ::fcomposition(success, f);
-}
-function foreachofargs (f ...) {
-	return ::foreacharg(::argspopfront(arguments, 1), f);
-}
-function firstarg (args) {
-	return args[args.start];
-}
-function lastarg (args) {
-	return args[args.start + args.total - 1];
-}
-function argumentSelector (f ...) {
-	return [
-		@f: f,
-		@args_indices: ::argspopfront(arguments, 1), // all minus f
-		method @operator () (...) {
-			// collect arguments
-			::foreacharg(@args_indices, local argCollector = [
-				@args: [], // collected result
-				@args_index: 0,
-				@all_args: arguments,
-				method @operator () (argindex) {
-					assert( ::isdeltanumber(argindex) );
-					@args[@args_index++] = @all_args[argindex];
-				}
-			]);
-			return @f(|argCollector.args|);
-		}
-	];
 }
 
 //
@@ -929,6 +956,9 @@ function Iterable_foreach (iterable, f) {
 	for (; keep_iterating and not ite.end(); ite.next())
 		keep_iterating = f(ite.key(), ite.value());
 }
+function Iterable_find (iterable, predicate) {
+	// TODO implement
+}
 
 /// File utilities
 function file_isreadable(filepath) {
@@ -984,8 +1014,9 @@ function file_pathconcatenate(...) {
 function file_basename(filepath) {
 	::assert_str( filepath );
 	local result = nil;
+	local last_index;
 	foreach (local separator, [ "\\", "/" ]) {
-		local last_index = ::strrindex(filepath, separator);
+		last_index = ::strrindex(filepath, separator);
 		if (last_index >= 0)
 			break;
 	}
@@ -1552,7 +1583,7 @@ function Class_linkState (state, classMap) {
 				::argumentSelector(
 					::fcomposition(
 						::bindfront(hasAllFieldsInitialised, state), // check state for every given fields-collection
-						::membercalltransformer(#stateFields, []) // tranform class to its state fields
+						::membercalltransformer(#stateFields, ::EMPTY_OBJ) // tranform class to its state fields
 					),
 					0 // select only key (which is the class)
 				)
@@ -1570,7 +1601,7 @@ function Class_linkState (state, classMap) {
 						::fcomposition(
 								::equalitypredicate(class.ObjectID()),
 								::fcomposition(
-										::membercalltransformer(#ObjectID, []),
+										::membercalltransformer(#ObjectID, ::EMPTY_OBJ),
 										::fcomposition(
 												::Class_classRegistry().getByName,
 												::bindfront(::dobj_normal_get, classMap)
@@ -2510,11 +2541,12 @@ function CSolution {
 				method findProject(projectName) {
 					::assert_str( projectName );
 					local projects = ::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects);
-					local result = ::iterable_find(
-							projects,
-							fcomposition(
+					local result = ::Iterable_find(
+							::Iterable_fromList(projects),
+							::fncomposition(
 									::equalitypredicate(projectName),
-									::bindback(::membercalltransformation, #getName, [])
+									::membercalltransformer(#getName, ::EMPTY_OBJ),
+									::membercalltransformer(#value, ::EMPTY_OBJ)
 							)
 						)
 					;

@@ -449,6 +449,18 @@ function main5 { // Issue 4
 	local ob = std::vmcompstringtooutputbuffer("std::print(\"Hello\\n\");", std::error, false);
 }
 
+function main6 {
+	u.println("Hello");
+	local r = u.fncomposition(
+		function f6 (n) { local r = n + 0; u.println("f6 makes ", n, " to ", r); return r; } ,
+		function f5 (n) { local r = n + 1; u.println("f5 makes ", n, " to ", r); return r; } ,
+		function f4 (n) { local r = n + 9; u.println("f4 makes ", n, " to ", r); return r; } ,
+		function f3 (n) { local r = n + 8; u.println("f3 makes ", n, " to ", r); return r; } ,
+		function f2 (n) { local r = n + 5; u.println("f2 makes ", n, " to ", r); return r; } ,
+		function f1 (n) { local r = n + 3; u.println("f1 makes ", n, " to ", r); return r; }
+	)(15);
+	u.println("Total result: ", r);
+}
 
 function main (argc, argv, envp) {
 	p.config = envp;
@@ -460,7 +472,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		))(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0);
 	
 	p.cleanup();
 

@@ -72,8 +72,12 @@ function VariableEvaluator {
 			{"$___CLASS_LIGHT___": "VariableEvaluator"}
 		];
 		//
-		static_variables_intialised = true;
+		static_variables_initialised = true;
 	}
+	return u.ternary(u.beClassy(),
+			VariableEvaluator_class_classy,
+			VariableEvaluator_class_light
+	);
 }
 
 

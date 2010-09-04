@@ -48,6 +48,7 @@ function bindback                       (f ...)
 function argspopback                    (args, popnum)
 function argspopfront                   (args, popnum)
 function fcomposition                   (f1, f2)                        // f1(f2(...))
+function fncomposition                  (f1, f2, ...)                   // f1(f2(f3(... fn(...) ... )))
 function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
                                                                         // in the slot with the given membername, passing to it the expanded args
 function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
@@ -158,6 +159,7 @@ function forany                         (Iterable, predicate)       // returns t
 function Iterable_fromList              (wrapped_list)              // implements rewind()
 function Iterable_fromDObj              (dobj)                      // implements rewind()
 function Iterable_foreach               (Iterable, f)
+function Iterable_find                  (Iterable, f)               // returns the iterator for which f() returns true
 //
 function file_isreadable                (filepath)
 function file_isabsolutepath            (filepath)
@@ -252,7 +254,7 @@ function Class_classRegistry
 //           checks of the given class is one of this object's classes.
 //         - ObjectID
 //           returns this object's (numerical) Id.
-//         - createdBy
+//         - createdB.y
 //           returns the class' object id which created this object.
 //     <^> state fields
 //         - classes : std::list
