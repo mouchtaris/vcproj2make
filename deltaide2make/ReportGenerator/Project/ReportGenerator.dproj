@@ -2,7 +2,7 @@
 <Project name="ReportGenerator.dproj" version="alpha">
     <ProjectProperties>
         <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
+        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 library</type>
         <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
         <symbolic>22 serialization::archive 4 0 0 1 0 80 22 serialization::archive 4 0 0 45 ReportGenerator/Project/ReportGenerator.dproj</symbolic>
         <startup>22 serialization::archive 4 0 0 1 0 64 22 serialization::archive 4 0 0 29 ..\Source\ReportGenerator.dsc</startup>

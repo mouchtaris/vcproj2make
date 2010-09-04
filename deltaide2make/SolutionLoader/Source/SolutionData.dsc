@@ -259,7 +259,7 @@ function classy_ConfigurationManager {
 				method Projects (solutionConfigurationID) {
 					local result = nil;
 					if ( check_hasconfig(self, solutionConfigurationID) )
-						result = u.dobj_keys(getconfigmap(self)[solutionConfigurationID]);
+						result = u.dval_copy(getconfigmap(self)[solutionConfigurationID]);
 					return result;
 				},
 				method markBuildable (solutionConfigurationID, projectID) {

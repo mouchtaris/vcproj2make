@@ -557,7 +557,10 @@ function ProjectType_isValid(type)
 //         - Projects(configurationID:deltastring)
 //               returns a deltaobject with the IDs of all the projects registered
 //               under the given solution configuration (whether as buildable or
-//               non-buildable).
+//               non-buildable) mapped to a deltaobject (pair) in which the first
+//               element is the project configuration ID and the second element is
+//               whether the object is buildable or not.
+//               [ projid => [ confid, buildable ], ... ]
 //         - markNonBuildable(solutionConfigurationID:deltastring, projectID:deltastirng)
 //               marks the given project as non-buildable, under the given solution
 //               configuration.

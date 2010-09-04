@@ -130,7 +130,7 @@ function ReportGenerator_generateReport (report_file_path, outer_log, configurat
 			append("\"><thead><tr><th colspan=\"3\">");
 			append(conf);
 			append("</th></tr></thead><tbody>");
-			local projectsIDs = configurationManager.Projects(conf);
+			local projectsIDs = u.dobj_keys(configurationManager.Projects(conf));
 			foreach (local projid, projectsIDs) {
 				log("adding info for project ", projid);
 				//
@@ -214,7 +214,7 @@ function ReportGenerator_generateReport (report_file_path, outer_log, configurat
 						projid);
 				}
 				comma = "";
-				foreach (local rdepid, configurationManager.Projects(conf))
+				foreach (local rdepid, u.dobj_keys(configurationManager.Projects(conf)))
 					if ( dependsOn(projectEntryHolder, projid, rdepid) ) {
 						append(comma);
 						appendDep(append, rdepid, makeprojhtmlid, isBuildable, conf, projectEntryHolder.getProjectEntry);

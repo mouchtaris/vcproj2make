@@ -4,7 +4,7 @@ sl_ve = std::libs::import("SolutionLoader/VariableEvaluator");
 assert( sl_ve );
 
 function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
-	function loadProject (projectFilePath, variableEvaluator) {
+	function loadProject (projectFilePath, projectConfiguration, variableEvaluator) {
 		local projectXML = u.xmlload(projectFilePath.deltaString());
 		local project = u.CProject().createInstance(
 				u.ProjectType().Executable,
@@ -27,14 +27,23 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 		result[configuration] = local csol = u.CSolution().createInstance(
 				u.Path_fromPath(solutionDirectory),
 				solutionName + "_" + configuration);
-		foreach (local projectID, configurationManager.Projects(configuration))
-			if (configurationManager.isBuildable(configuration, projectID)) {
+		local projectsBuildInfos = configurationManager.Projects(configuration);
+		local iterable           = u.Iterable_fromDObj(projectsBuildInfos);
+		for (local ite = iterable.iterator(); not ite.end(); ite.next()) {
+			local projectID            = ite.key();
+			local projectBuildInfo     = ite.value();
+			local projectConfiguration = projectBuildInfo[0];
+			local projectBuildable     = projectBuildInfo[1];
+			if (projectBuildable) {
+				assert( configurationManager.isBuildable(configuration, projectID) );
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);
 				csol.addProject(loadProject (
 						u.Path_castFromPath(solutionDirectoryPath.basename()).Concatenate(projectEntry.getLocation()),
+						projectConfiguration,
 						variableEvaluator
 				));
 			}
+		}
 	}
 	return result;
 }

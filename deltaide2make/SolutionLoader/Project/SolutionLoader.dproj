@@ -2,7 +2,7 @@
 <Project name="SolutionLoader.dproj" version="alpha">
     <ProjectProperties>
         <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
+        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 library</type>
         <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
         <symbolic>22 serialization::archive 4 0 0 1 0 78 22 serialization::archive 4 0 0 43 SolutionLoader/Project/SolutionLoader.dproj</symbolic>
         <startup>22 serialization::archive 4 0 0 1 0 63 22 serialization::archive 4 0 0 28 ..\Source\SolutionLoader.dsc</startup>
