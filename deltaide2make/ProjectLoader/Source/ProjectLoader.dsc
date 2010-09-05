@@ -2,10 +2,13 @@ u = std::libs::import("util");
 assert( u );
 sl_ve = std::libs::import("SolutionLoader/VariableEvaluator");
 assert( sl_ve );
+pr = std::libs::import("ProjectLoader/MicrosoftVisualStudioProjectReader");
+assert( pr );
 
 function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 	function loadProject (projectFilePath, projectConfiguration, variableEvaluator) {
-		local projectXML = u.xmlload(projectFilePath.deltaString());
+		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
+		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
 		local project = u.CProject().createInstance(
 				u.ProjectType().Executable,
 				projectFilePath,
@@ -32,8 +35,8 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 		for (local ite = iterable.iterator(); not ite.end(); ite.next()) {
 			local projectID            = ite.key();
 			local projectBuildInfo     = ite.value();
-			local projectConfiguration = projectBuildInfo[0];
-			local projectBuildable     = projectBuildInfo[1];
+			local projectConfiguration = projectBuildInfo.buildable;
+			local projectBuildable     = projectBuildInfo.config;
 			if (projectBuildable) {
 				assert( configurationManager.isBuildable(configuration, projectID) );
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);

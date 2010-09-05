@@ -17,4 +17,5 @@
         <args>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </args>
     </ProjectProperties>
     <Child type="Script">..\Source\ProjectLoader.dsc</Child>
+    <Child type="Script">..\Source\MicrosoftVisualStudioProjectFileReader.dsc</Child>
 </Project>

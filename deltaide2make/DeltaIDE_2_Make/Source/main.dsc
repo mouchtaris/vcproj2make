@@ -2,27 +2,26 @@
 // VM imports
 // ----------------------------------------------------------
 function importVM(path, id, onfail) {
-	local result = nil;
 	std::libs::registershared(id, path);
-	if (not std::libs::isregisteredshared(id))
-		onfail(path, id, "not registered");
-	else {
-		result = std::libs::import(id);
-		if (not result.Initialise())
-			onfail(path, id, "initialisation failed");
-	}
+	assert( std::libs::isregisteredshared(id) );
+	local result = std::libs::import(id);
+	if (not result)
+		onfail(path, id, "could not load vm");
+	else if (not result.Initialise())
+		onfail(path, id, "initialisation failed");
 	return result;
 }
 function onImportVMFail(path, id, reason) {
 	std::error("Could not import " + id + " from " + path + ". Reason: " + reason);
 }
 const SolutionDataCoreCache_filename = "SolutionDataCache";
-local u     = importVM("Util/Lib/util.dbc"                       , "util"                            , onImportVMFail);
-local rg    = importVM("ReportGenerator/Lib/ReportGenerator.dbc" , "ReportGenerator"                 , onImportVMFail);
-local sl_sd = importVM("SolutionLoader/Lib/SolutionData.dbc"     , "SolutionLoader/SolutionData"     , onImportVMFail);
-local sl_ve = importVM("SolutionLoader/Lib/VariableEvaluator.dbc", "SolutionLoader/VariableEvaluator", onImportVMFail);
-local sl    = importVM("SolutionLoader/Lib/SolutionLoader.dbc"   , "SolutionLoader"                  , onImportVMFail);
-local pl    = importVM("ProjectLoader/Lib/ProjectLoader.dbc"     , "ProjectLoader"                   , onImportVMFail);
+local u     = importVM("Util"            "/Lib/" "util"                                   ".dbc" , "util"                                            , onImportVMFail);
+local rg    = importVM("ReportGenerator" "/Lib/" "ReportGenerator"                        ".dbc" , "ReportGenerator"                                 , onImportVMFail);
+local sl_sd = importVM("SolutionLoader"  "/Lib/" "SolutionData"                           ".dbc" , "SolutionLoader/SolutionData"                     , onImportVMFail);
+local sl_ve = importVM("SolutionLoader"  "/Lib/" "VariableEvaluator"                      ".dbc" , "SolutionLoader/VariableEvaluator"                , onImportVMFail);
+local sl    = importVM("SolutionLoader"  "/Lib/" "SolutionLoader"                         ".dbc" , "SolutionLoader"                                  , onImportVMFail);
+local pl_pr = importVM("ProjectLoader"   "/Lib/" "MicrosoftVisualStudioProjectFileReader" ".dbc" , "ProjectLoader/MicrosoftVisualStudioProjectReader", onImportVMFail);
+local pl    = importVM("ProjectLoader"   "/Lib/" "ProjectLoader"                          ".dbc" , "ProjectLoader"                                   , onImportVMFail);
 
 const SolutionXMLpath = "Solution.xml";
 const RootTagName     = "VisualStudioSolution";
@@ -467,11 +466,10 @@ function main (argc, argv, envp) {
 	p.init(argv);
 	
 	(function mains_dispatcher (...) {
-		// TODO remove dummy after compiler bug is fixed
-		return (local dummy = std::vmfuncaddr(
+		return std::vmfuncaddr(
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
-		))(|u.firstarg(arguments)|);
+		)(|u.firstarg(arguments)|);
 	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0);
 	
 	p.cleanup();

@@ -142,8 +142,7 @@ function tostringunoverloaded (val) {
 // assertion utils
 function Assert(cond) {
 	if ( not cond )
-		// TODO compiler error, remove dummy after it's fixed
-		(local dummy = std::vmfuncaddr(std::vmthis(), #error))().AddError("Assertion failed");
+		::forward(#error)().AddError("Assertion failed");
 	assert( cond );
 }
 function assert_notnil(val) {
@@ -2795,7 +2794,8 @@ init_helper = InitialisableModuleHelper("Util",
 		[method @operator () {
 			::Path(), ::CProject(), ::CSolution();
 			return true;
-		}]."()", // TODO bug report: no @operator orphan methods
+		}]."()", // (DONE) bug report: no @operator orphan methods
+			// TODO replace if the bug is fixed
 		// clean-up
 		nil
 );
