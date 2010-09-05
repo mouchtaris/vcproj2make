@@ -19,7 +19,7 @@ envp = [
 	// lean classes
 	@lean_classes	      : false,
 	// Try to load Solution Data from cache
-	@SolutionDataCached   : true,
+	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache    : true,

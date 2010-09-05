@@ -23,4 +23,5 @@ glob:deltaide2make/SolutionLoader/Lib/SolutionDataCache.txt
 glob:DebugServerPort.txt
 glob:socketlog.txt
 glob:output.txt
-
+glob:deltaide2make/ProjectLoader/Lib/ProjectLoader.txt
+glob:deltaide2make/ProjectLoader/Lib/MicrosoftVisualStudioProjectFileReader.txt

@@ -871,7 +871,7 @@ function forany (iterable, predicate) {
 function Iterable_fromList (list) {
 	assert( ::isdeltalist(list) );
 	if (std::isundefined(static iterator_prototype))
-		prototype = [ // state fields [ #list:stdlist, #ite:listiter ]
+		iterator_prototype = [ // state fields [ #list:stdlist, #ite:listiter ]
 			method end {
 				return std::listiter_checkend(::dobj_get(self, #ite), ::dobj_get(self, #list));
 			},
@@ -893,7 +893,11 @@ function Iterable_fromList (list) {
 			method iterator {
 				local ite = [
 					{ ::pfield(#list): ::list_to_stdlist(::dobj_get(self, #list)) },
-					{ ::pfield(#ite) : std::list_iterator(::dobj_get(@self, #list)) }
+					{ ::pfield(#ite) : (function makeListIter (std_list) {
+							local ite = std::list_iterator(std_list);
+							std::listiter_setbegin(ite, std_list);
+							return ite;
+						})(::dobj_get(@self, #list)) }
 				];
 				::del(ite, iterator_prototype);
 				return ite;
@@ -956,7 +960,13 @@ function Iterable_foreach (iterable, f) {
 		keep_iterating = f(ite.key(), ite.value());
 }
 function Iterable_find (iterable, predicate) {
-	// TODO implement
+	for (local ite = iterable.iterator(); not ite.end() and not predicate(ite.key(), ite.value()); ite.next())
+		;
+	if (ite.end())
+		local result = nil;
+	else
+		result = ite;
+	return ite;
 }
 
 /// File utilities
