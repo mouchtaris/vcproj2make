@@ -156,8 +156,11 @@ function iterable_map_to_list           (iterable, mapf)            // returns a
 ///////////////////////////
 function forall                         (Iterable, predicate)
 function forany                         (Iterable, predicate)       // returns the Iterator for which predicate() holds, false otherwise
+function fold                           (Iterable, f)                   => f(... f(f(f(iterable_first, iterable_next), iterable_next)) ...)
+function folder                         (f)                             => a folder than fold(,f)s
 function Iterable_fromList              (wrapped_list)              // implements rewind()
 function Iterable_fromDObj              (dobj)                      // implements rewind()
+function Iterable_fromArguments         (arguments)                 // implements rewind()
 function Iterable_foreach               (Iterable, f)
 function Iterable_find                  (Iterable, f)               // returns the iterator for which f() returns true
 //

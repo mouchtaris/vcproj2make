@@ -9,10 +9,11 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 	function loadProject (projectFilePath, projectConfiguration, variableEvaluator) {
 		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
+		local projectName = pr.GetProjectName(projectXML);
 		local project = u.CProject().createInstance(
-				u.ProjectType().Executable,
+				projectType,
 				projectFilePath,
-				"I don't know your naaaaame, any mooooreee"
+				projectName
 		);
 		return project;
 	}
@@ -40,7 +41,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData) {
 			if (projectBuildable) {
 				assert( configurationManager.isBuildable(configuration, projectID) );
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);
-				csol.addProject(loadProject (
+				csol.addProject(local cproj = loadProject(
 						u.Path_castFromPath(solutionDirectoryPath.basename()).Concatenate(projectEntry.getLocation()),
 						projectConfiguration,
 						variableEvaluator

@@ -208,6 +208,7 @@ p = [
 					"SolutionLoader/Source/VariableEvaluator.dsc",
 					"ReportGenerator/Source/ReportGenerator.dsc",
 					"ProjectLoader/Source/ProjectLoader.dsc",
+					"ProjectLoader/Source/MicrosoftvisualStudioProjectFileReader.dsc",
 					"Util/Source/util.dsc"
 			])
 				@unixify(src, src);
@@ -461,6 +462,23 @@ function main6 {
 	u.println("Total result: ", r);
 }
 
+function main7 {
+	u.println(pl_pr.p_xpath);
+	xml = [];
+	xml.Grandpa = [];
+	xml.Grandpa.Dad = [];
+	xml.Grandpa.Dad.Child = ["Hello mommy"];
+	u.println(xml);
+	u.println(pl_pr.p_xpath(xml, #Grandpa, #Dad, #Child));
+}
+
+function main8 {
+	(function (...) {
+		local iterable = u.Iterable_fromArguments(u.argspopback(u.argspopfront(arguments,1),1));
+		u.Iterable_foreach(iterable, u.successifier(u.argumentSelector(u.println,1)));
+	})(#MUSTNOTBESHOWN, #a, #b, #c, #d, #e,#f, [#g], [#h], [#i], #j , #k , #l, #m, #n , #o, #MUSTNOTBESHOWN);
+}
+
 function main (argc, argv, envp) {
 	p.config = envp;
 	p.init(argv);
@@ -470,7 +488,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		)(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0);
 	
 	p.cleanup();
 

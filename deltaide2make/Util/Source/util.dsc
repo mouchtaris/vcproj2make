@@ -582,7 +582,7 @@ function dobj_replace (dobj, index, newval) {
 }
 function dobj_getaddress (dobj) {
 	local str = ::tostringunoverloaded(dobj);
-	local addr_begin = ::strindex(str, "Object(") + 7;
+	local addr_begin = ::strindex(str, "Object sn(") + 10;
 	local addr_end = ::strindex(str, ")") - 1;
 	::assert_gt( addr_end , addr_begin );
 	local addr = ::strsubstr(str, addr_begin, addr_end - addr_begin + 1);
@@ -708,7 +708,7 @@ function fncomposition (...) {
 	// optimised implementation: don't do fcomposition(fcomposition(...))
 	local result = [
 		method @operator () (...) {
-			local functions = @functions;
+			local functions = ::dobj_copy(@functions);
 			local result;
 			for (
 					result = lastargument_postdecrement(functions)(...);
@@ -868,6 +868,25 @@ function forany (iterable, predicate) {
 			return ite;
 	return false;
 }
+function fold (iterable, f) {
+	local a = nil;
+	for (local ite = iterable.iterator(); not ite.end(); ite.next()) {
+		local element = ite.value();
+		if (::isdeltanil(a))
+			a = element;
+		else {
+			a = f(a, element);
+			if (::isdeltanil(a) or ::isdeltaundefined(a)) {
+				::error().AddError("Not allowed to return nil or undefined during folding: a=", a);
+				break;
+			}
+		}
+	}
+	return a;
+}
+function folder (f) {
+	return ::bindback(::fold, f);
+}
 function Iterable_fromList (list) {
 	assert( ::isdeltalist(list) );
 	if (std::isundefined(static iterator_prototype))
@@ -953,6 +972,79 @@ function Iterable_fromDObj (dobj) {
 	::del(iterable, iterable_prototype);
 	return iterable;
 }
+function Iterable_fromArguments (args) {
+	assert( ::isdeltatable(args) );
+	const Iterator__stateField__currentIndex = #ArgumentsIterator_currentIndex;
+	const Iterator__stateField__arguments    = #ArgumentsIterator_arguments;
+	if (std::isundefined(static Iterator_stateFields))
+		Iterator_stateFields = [Iterator__stateField__currentIndex, Iterator__stateField__arguments];
+	// iterator private
+	function getindex (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__currentIndex); }
+	function getargs  (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__arguments   ); }
+	function invariants(iterator){
+		local index = getindex(iterator);
+		local args  = getargs(iterator);
+		return index >= args.start and index <= args.start + args.total;
+	}
+	function initialiseIndex (iterator) {
+		::dobj_checked_set(iterator, Iterator_stateFields, Iterator__stateField__currentIndex,
+			getargs(iterator).start);
+	}
+	if (std::isundefined(static iterator_prototype))
+		iterator_prototype = [
+			method end {
+				assert( invariants(self) );
+				local args = getargs(self);
+				local index = getindex(self);
+				return index == args.start + args.total;
+			},
+			method key {
+				assert( invariants(self) );
+				assert( not self.end() );
+				return getargs(self).start + getindex(self);
+			},
+			method value {
+				assert( invariants(self) );
+				assert( not self.end() );
+				local args = getargs(self);
+				local index = getindex(self);
+				return args[ index ];
+			},
+			method next {
+				assert( invariants(self) );
+				assert( not self.end() );
+				::dobj_checked_set(self, Iterator_stateFields, Iterator__stateField__currentIndex, 
+						getindex(self) + 1);
+			},
+			method rewind {
+				assert( invariants(self) );
+				initialiseIndex(self);
+			}
+		];
+	const Iterable__stateField__arguments = #ArgumentsIterable_arguments;
+	if (std::isundefined(static Iterable_stateFields))
+		Iterable_stateFields = [Iterable__stateField__arguments];
+	if (std::isundefined(static iterable_prototype))
+		iterable_prototype = [
+			method iterator {
+				local ite = [
+					{ ::pfield(Iterator__stateField__arguments):
+							::dobj_checked_get(self, Iterable_stateFields, Iterable__stateField__arguments) }
+				];
+				initialiseIndex(ite);
+				assert( invariants(ite) );
+				::del(ite, iterator_prototype);
+				return ite;
+			}
+		];
+	local iterable = [
+			{ ::pfield(Iterable__stateField__arguments): args }
+	];
+	::del(iterable, iterable_prototype);
+	return iterable;
+}
+
+
 function Iterable_foreach (iterable, f) {
 	local ite = iterable.iterator();
 	local keep_iterating = true;
@@ -966,7 +1058,7 @@ function Iterable_find (iterable, predicate) {
 		local result = nil;
 	else
 		result = ite;
-	return ite;
+	return result;
 }
 
 /// File utilities
@@ -2554,8 +2646,10 @@ function CSolution {
 							::Iterable_fromList(projects),
 							::fncomposition(
 									::equalitypredicate(projectName),
-									::membercalltransformer(#getName, ::EMPTY_OBJ),
-									::membercalltransformer(#value, ::EMPTY_OBJ)
+									::argumentSelector(
+											::membercalltransformer(#getName, ::EMPTY_OBJ),
+											1
+									)
 							)
 						)
 					;
