@@ -15,7 +15,7 @@ envp = [
 	// Copy libraries from predefined paths, so as to have the latest versions
 	@update_libs	      : true,
 	// unixify sources
-	@unixify		      : true,
+	@unixify		      : false,
 	// lean classes
 	@lean_classes	      : false,
 	// Try to load Solution Data from cache

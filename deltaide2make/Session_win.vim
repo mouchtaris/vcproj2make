@@ -38,8 +38,9 @@ badd +22 DeltaIDE_2_Make\Source\main_win.dsc
 badd +39 ProjectLoader\Source\ProjectLoader.dsc
 badd +17 SolutionLoader\Source\SolutionLoader.dsc
 badd +38 SolutionLoader\Source\VariableEvaluator.dsc
-badd +1 ReportGenerator\Source\ReportGenerator.dsc
+badd +217 ReportGenerator\Source\ReportGenerator.dsc
 badd +30 ProjectLoader\Source\MicrosoftVisualStudioProjectFileReader.dsc
+badd +0 ~\vimfiles\syntax\.\deltasourcecode.vim
 args SolutionReport.xhtml
 edit Util\Source\util.dsc
 set splitbelow splitright
@@ -143,12 +144,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 998 - ((0 * winheight(0) + 29) / 59)
+let s:l = 156 - ((29 * winheight(0) + 29) / 59)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-998
-normal! 02l
+156
+normal! 0
 tabedit DeltaIDE_2_Make\Source\main_win.dsc
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -257,12 +258,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 21 - ((9 * winheight(0) + 7) / 15)
+let s:l = 20 - ((4 * winheight(0) + 7) / 15)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-21
-normal! 0
+20
+normal! 028l
 wincmd w
 argglobal
 edit DeltaIDE_2_Make\Source\main.dsc
@@ -361,14 +362,13 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 476 - ((27 * winheight(0) + 21) / 42)
+let s:l = 358 - ((17 * winheight(0) + 21) / 42)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-476
-normal! 02l
+358
+normal! 06l
 wincmd w
-2wincmd w
 exe '1resize ' . ((&lines * 15 + 30) / 60)
 exe '2resize ' . ((&lines * 42 + 30) / 60)
 tabedit SolutionLoader\Source\VariableEvaluator.dsc
@@ -390,13 +390,13 @@ set nosplitright
 wincmd t
 set winheight=1 winwidth=1
 exe '1resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 1resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 1resize ' . ((&columns * 94 + 92) / 185)
 exe '2resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 2resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 2resize ' . ((&columns * 94 + 92) / 185)
 exe '3resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 3resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 3resize ' . ((&columns * 90 + 92) / 185)
 exe '4resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 4resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 4resize ' . ((&columns * 90 + 92) / 185)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -493,12 +493,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 38 - ((0 * winheight(0) + 14) / 28)
+let s:l = 39 - ((1 * winheight(0) + 14) / 28)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-38
-normal! 021l
+39
+normal! 05l
 wincmd w
 argglobal
 edit SolutionLoader\Source\SolutionData.dsc
@@ -597,12 +597,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 559 - ((0 * winheight(0) + 14) / 29)
+let s:l = 560 - ((1 * winheight(0) + 14) / 29)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-559
-normal! 050l
+560
+normal! 02l
 wincmd w
 argglobal
 edit SolutionLoader\Source\SolutionLoader.dsc
@@ -777,7 +777,7 @@ setlocal path=
 setlocal nopreserveindent
 setlocal nopreviewwindow
 setlocal quoteescape=\\
-setlocal noreadonly
+setlocal readonly
 setlocal norightleft
 setlocal rightleftcmd=search
 setlocal noscrollbind
@@ -812,15 +812,14 @@ normal! zt
 1
 normal! 0
 wincmd w
-2wincmd w
 exe '1resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 1resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 1resize ' . ((&columns * 94 + 92) / 185)
 exe '2resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 2resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 2resize ' . ((&columns * 94 + 92) / 185)
 exe '3resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 3resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 3resize ' . ((&columns * 90 + 92) / 185)
 exe '4resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 4resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 4resize ' . ((&columns * 90 + 92) / 185)
 tabedit ..\vcproj2make_old\API.txt
 set splitbelow splitright
 set nosplitbelow
@@ -923,13 +922,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 163 - ((35 * winheight(0) + 29) / 59)
+let s:l = 136 - ((29 * winheight(0) + 29) / 59)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-163
-normal! 089l
-2wincmd w
+136
+normal! 09l
 tabedit ProjectLoader\Source\MicrosoftVisualStudioProjectFileReader.dsc
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -952,15 +950,15 @@ set nosplitright
 wincmd t
 set winheight=1 winwidth=1
 exe '1resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 1resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 1resize ' . ((&columns * 97 + 92) / 185)
 exe '2resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 2resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 2resize ' . ((&columns * 97 + 92) / 185)
 exe '3resize ' . ((&lines * 19 + 30) / 60)
-exe 'vert 3resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 3resize ' . ((&columns * 87 + 92) / 185)
 exe '4resize ' . ((&lines * 19 + 30) / 60)
-exe 'vert 4resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 4resize ' . ((&columns * 87 + 92) / 185)
 exe '5resize ' . ((&lines * 18 + 30) / 60)
-exe 'vert 5resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 5resize ' . ((&columns * 87 + 92) / 185)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -1057,12 +1055,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 15 - ((14 * winheight(0) + 14) / 28)
+let s:l = 70 - ((2 * winheight(0) + 14) / 28)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-15
-normal! 027l
+70
+normal! 0
 wincmd w
 argglobal
 edit ProjectLoader\Source\ProjectLoader.dsc
@@ -1161,11 +1159,115 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 19 - ((15 * winheight(0) + 14) / 29)
+let s:l = 22 - ((18 * winheight(0) + 14) / 29)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-19
+22
+normal! 046l
+wincmd w
+argglobal
+edit ..\vcproj2make_old\API.txt
+setlocal keymap=
+setlocal noarabic
+setlocal noautoindent
+setlocal balloonexpr=
+setlocal nobinary
+setlocal bufhidden=
+setlocal buflisted
+setlocal buftype=
+setlocal nocindent
+setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
+setlocal cinoptions=
+setlocal cinwords=if,else,while,do,for,switch
+setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-
+setlocal commentstring=/*%s*/
+setlocal complete=.,w,b,u,t,i
+setlocal completefunc=
+setlocal nocopyindent
+setlocal nocursorcolumn
+setlocal nocursorline
+setlocal define=
+setlocal dictionary=
+setlocal nodiff
+setlocal equalprg=
+setlocal errorformat=
+setlocal noexpandtab
+if &filetype != ''
+setlocal filetype=
+endif
+setlocal foldcolumn=0
+setlocal foldenable
+setlocal foldexpr=0
+setlocal foldignore=#
+setlocal foldlevel=0
+setlocal foldmarker={{{,}}}
+setlocal foldmethod=manual
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldtext=foldtext()
+setlocal formatexpr=
+setlocal formatoptions=tcq
+setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
+setlocal grepprg=
+setlocal iminsert=2
+setlocal imsearch=2
+setlocal include=
+setlocal includeexpr=
+setlocal indentexpr=
+setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
+setlocal noinfercase
+setlocal iskeyword=@,48-57,_,128-167,224-235
+setlocal keywordprg=
+setlocal nolinebreak
+setlocal nolisp
+setlocal nolist
+setlocal makeprg=
+setlocal matchpairs=(:),{:},[:]
+setlocal modeline
+setlocal modifiable
+setlocal nrformats=octal,hex
+set number
+setlocal number
+setlocal numberwidth=4
+setlocal omnifunc=
+setlocal path=
+setlocal nopreserveindent
+setlocal nopreviewwindow
+setlocal quoteescape=\\
+setlocal noreadonly
+setlocal norightleft
+setlocal rightleftcmd=search
+setlocal noscrollbind
+setlocal shiftwidth=8
+setlocal noshortname
+setlocal nosmartindent
+setlocal softtabstop=0
+setlocal nospell
+setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
+setlocal spellfile=
+setlocal spelllang=en
+setlocal statusline=
+setlocal suffixesadd=
+setlocal swapfile
+setlocal synmaxcol=3000
+if &syntax != ''
+setlocal syntax=
+endif
+setlocal tabstop=4
+setlocal tags=
+setlocal textwidth=0
+setlocal thesaurus=
+setlocal nowinfixheight
+setlocal nowinfixwidth
+setlocal wrap
+setlocal wrapmargin=0
+silent! normal! zE
+let s:l = 655 - ((8 * winheight(0) + 9) / 19)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+655
 normal! 0
 wincmd w
 argglobal
@@ -1265,116 +1367,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 661 - ((14 * winheight(0) + 9) / 19)
+let s:l = 515 - ((1 * winheight(0) + 9) / 19)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-661
-normal! 024l
-wincmd w
-argglobal
-edit ..\vcproj2make_old\API.txt
-setlocal keymap=
-setlocal noarabic
-setlocal noautoindent
-setlocal balloonexpr=
-setlocal nobinary
-setlocal bufhidden=
-setlocal buflisted
-setlocal buftype=
-setlocal nocindent
-setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
-setlocal cinoptions=
-setlocal cinwords=if,else,while,do,for,switch
-setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-
-setlocal commentstring=/*%s*/
-setlocal complete=.,w,b,u,t,i
-setlocal completefunc=
-setlocal nocopyindent
-setlocal nocursorcolumn
-setlocal nocursorline
-setlocal define=
-setlocal dictionary=
-setlocal nodiff
-setlocal equalprg=
-setlocal errorformat=
-setlocal noexpandtab
-if &filetype != ''
-setlocal filetype=
-endif
-setlocal foldcolumn=0
-setlocal foldenable
-setlocal foldexpr=0
-setlocal foldignore=#
-setlocal foldlevel=0
-setlocal foldmarker={{{,}}}
-setlocal foldmethod=manual
-setlocal foldminlines=1
-setlocal foldnestmax=20
-setlocal foldtext=foldtext()
-setlocal formatexpr=
-setlocal formatoptions=tcq
-setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
-setlocal grepprg=
-setlocal iminsert=2
-setlocal imsearch=2
-setlocal include=
-setlocal includeexpr=
-setlocal indentexpr=
-setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
-setlocal noinfercase
-setlocal iskeyword=@,48-57,_,128-167,224-235
-setlocal keywordprg=
-setlocal nolinebreak
-setlocal nolisp
-setlocal nolist
-setlocal makeprg=
-setlocal matchpairs=(:),{:},[:]
-setlocal modeline
-setlocal modifiable
-setlocal nrformats=octal,hex
-set number
-setlocal number
-setlocal numberwidth=4
-setlocal omnifunc=
-setlocal path=
-setlocal nopreserveindent
-setlocal nopreviewwindow
-setlocal quoteescape=\\
-setlocal noreadonly
-setlocal norightleft
-setlocal rightleftcmd=search
-setlocal noscrollbind
-setlocal shiftwidth=8
-setlocal noshortname
-setlocal nosmartindent
-setlocal softtabstop=0
-setlocal nospell
-setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
-setlocal spellfile=
-setlocal spelllang=en
-setlocal statusline=
-setlocal suffixesadd=
-setlocal swapfile
-setlocal synmaxcol=3000
-if &syntax != ''
-setlocal syntax=
-endif
-setlocal tabstop=4
-setlocal tags=
-setlocal textwidth=0
-setlocal thesaurus=
-setlocal nowinfixheight
-setlocal nowinfixwidth
-setlocal wrap
-setlocal wrapmargin=0
-silent! normal! zE
-let s:l = 514 - ((0 * winheight(0) + 9) / 19)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-514
-normal! 07l
+515
+normal! 027l
 wincmd w
 argglobal
 edit ..\vcproj2make_old\API.txt
@@ -1478,19 +1476,18 @@ if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
 434
-normal! 026l
+normal! 030l
 wincmd w
-2wincmd w
 exe '1resize ' . ((&lines * 28 + 30) / 60)
-exe 'vert 1resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 1resize ' . ((&columns * 97 + 92) / 185)
 exe '2resize ' . ((&lines * 29 + 30) / 60)
-exe 'vert 2resize ' . ((&columns * 97 + 96) / 192)
+exe 'vert 2resize ' . ((&columns * 97 + 92) / 185)
 exe '3resize ' . ((&lines * 19 + 30) / 60)
-exe 'vert 3resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 3resize ' . ((&columns * 87 + 92) / 185)
 exe '4resize ' . ((&lines * 19 + 30) / 60)
-exe 'vert 4resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 4resize ' . ((&columns * 87 + 92) / 185)
 exe '5resize ' . ((&lines * 18 + 30) / 60)
-exe 'vert 5resize ' . ((&columns * 94 + 96) / 192)
+exe 'vert 5resize ' . ((&columns * 87 + 92) / 185)
 tabedit ReportGenerator\Source\ReportGenerator.dsc
 set splitbelow splitright
 set nosplitbelow
@@ -1599,8 +1596,115 @@ exe s:l
 normal! zt
 217
 normal! 075l
-2wincmd w
-tabnext 2
+tabedit ~\vimfiles\syntax\.\deltasourcecode.vim
+set splitbelow splitright
+set nosplitbelow
+set nosplitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal keymap=
+setlocal noarabic
+setlocal noautoindent
+setlocal balloonexpr=
+setlocal nobinary
+setlocal bufhidden=
+setlocal buflisted
+setlocal buftype=
+setlocal nocindent
+setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
+setlocal cinoptions=
+setlocal cinwords=if,else,while,do,for,switch
+setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-
+setlocal commentstring=/*%s*/
+setlocal complete=.,w,b,u,t,i
+setlocal completefunc=
+setlocal nocopyindent
+setlocal nocursorcolumn
+setlocal nocursorline
+setlocal define=
+setlocal dictionary=
+setlocal nodiff
+setlocal equalprg=
+setlocal errorformat=
+setlocal noexpandtab
+if &filetype != 'vim'
+setlocal filetype=vim
+endif
+setlocal foldcolumn=0
+setlocal foldenable
+setlocal foldexpr=0
+setlocal foldignore=#
+setlocal foldlevel=0
+setlocal foldmarker={{{,}}}
+setlocal foldmethod=manual
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldtext=foldtext()
+setlocal formatexpr=
+setlocal formatoptions=tcq
+setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
+setlocal grepprg=
+setlocal iminsert=2
+setlocal imsearch=2
+setlocal include=
+setlocal includeexpr=
+setlocal indentexpr=
+setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
+setlocal noinfercase
+setlocal iskeyword=@,48-57,_,128-167,224-235
+setlocal keywordprg=
+setlocal nolinebreak
+setlocal nolisp
+setlocal nolist
+setlocal makeprg=
+setlocal matchpairs=(:),{:},[:]
+setlocal modeline
+setlocal modifiable
+setlocal nrformats=octal,hex
+set number
+setlocal number
+setlocal numberwidth=4
+setlocal omnifunc=
+setlocal path=
+setlocal nopreserveindent
+setlocal nopreviewwindow
+setlocal quoteescape=\\
+setlocal noreadonly
+setlocal norightleft
+setlocal rightleftcmd=search
+setlocal noscrollbind
+setlocal shiftwidth=4
+setlocal noshortname
+setlocal nosmartindent
+setlocal softtabstop=0
+setlocal nospell
+setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
+setlocal spellfile=
+setlocal spelllang=en
+setlocal statusline=
+setlocal suffixesadd=
+setlocal swapfile
+setlocal synmaxcol=3000
+if &syntax != 'vim'
+setlocal syntax=vim
+endif
+setlocal tabstop=4
+setlocal tags=
+setlocal textwidth=0
+setlocal thesaurus=
+setlocal nowinfixheight
+setlocal nowinfixwidth
+setlocal wrap
+setlocal wrapmargin=0
+silent! normal! zE
+let s:l = 28 - ((27 * winheight(0) + 29) / 59)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+28
+normal! 0345l
+tabnext 5
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

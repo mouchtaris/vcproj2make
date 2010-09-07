@@ -355,7 +355,8 @@ function main0 (argc, argv, envp) {
 	// TMP test code
 	local solutionData = p.solutionData;
 	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
-	local projectData = pl.ProjectLoader_loadProjectsFromSolutionData(solutionData);
+	local log = u.bindfront(u.println, "[ProjectLoader]: ");
+	local projectData = pl.ProjectLoader_loadProjectsFromSolutionData(solutionData, log);
 	u.println(projectData);
 
 	p.generateReport(solutionData);
