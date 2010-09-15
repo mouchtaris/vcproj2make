@@ -25,8 +25,34 @@ function p_xfree (parent, child) {
 	assert( parent[child] );
 	parent[child] = nil;
 }
+function p_xConfiguration (projectXML) {
+	const Configurations_Name = "Configurations";
+	const Configuration_Name = "Configuration";
+	local result = ::p_xpath(projectXML, Configurations_Name, 0, Configuration_Name);
+	return result;
+}
+const p_xName_Name = "Name";
+function p_xName (projectXML) {
+	local result = ::p_xpath(projectXML, ::p_xName_Name); 
+	return result;
+}
+function p_xfreeName (projectXML) {
+	::p_xfree(projectXML, ::p_xName_Name);
+}
+const p_xFiles_Name = "Files";
+function p_xFiles (projectXML) {
+	local result = ::p_xpath(projectXML, ::p_xFiles_Name);
+	return result;
+}
+const p_xFilter_Name = "Filter";
+function p_xFilter (projectXML) {
+	local result = ::p_xpath(::p_xFiles(projectXML), 0, ::p_xFilter_Name);
+	return result;
+}
+
+
 function p_getConfiguration (projectXML, config) {
-	foreach (local configuration, p_xpath(projectXML, "Configurations", 0, "Configuration"))
+	foreach (local configuration, p_xConfiguration(projectXML))
 		if (configuration.Name == config)
 			return configuration;
 	return nil;
@@ -60,12 +86,11 @@ function GetProjectTypeForConfiguration (projectXML, projectConfiguration) {
 }
 
 function GetProjectName (projectXML) {
-	const Name_Name = "Name";
-	local result = ::p_xpath(projectXML, Name_Name); 
-	if (result)
-		::p_xfree(projectXML, Name_Name);
-	assert( u.isdeltastring(result) );
-	return result;
+	local name = ::p_xName(projectXML);
+	if (name)
+		::p_xfreeName(projectXML);
+	assert( u.isdeltastring(name) );
+	return name;
 }
 
 // returns a wrapped list with the relative paths of source files
@@ -81,11 +106,9 @@ function GetProjectSourceFiles (projectXML) {
 	}
 
 	local result = u.list_new();
-	const Files_Name        = "Files";
-	const Filter_Name       = "Filter";
 	const File_Name         = "File";
 	const RelativePath_Name = "RelativePath";
-	foreach (local filtre, local filters = ::p_xpath(projectXML, Files_Name, 0, Filter_Name))
+	foreach (local filtre, local filters = ::p_xFilter(projectXML))
 		if (filtreIsSourceFilesFiltre(filtre))
 			foreach (local file, local files = ::p_xpath(filtre, File_Name))
 				u.list_push_back(result,
