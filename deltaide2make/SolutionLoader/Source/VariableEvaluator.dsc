@@ -31,7 +31,7 @@ function VariableEvaluator {
 		VariableEvaluator_class_classy = u.Class().createInstance(
 			// state initialiser
 			function VariableEvaluator_stateInitialiser (newVariableEvaluatorInstance, validFieldsNames, solutionDirectory) {
-				local root = u.Path_fromPath(solutionDirectory);
+				local root = u.Path_fromPath(solutionDirectory, false);
 				u.Assert( u.Path_isaPath(root) );
 				u.Class_checkedStateInitialisation(
 					newVariableEvaluatorInstance,

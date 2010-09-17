@@ -204,7 +204,7 @@ function MakefileManifestation(basedirpath, solution) {
 		local pathstr = path.deltaString();
 		pathstr = ::util.strgsub(pathstr, "../", "__/");
 		pathstr = ::util.strgsub(pathstr, "./" , "_/" );
-		return ::util.Path_castFromPath(pathstr);
+		return ::util.Path_castFromPath(pathstr, false);
 	}
 	function pathMapping(paths, pathmapf) {
 		return ::util.list_to_stdlist(::util.iterable_map_to_list(paths,
@@ -252,7 +252,7 @@ function MakefileManifestation(basedirpath, solution) {
 		return "proj_" + project.getName();
 	}
 	function subbuildCommandForSubproject(project, makefileTarget_str) {
-		return "( cd " + pathToString(project.getLocation()) + " && ${MAKE} -f " +
+		return "( cd " + pathToString(::util.Path_fromPath(project.getLocation().basename(), false)) + " && ${MAKE} -f " +
 					deltastringToString(project.getName() + "Makefile.mk") + " " +
 					makefileTarget_str + ")";
 	}
@@ -284,7 +284,7 @@ function MakefileManifestation(basedirpath, solution) {
 					.Append(".so");
 			return path;
 		}
-		if (std::isundefined( outputTransformers ))
+		if (std::isundefined( static outputTransformers ))
 			outputTransformers = [
 				@executable     :  executableOutputTransformer    ,
 				@staticLibrary  :  staticLibraryOutputTransformer ,
@@ -760,7 +760,7 @@ function MakefileManifestation(basedirpath, solution) {
 				::util.Assert( ::util.Path_isaPath(basedirpath) );
 				//
 				@basedirpath = basedirpath;
-				@basedir_ccat_solution_path = basedirpath.Concatenate(solution.getLocation());
+				@basedir_ccat_solution_path = basedirpath.Concatenate(solution.getLocation().basename());
 				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
 				@builddir_str = pathToString(@builddir);
 				//

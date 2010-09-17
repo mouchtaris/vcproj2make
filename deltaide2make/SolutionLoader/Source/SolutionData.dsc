@@ -90,7 +90,7 @@ function ProjectEntry {
 		mixinsInstancesStateInitialisersArgumentsFunctors = [
 			@Namable  : lambda {["__noname__"]},
 			@IDable   : lambda {["__noID__"  ]},
-			@Locatable: lambda {["__nopath__"]}
+			@Locatable: lambda {[u.Path_fromPath("__nopath__", false)]}
 		];
 		// Mix-ins
 		classy_ProjectEntry_class.mixIn(u.Namable     (), mixinsInstancesStateInitialisersArgumentsFunctors.Namable   );

@@ -248,7 +248,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionDirectory, solutionNa
 			method NonProjectProjectEntryRemover
 				(parent, childindex, projelem, ismany)
 			{
-				local path = u.Path_castFromPath(projelem.path);
+				local path = u.Path_castFromPath(projelem.path, true);
 				if (path.Extension() != VCPROJ_Extension) {
 					u.assert_eq( projelem.name , projelem.path );
 					@l("Deleting nonProject project: ", projelem.name, ", ",
@@ -362,7 +362,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionDirectory, solutionNa
 						local projectEntry = sd.ProjectEntry().createInstance();
 						projectEntry.setID(id);
 						projectEntry.setName(name);
-						projectEntry.setLocation(path);
+						projectEntry.setLocation(u.Path_fromPath(path, true));
 						projectEntry.setParentReference(parentReference);
 						//
 						if (xmlhaschild(projectElement, ProjectSection_ElementName)) {

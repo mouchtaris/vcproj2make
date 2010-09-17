@@ -1325,7 +1325,7 @@ p__Class_classRegistry = [
 function Class_isa(obj, a_class) {
 	local result;
 	if (::isdeltaobject(obj))
-		if ( local obj_ObjectID = obj.ObjectID and
+		if ( (local obj_ObjectID = obj.ObjectID) and
 				obj_ObjectID() == local Class_objid = ::p__Class_classRegistry.ClassObjectID())
 			result = a_class.ObjectID() == Class_objid; // class Class is-a Class
 		else
@@ -2245,25 +2245,32 @@ function Point {
 //////////////////////////////////////////////////////////// VCPROJ 2 MAKE ////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+PATH_PATH_SEPARATOR =
+	//	PATH_SEPARATOR
+		"/"
+;
 function Path {
 	function isaPath(obj) {
 		return ::Class_isa(obj, ::Path());
 	}
-	function fromPath(path) {
+	function fromPath(path, isWindowsPath) {
 		local result = nil;
 		if ( ::isdeltastring(path) )
-			result = ::Path().createInstance(path, ::file_isabsolutepath(path));
+			result = ::Path().createInstance(path, ::file_isabsolutepath(path), isWindowsPath);
 		else if ( isaPath(path) )
-			result = ::Path().createInstance(path.deltaString(), path.IsAbsolute());
+			result = ::Path().createInstance(path.deltaString(), path.IsAbsolute(), isWindowsPath);
 		return result;
 	}
-	function castFromPath(path) {
+	function castFromPath(path, isWindowsPath) {
 		local result = nil;
 		if ( ::isdeltastring(path) )
-			result = fromPath(path);
+			result = fromPath(path, isWindowsPath);
 		else if ( isaPath(path) )
 			result = path;
 		return result;
+	}
+	function windowsToUnixPath (path) {
+		return ::strgsub(path, "\\", "/");
 	}
 	static classy_Path_class;
 	static light_Path_class;
@@ -2272,8 +2279,11 @@ function Path {
 		//
 		classy_Path_class = ::Class().createInstance(
 			// stateInitialiser
-			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute) {
+			function Path_stateInitialiser(newPathInstance, validStateFieldsNames, path, isabsolute, isWindowsPath) {
 				::assert_str( path );
+				assert( ::isdeltaboolean(isWindowsPath) );
+				if (isWindowsPath)
+					path = windowsToUnixPath(path);
 				Class_checkedStateInitialisation(
 					newPathInstance,
 					validStateFieldsNames,
@@ -2298,11 +2308,11 @@ function Path {
 				method Concatenate(another_relative_path) {
 					local result = nil;
 					if ( ::isdeltastring(another_relative_path) )
-						result = self.Concatenate( fromPath(another_relative_path) );
+						result = self.Concatenate( fromPath(another_relative_path, false) );
 					else {
 						::Assert( isaPath(another_relative_path) );
 						::Assert( another_relative_path.IsRelative() );
-						result = fromPath(self.deltaString() + ::PATH_SEPARATOR + another_relative_path.deltaString());
+						result = fromPath(self.deltaString() + ::PATH_PATH_SEPARATOR + another_relative_path.deltaString(), false);
 					}
 					return result;
 				},
@@ -2323,7 +2333,7 @@ function Path {
 					::assert_eq( ::strchar(pathstr, ::strlength(pathstr) - 1), "." );
 					::assert_eq( ::strsubstr(pathstr, extindex + 1), "" );
 					pathstr = pathstr + newext;
-					return ::Path().createInstance(pathstr, self.IsAbsolute());
+					return ::Path().createInstance(pathstr, self.IsAbsolute(), false);
 				},
 				method basename {
 					return ::file_basename(self.deltaString());
@@ -2375,17 +2385,17 @@ function Path {
 			light_Path_class
 	);
 }
-function Path_isaPath     (obj ) { return Path().isaPath     (obj ); }
-function Path_fromPath    (path) { return Path().fromPath    (path); }
-function Path_castFromPath(path) { return Path().castFromPath(path); }
+function Path_isaPath     (obj                ) { return Path().isaPath     (obj                ); }
+function Path_fromPath    (path, isWindowsPath) { return Path().fromPath    (path, isWindowsPath); }
+function Path_castFromPath(path, isWindowsPath) { return Path().castFromPath(path, isWindowsPath); }
 
 function Locatable {
 	if (std::isundefined(static Locatable_class))
 		Locatable_class = Class().createInstance(
 			// stateInitialiser
 			function Locatable_stateInitialiser(newInstance, validStateFieldsNames, path) {
-				local p = ::Path_fromPath(path);
-				::Assert( p );
+				assert( ::Path_isaPath(path) );
+				local p = path;
 				Class_checkedStateInitialisation(
 					newInstance,
 					validStateFieldsNames,
@@ -2400,8 +2410,8 @@ function Locatable {
 					return path;
 				},
 				method setLocation(path) {
-					local p = ::Path_fromPath(path);
-					::Assert( p );
+					assert( ::Path_isaPath(path));
+					local p = path;
 					return ::dobj_set(self, #Locatable_path, p);
 				}
 			],
@@ -2536,8 +2546,8 @@ function CProjectProperties {
 		prototype = [
 			method addIncludeDirectory (path) {
 				local includes = getincludes(self);
-				local p = ::Path_fromPath(path);
-				::list_push_back(includes, p);
+				assert( ::Path_isaPath(path) );
+				::list_push_back(includes, path);
 			},
 			method IncludeDirectories {
 				local include = getincludes(self);
@@ -2555,9 +2565,9 @@ function CProjectProperties {
 				return result;
 			},
 			method addLibraryPath (path) {
-				local p = ::Path_fromPath(path);
+				assert( ::Path_isaPath(path) );
 				local libpaths = getlibpaths(self);
-				::list_push_back(libpaths, p);
+				::list_push_back(libpaths, path);
 			},
 			method LibrariesPaths {
 				local libpaths = getlibpaths(self);
@@ -2618,10 +2628,9 @@ function CProject {
 			// prototype
 			[
 				method addSource(path) {
-					local p = ::Path_castFromPath(path);
-					::Assert( ::Path_isaPath(p) );
-					::assert_eq( p.Extension(), self.SourceExtension() );
-					::list_push_back(::dobj_get(self, #CProject_sources), p);
+					assert( ::Path_isaPath(path) );
+					::assert_eq( path.Extension(), self.SourceExtension() );
+					::list_push_back(::dobj_get(self, #CProject_sources), path);
 				},
 				method Sources {
 					return ::list_clone(::dobj_get(self, #CProject_sources));
@@ -2697,7 +2706,7 @@ function CProject {
 					return outputDirectory;
 				},
 				method setOutputDirectory(pathable) {
-					local path = ::Path().fromPath(pathable);
+					local path = ::Path().fromPath(pathable, false);
 					::Assert( ::Path().isaPath(path) );
 					::dobj_set(self, #CProject_outputDirectory, path);
 				},
@@ -2711,8 +2720,8 @@ function CProject {
 					::dobj_checked_set(self, ::CProject().stateFields(), #CProject_outputName, name);
 				},
 				method setAPIDirectory(path) {
-					local p = ::Path_fromPath(path);
-					::Assert( ::Path_isaPath(p) );
+					assert( ::Path_isaPath(path) );
+					local p = path;
 					::dobj_set(self, #CProject_apidir, p);
 				},
 				method getAPIDirectory {

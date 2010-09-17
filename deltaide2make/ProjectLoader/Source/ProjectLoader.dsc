@@ -13,7 +13,7 @@ assert( pr );
 // Public
 function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator) {
-		local projectPath = u.Path_castFromPath(projectPathMaybe);
+		local projectPath = u.Path_castFromPath(projectPathMaybe, false);
 		local projectFilePath = solutionBasedirPath.Concatenate(projectPath);
 		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
@@ -21,13 +21,13 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		local project = u.CProject().createInstance(projectType, projectPath, projectName);
 		// Sources
 		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
-			project.addSource(u.assert_str(src_relpath));
+			project.addSource(u.Path_fromPath(src_relpath, true));
 		// Output Directory
 		project.setOutputDirectory("./output/"); // TODO do real
 		// Output Name
 		project.setOutputName("OutputName"); // TODO do real
 		// API Directory
-		project.setAPIDirectory("../Include"); // TODO do real
+		project.setAPIDirectory(u.Path_fromPath("../Include", false)); // TODO do real
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
 			[
@@ -54,18 +54,18 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 	//
 	local result = [];
 	//
-	local configurationManager  = solutionData.ConfigurationManager     ;
-	local projectEntryHolder    = solutionData.ProjectEntryHolder       ;
-	local solutionDirectory     = solutionData.SolutionDirectory        ;
-	local solutionDirectoryPath = u.Path_castFromPath(solutionDirectory);
-	local solutionName          = solutionData.SolutionName             ;
+	local configurationManager  = solutionData.ConfigurationManager            ;
+	local projectEntryHolder    = solutionData.ProjectEntryHolder              ;
+	local solutionDirectory     = solutionData.SolutionDirectory               ;
+	local solutionDirectoryPath = u.Path_castFromPath(solutionDirectory, false);
+	local solutionName          = solutionData.SolutionName                    ;
 	//
 	local variableEvaluator     = sl_ve.VariableEvaluator().createInstance(solutionDirectoryPath);
 	//
 	foreach (local configuration, configurationManager.Configurations()) {
 		log("Creating a Solution for configuration ", configuration);
 		result[configuration] = local csol = u.CSolution().createInstance(
-				u.Path_fromPath(solutionDirectory),
+				u.Path_fromPath(solutionDirectory, false),
 				solutionName + "_" + configuration);
 		local projectsBuildInfos = configurationManager.Projects(configuration);
 		local iterable           = u.Iterable_fromDObj(projectsBuildInfos);
@@ -80,7 +80,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);
 				log(configuration, ": Creating a project for ", projectID, "/", projectEntry.getName());
 				csol.addProject(local cproj = loadProject(
-						u.Path_castFromPath(solutionDirectoryPath.basename()), projectEntry.getLocation(),
+						u.Path_castFromPath(solutionDirectoryPath.basename(), false), projectEntry.getLocation(),
 						projectConfiguration,
 						variableEvaluator
 				));
