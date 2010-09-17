@@ -649,8 +649,9 @@ function file_pathconcatenate(...) {
 function file_basename(filepath) {
 	::assert_str( filepath );
 	local result = nil;
+	local last_index = -1;
 	foreach (local separator, [ "\\", "/" ]) {
-		local last_index = ::strrindex(filepath, separator);
+		last_index = ::strrindex(filepath, separator);
 		if (last_index >= 0)
 			break;
 	}

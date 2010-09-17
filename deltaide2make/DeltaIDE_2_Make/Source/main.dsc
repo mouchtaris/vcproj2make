@@ -15,13 +15,14 @@ function onImportVMFail(path, id, reason) {
 	std::error("Could not import " + id + " from " + path + ". Reason: " + reason);
 }
 const SolutionDataCoreCache_filename = "SolutionDataCache";
-local u     = importVM("Util"            "/Lib/" "util"                                   ".dbc" , "util"                                            , onImportVMFail);
-local rg    = importVM("ReportGenerator" "/Lib/" "ReportGenerator"                        ".dbc" , "ReportGenerator"                                 , onImportVMFail);
-local sl_sd = importVM("SolutionLoader"  "/Lib/" "SolutionData"                           ".dbc" , "SolutionLoader/SolutionData"                     , onImportVMFail);
-local sl_ve = importVM("SolutionLoader"  "/Lib/" "VariableEvaluator"                      ".dbc" , "SolutionLoader/VariableEvaluator"                , onImportVMFail);
-local sl    = importVM("SolutionLoader"  "/Lib/" "SolutionLoader"                         ".dbc" , "SolutionLoader"                                  , onImportVMFail);
-local pl_pr = importVM("ProjectLoader"   "/Lib/" "MicrosoftVisualStudioProjectFileReader" ".dbc" , "ProjectLoader/MicrosoftVisualStudioProjectReader", onImportVMFail);
-local pl    = importVM("ProjectLoader"   "/Lib/" "ProjectLoader"                          ".dbc" , "ProjectLoader"                                   , onImportVMFail);
+local u     = importVM("Util"              "/Lib/" "util"                                   ".dbc" , "util"                                            , onImportVMFail);
+local rg    = importVM("ReportGenerator"   "/Lib/" "ReportGenerator"                        ".dbc" , "ReportGenerator"                                 , onImportVMFail);
+local sl_sd = importVM("SolutionLoader"    "/Lib/" "SolutionData"                           ".dbc" , "SolutionLoader/SolutionData"                     , onImportVMFail);
+local sl_ve = importVM("SolutionLoader"    "/Lib/" "VariableEvaluator"                      ".dbc" , "SolutionLoader/VariableEvaluator"                , onImportVMFail);
+local sl    = importVM("SolutionLoader"    "/Lib/" "SolutionLoader"                         ".dbc" , "SolutionLoader"                                  , onImportVMFail);
+local pl_pr = importVM("ProjectLoader"     "/Lib/" "MicrosoftVisualStudioProjectFileReader" ".dbc" , "ProjectLoader/MicrosoftVisualStudioProjectReader", onImportVMFail);
+local pl    = importVM("ProjectLoader"     "/Lib/" "ProjectLoader"                          ".dbc" , "ProjectLoader"                                   , onImportVMFail);
+local mkgen = importVM("MakefileGenerator" "/Lib/" "MakefileGenerator"                      ".dbc" , "MakefileGenerator"                               , onImportVMFail);
 
 const SolutionXMLpath = "Solution.xml";
 const RootTagName     = "VisualStudioSolution";
@@ -345,19 +346,48 @@ p = [
 		
 		assert( @solutionData );
 	},
-	@log: u.bindfront(u.log, "Mainer")
+	@log: u.bindfront(u.log, "Mainer"),
+	method loadProjectData {
+		local log = u.bindfront(@log, "[ProjectLoader]: ");
+		local op = [
+			method @operator () {
+				@projectData = pl.ProjectLoader_loadProjectsFromSolutionData(@solutionData, @log);
+			},
+			@solutionData: @solutionData,
+			@log: log,
+			@projectData: false
+		];
+		@log("Loading projects...");
+		time("", op);
+		@projectData = local projectData = op.projectData;
+	}
 ];
 
 function main0 (argc, argv, envp) {
 	p.loadSolutionXML();
 	p.loadSolutionData();
+	p.loadProjectData();
 
 	// TMP test code
 	local solutionData = p.solutionData;
 	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
-	local log = u.bindfront(u.println, "[ProjectLoader]: ");
-	local projectData = pl.ProjectLoader_loadProjectsFromSolutionData(solutionData, log);
-	u.println(projectData);
+	local projectData = p.projectData;
+	u.Iterable_foreach(u.Iterable_fromDObj(projectData), [
+		method @operator () (key, val) {
+			if (@firstrun) {
+				@firstrun = false;
+				p.log("Generating makefiles for onfiguration ", key);
+				mkgen.MakefileManifestation(
+						u.Path_castFromPath(
+							//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
+								"./"
+						),
+						val
+				);
+			}
+		},
+		@firstrun: true
+	]);
 
 	p.generateReport(solutionData);
 }

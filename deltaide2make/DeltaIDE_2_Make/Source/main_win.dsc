@@ -3,7 +3,7 @@ std::vmrun(main);
 
 envp = [
 	// Platform sed executable (either full path or executable name, if it's in the path)
-	@SED			      : "\gnu\bin\sed",
+	@SED			      : "\\gnu\\bin\\sed",
 	// Use only standard delta features, without any custom extensions
 	// (custom library functions, etc). Valid values are only the ones
 	// listed here as comments
@@ -19,7 +19,7 @@ envp = [
 	// lean classes
 	@lean_classes	      : false,
 	// Try to load Solution Data from cache
-	@SolutionDataCached   : true,
+	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache    : true,
@@ -38,7 +38,7 @@ args = [
 	@solution_name:	"IDE",
 	@solution_path:
 				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
-					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+					"..\\vcproj2make_old\\vcproj2make_testprojects\\vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

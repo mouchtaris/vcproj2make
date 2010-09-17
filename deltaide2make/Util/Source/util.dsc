@@ -338,6 +338,11 @@ function libifyname(filename) {
 		::error().AddError("Unknown platform for libifyname(): " + ::platform());
 	return result;
 }
+PATH_SEPARATOR = nil;
+if (iswin32()) PATH_SEPARATOR = "\\";
+else if (islinux()) PATH_SEPARATOR = "/";
+else ::error().UnknownPlatform();
+
 private__loadlibsStaticData = [];
 const private__DELTA_DLL_INSTALLATION_FUNCTION_NAME = "Install";
 function loadlibs {
@@ -399,7 +404,7 @@ function strslice(str, start_index, end_index) {
 	}
 	return result;
 }
-function strsubstr(str, start_index ...) {
+function strsubstr (str, start_index ...) {
 	local result = nil;
 	local end_index = nil;
 	local length = nil;
@@ -825,6 +830,7 @@ function list_to_stdlist (list) {
 	return ::p__list.getlist(list);
 }
 function list_clone (list) {
+	assert( ::isdeltalist(list) );
 	local result = std::list_new();
 	foreach (local el, ::p__list.getlist(list))
 		std::list_push_back(result, el);
@@ -840,6 +846,43 @@ function list_cardinality (list) {
 }
 function list_clear (list) {
 	std::list_clear(::p__list.getlist(list));
+}
+
+function list_concatenate_from_lists (lists, listAccessor) {
+	::list_foreach(lists, local accumulator = [
+		method @operator () (listWrapped) {
+			local unwrap = @listAccessor;
+			local list = unwrap(listWrapped);
+			::list_foreach(list, [
+				method @operator () (element) {
+					local c = @concatenation;
+					::list_push_back(c, element);
+				},
+				@concatenation: @concatenation
+			]);
+		},
+		@concatenation: ::list_new(),
+		@listAccessor: listAccessor
+	]);
+	return accumulator.concatenation;
+}
+
+function list_concatenate(...) {
+	::foreacharg(arguments, local accumulator = [
+		method @operator () (list) {
+			local c = @concatenation;
+			assert( ::isdeltalist(c) );
+			::list_foreach(list, [
+				method @operator () (element) {
+					local c = @concatenation;
+					::list_push_back(c, element);
+				},
+				@concatenation: c
+			]);
+		},
+		@concatenation: ::list_new()
+	]);
+	return accumulator.concatenation;
 }
 
 //
@@ -1077,7 +1120,9 @@ function file_isabsolutepath(filepath) {
 		result =
 				(std::strlen(filepath) > 3 and std::strchar(filepath, 1) == ":" and std::strchar(filepath, 2) == "\\")
 				or
-				(std::strlen(filepath) > 1 and std::strchar(filepath, 0) == "\\")
+				(std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "\\")
+				or
+				(std::strlen(filepath) > 0 and std::strchar(filepath, 0) == "/")
 		;
 	return result;
 }
@@ -1155,6 +1200,9 @@ function file_copy(src, dst) {
 		::error().AddError("Could not open file \"" + src + "\" for reading.");
 
 	return result;
+}
+function file_pathify (str) {
+	return ::strgsub(str, "|", "_");
 }
 function shell(command) {
 	return std::fileexecute(command);
@@ -1275,13 +1323,19 @@ p__Class_classRegistry = [
 	}
 ];
 function Class_isa(obj, a_class) {
-	if ( obj.ObjectID() == local Class_objid = ::p__Class_classRegistry.ClassObjectID())
-		local result = a_class.ObjectID() == Class_objid; // class Class is-a Class
+	local result;
+	if (::isdeltaobject(obj))
+		if ( local obj_ObjectID = obj.ObjectID and
+				obj_ObjectID() == local Class_objid = ::p__Class_classRegistry.ClassObjectID())
+			result = a_class.ObjectID() == Class_objid; // class Class is-a Class
+		else
+			result =
+					(local instanceOf = obj.instanceOf)                     and
+					instanceOf(a_class)
+			;
 	else
-		result = (::isdeltaobject(obj))                                 and 
-				(local instanceOf = obj.instanceOf)                     and
-				instanceOf(a_class)
-		;
+		result = false;
+	
 	return result;
 }
 function Class_classRegistry {
@@ -2248,7 +2302,7 @@ function Path {
 					else {
 						::Assert( isaPath(another_relative_path) );
 						::Assert( another_relative_path.IsRelative() );
-						result = fromPath(self.deltaString() + "/" + another_relative_path.deltaString());
+						result = fromPath(self.deltaString() + ::PATH_SEPARATOR + another_relative_path.deltaString());
 					}
 					return result;
 				},
@@ -2263,7 +2317,8 @@ function Path {
 					::assert_str(newext);
 					local pathstr = self.deltaString();
 					local extindex = ::strrindex(pathstr, ".");
-					local pathstr = ::strsubstr(pathstr, 0, extindex);
+					local substrlen = extindex -0  +1;
+					local pathstr = ::strsubstr(pathstr, 0, substrlen);
 					::assert_eq( extindex + 1 , ::strlength(pathstr) );
 					::assert_eq( ::strchar(pathstr, ::strlength(pathstr) - 1), "." );
 					::assert_eq( ::strsubstr(pathstr, extindex + 1), "" );
@@ -2451,31 +2506,115 @@ function ProjectType {
 	return projectTypeEnum;
 }
 
+// CProjectProperties
+function CProjectProperties {
+	const StateField_includes       = "CProjectProperties_includes";
+	const StateField_definitions    = "CProjectProperties_definitions";
+	const StateField_librariesPaths = "CProjectProperties_librariesPaths";
+	const className = #CProjectProperties;
+	static Class;
+	static static_variables_defined;
+	static stateFields;
+	static prototype;
+	static mixInRequirements;
+	function getincludes    (this) { return ::dobj_checked_get(this, stateFields, StateField_includes       ); }
+	function getdefinitions (this) { return ::dobj_checked_get(this, stateFields, StateField_definitions    ); }
+	function getlibpaths    (this) { return ::dobj_checked_get(this, stateFields, StateField_librariesPaths ); }
+	function stateInitialiser (newInstance, stateFieldsNames) {
+		::Class_checkedStateInitialisation(newInstance, stateFieldsNames,
+		[
+			{ StateField_includes      : ::list_new() },
+			{ StateField_definitions   : ::list_new() },
+			{ StateField_librariesPaths: ::list_new() }
+		]);
+	}
+	if (std::isundefined(static_variables_defined)) {
+		stateFields = [ StateField_includes, StateField_definitions, StateField_librariesPaths ];
+		//
+		mixInRequirements = [];
+		//
+		prototype = [
+			method addIncludeDirectory (path) {
+				local includes = getincludes(self);
+				local p = ::Path_fromPath(path);
+				::list_push_back(includes, p);
+			},
+			method IncludeDirectories {
+				local include = getincludes(self);
+				local result = ::list_clone(include);
+				return result;
+			},
+			method addPreprocessorDefinition (def) {
+				assert( ::isdeltastring(def) );
+				local defs = getdefinitions(self);
+				::list_push_back(defs, def);
+			},
+			method PreprocessorDefinitions {
+				local defs = getdefinitions(self);
+				local result = ::list_clone(defs);
+				return result;
+			},
+			method addLibraryPath (path) {
+				local p = ::Path_fromPath(path);
+				local libpaths = getlibpaths(self);
+				::list_push_back(libpaths, p);
+			},
+			method LibrariesPaths {
+				local libpaths = getlibpaths(self);
+				local result = ::list_clone(libpaths);
+				return result;
+			}
+		];
+		//
+		Class = ::Class().createInstance(prototype, mixInRequirements, stateFields, className);
+		//
+		assert( std::isundefined(static_variables_defined) );
+		static_variables_defined = true;
+	}
+	return Class;
+}
+function CProjectProperties_isa (obj) {
+	return ::Class_isa(obj, ::CProjectProperties());
+}
+
 // CProject
 function CProject {
+	const FieldState_type                         = #CProject_type                            ;
+	const FieldState_manifestationsConfigurations = #CProject_manifestationsConfigurations    ;
+	const FieldState_sources                      = #CProject_sources                         ;
+	const FieldState_dependencies                 = #CProject_dependencies                    ;
+	const FieldState_libraries                    = #CProject_libraries                       ;
+	const FieldState_outputName                   = #CProject_outputName                      ;
+	const FieldState_outputDirectory              = #CProject_outputDirectory                 ;
+	const FieldState_apidir                       = #CProject_apidir                          ;
+	const FieldState_properties                   = #CProject_properties                      ;
+	function stateInitialiser(newInstance, validStateFieldsNames, projectType, path, projectName) {
+		::Assert( ::ProjectType_isValid(projectType) );
+		Class_checkedStateInitialisation(
+			newInstance,
+			validStateFieldsNames,
+			[
+				{ FieldState_type                        : projectType     },
+				{ FieldState_manifestationsConfigurations: []              },
+				{ FieldState_sources                     : ::list_new()    },
+				{ FieldState_dependencies                : ::list_new()    },
+				{ FieldState_libraries                   : ::list_new()    },
+				{ FieldState_outputName                  : false           },
+				{ FieldState_outputDirectory             : false           },
+				{ FieldState_apidir                      : false           },
+				{ FieldState_properties                  : ::list_new()    }
+			]
+		);
+	}
+	function propertiesListConcatenation (this, methodName) {
+		local props = ::dobj_get(this, FieldState_properties);
+		return ::list_concatenate_from_lists(props, ::membercalltransformer(methodName, ::EMPTY_OBJ));
+	}
+
+
 	if (std::isundefined(static CProject_class)) {
 		CProject_class = ::Class().createInstance(
-			// stateInitialiser
-			function CProject_stateInitialiser(newInstance, validStateFieldsNames, projectType, path, projectName) {
-				::Assert( ::ProjectType_isValid(projectType) );
-				Class_checkedStateInitialisation(
-					newInstance,
-					validStateFieldsNames,
-					[
-						{ #CProject_type                        : projectType     },
-						{ #CProject_manifestationsConfigurations: []              },
-						{ #CProject_sources                     : ::list_new()    },
-						{ #CProject_includes                    : ::list_new()    },
-						{ #CProject_dependencies                : ::list_new()    },
-						{ #CProject_definitions                 : ::list_new()    },
-						{ #CProject_librariesPaths              : ::list_new()    },
-						{ #CProject_libraries                   : ::list_new()    },
-						{ #CProject_outputName                  : false           },
-						{ #CProject_outputDirectory             : false           },
-						{ #CProject_apidir                      : false           }
-					]
-				);
-			},
+			stateInitialiser,
 			// prototype
 			[
 				method addSource(path) {
@@ -2485,44 +2624,40 @@ function CProject {
 					::list_push_back(::dobj_get(self, #CProject_sources), p);
 				},
 				method Sources {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_sources));
-				},
-				method addIncludeDirectory(path) {
-					local p = ::Path_castFromPath(path);
-					::Assert( ::Path_isaPath(p) );
-					::list_push_back(::dobj_get(self, #CProject_includes), p);
-				},
-				method IncludeDirectories {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_includes));
+					return ::list_clone(::dobj_get(self, #CProject_sources));
 				},
 				method addDependency(project) {
 					::Assert( ::Class_isa(project, ::CProject()) );
 					::list_push_back(::dobj_get(self, #CProject_dependencies), project);
 				},
 				method Dependencies {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_dependencies));
-				},
-				method addPreprocessorDefinition(definition) {
-					::assert_str( definition );
-					::list_push_back(::dobj_get(self, #CProject_definitions), definition);
-				},
-				method PreprocessorDefinitions {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_definitions));
-				},
-				method addLibraryPath(path) {
-					local p = ::Path_castFromPath(path);
-					::Assert( ::Path_isaPath(p) );
-					::list_push_back(::dobj_get(self, #CProject_librariesPaths), p);
-				},
-				method LibrariesPaths {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_librariesPaths));
+					return ::list_clone(::dobj_get(self, #CProject_dependencies));
 				},
 				method addLibrary(libname) {
 					::assert_str( libname );
 					::list_push_back(::dobj_get(self, #CProject_libraries), libname);
 				},
 				method Libraries {
-					return ::iterable_clone_to_list(::dobj_get(self, #CProject_libraries));
+					return ::list_clone(::dobj_get(self, #CProject_libraries));
+				},
+				method addProjectProperties (projectProperties) {
+					assert( ::CProjectProperties_isa(projectProperties) );
+					::list_push_back(::dobj_get(self, FieldState_properties), projectProperties);
+				},
+				method ProjectProperties {
+					return ::list_clone(::dobj_get(self, FieldState_properties));
+				},
+				method IncludeDirectories {
+					local result = propertiesListConcatenation(self, #IncludeDirectories);
+					return result;
+				},
+				method PreprocessorDefinitions {
+					local result = propertiesListConcatenation(self, #PreprocessorDefinitions);
+					return result;
+				},
+				method LibrariesPaths {
+					local result = propertiesListConcatenation(self, #LibrariesPaths);
+					return result;
 				},
 				method setManifestationConfiguration(manifestationID, configuration) {
 					::assert_str( manifestationID );
@@ -2598,22 +2733,13 @@ function CProject {
 			// mixInRequirements
 			[],
 			// stateFields
-			[ #CProject_type, #CProject_manifestationsConfigurations, #CProject_sources, #CProject_includes,
-			  #CProject_dependencies, #CProject_definitions, #CProject_librariesPaths, #CProject_libraries,
-			  #CProject_outputDirectory, #CProject_outputName, #CProject_apidir],
+			[ FieldState_type, FieldState_manifestationsConfigurations, FieldState_sources, FieldState_dependencies,
+			FieldState_libraries, FieldState_outputName, FieldState_outputDirectory, FieldState_apidir, FieldState_properties ],
 			// className
 			#CProject
 		);
-		CProject_class.mixIn(::Locatable(), [
-			method @operator () (newInstance, validStateFieldsNames, projectType, path, projectName) {
-				return [path];
-			}
-		]);
-		CProject_class.mixIn(::Namable()  , [
-			method @operator () (newInstance, validStateFieldsNames, projectType, path, projectName) {
-				return [projectName];
-			}
-		]);
+		CProject_class.mixIn(::Locatable(), lambda (newInstance, validStateFieldsNames, projectType, path, projectName) { [path] });
+		CProject_class.mixIn(::Namable()  , lambda (newInstance, validStateFieldsNames, projectType, path, projectName) { [projectName] });
 	}
 	return CProject_class;
 }
@@ -2666,7 +2792,7 @@ function CSolution {
 					::list_push_back(projects, project);
 				},
 				method Projects {
-					return ::iterable_clone_to_list(
+					return ::list_clone(
 						::dobj_checked_get(self, ::CSolution().stateFields(), #CSolution_projects)
 					);
 				}

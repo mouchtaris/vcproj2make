@@ -13,4 +13,5 @@
     <Child type="Project">..\vcproj2make_old\vcproj2make.dproj</Child>
     <Child type="Project">ReportGenerator\Project\ReportGenerator.dproj</Child>
     <Child type="Project">ProjectLoader\Project\ProjectLoader.dproj</Child>
+    <Child type="Project">MakefileGenerator\Project\MakefileGenerator.dproj</Child>
 </Workspace>

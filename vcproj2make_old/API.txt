@@ -137,6 +137,8 @@ function list_to_stdlist                (list)
 function list_clone                     (list)
 function list_cardinality               (list)
 function list_clean                     (list)
+function list_concatenate               (...)                       // concatenate given lists into a single resulting list
+function list_concatenate_from_lists    (lists, listAccessor)       // concatenates the lists accessed in elements of "lists" by "listAccessor"
 //
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns an iterable with all the contents
@@ -171,6 +173,7 @@ function file_separator                                             // platform-
 function file_pathconcatenate           (...)
 function file_basename                  (filepath)
 function file_copy                      (src, dst)
+function file_pathify                   (str)
 //
 function shell                          (command)
 function shellcopy                      (srcpath, destpath)
@@ -419,6 +422,34 @@ function ProjectType_isValid(type)
 
 ////////////////////////////////////////////////////////////////////////
 //////////////////////////////
+// *** CProjectProperties class
+//       Modeling properties for a CProject.
+//     -----------------------
+//     <^> createInstance( )
+//     <^> Mixes in:
+//     <^> Public methods
+//         - addIncludeDirectory(path:Path-castable)
+//               adds an include path to this project. The filepath is relative to
+//               the project's location.
+//         - IncludeDirectories
+//               returns an wrapped_list with all the include directories of this project.
+//         - addPreprocessorDefinition(def:deltastring)
+//               adds a preprocessor definition to be defined in all compilation units
+//               for this project.
+//         - PreprocessorDefinitions
+//               returns an wrapped_list with all the extra preprocessor defnitions.
+//         - addLibraryPath(path:Path-castable)
+//               adds a library-search path for this project's building.
+//         - LibrariesPaths
+//               returns an wrapped_list with the library search paths for this project's building.
+//     <^> state fields
+//         00. CProjectProperties_includes
+//         01. CProjectProperties_definitions
+//         02. CProjectProperties_librariesPaths
+
+
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////
 // *** CProject class
 //       A programming project, containing source fileds, include directories, and
 //     dependency subprojects.
@@ -441,32 +472,28 @@ function ProjectType_isValid(type)
 //               adds a source file to this project. The filepath is relative to
 //               the project's location.
 //         - Sources
-//               returns an std::list with all the sources that belong to this project (as Path instances).
-//         - addIncludeDirectory(path:Path-castable)
-//               adds an include path to this project. The filepath is relative to
-//               the project's location.
-//         - IndluceDirectories
-//               returns an std::list with all the include directories of this project.
+//               returns an wrapped_list with all the sources that belong to this project (as Path instances).
+//         - IncludeDirectories
+//               returns an wrapped_list with all the include directories of this project.
 //         - addDependency(subproject:Project)
 //               adds a project as a dependency of this projet. The subproject's
 //               paths is interpreted as relative to this project's path.
 //         - Dependencies
-//               return an std::list with the dependency-projects of this project.
-//         - addPreprocessorDefinition(def:deltastring)
-//               adds a preprocessor definition to be defined in all compilation units
-//               for this project.
+//               return an wrapped_list with the dependency-projects of this project.
 //         - PreprocessorDefinitions
-//               returns an std::list with all the extra preprocessor defnitions.
-//         - addLibraryPath(path:Path-castable)
-//               adds a library-search path for this project's building.
+//               returns an wrapped_list with all the extra preprocessor defnitions.
 //         - LibrariesPaths
-//               returns an std::list with the library search paths for this project's building.
+//               returns an wrapped_list with the library search paths for this project's building.
 //         - addLibrary(libname:deltastring)
 //               adds an extra library file name to be included in this project's building
 //               process.
 //         - Libraries
-//               returns an std::list with all the extra libraries to be included in this project's
+//               returns an wrapped_list with all the extra libraries to be included in this project's
 //               building process.
+//         - addProjectProperties(projectProperties:CProjectProperties)
+//               adds the given project property instance as applied properties to this project.
+//         - ProjectProperties
+//               returns a wrapped_list with all the 
 //         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
 //               sets the manifestation specific options for the given manifestation.
 //               Any previous configuration added for this manifestation is overwritten.
@@ -505,14 +532,12 @@ function ProjectType_isValid(type)
 //         01. CProject_type
 //         02. CProject_manifestationsConfigurations
 //         03. CProject_sources
-//         04. CProject_includes
-//         05. CProject_dependencies
-//         06. CProject_definitions
-//         07. CProject_librariesPaths
-//         08. CProject_libraries
-//         09. CProject_outputName
-//         10. CProject_outputDirectory
-//         11. CProject_apidir
+//         04. CProject_dependencies
+//         05. CProject_libraries
+//         06. CProject_outputName
+//         07. CProject_outputDirectory
+//         08. CProject_apidir
+//         09. CProject_properties
 
 ////////////////////////////////////////////////////////////////////////
 //////////////////////////////

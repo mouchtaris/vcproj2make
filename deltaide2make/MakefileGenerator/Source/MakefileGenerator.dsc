@@ -1,9 +1,5 @@
-util = std::vmget("util");
-if ( not util ) {
-	util = std::vmload("util.dbc", "util");
-	std::vmrun(util);
-}
-assert( util );
+util = u = std::libs::import("util");
+assert( u );
 
 //////////////////////////////
 // *** MakefileManifestation
@@ -98,7 +94,7 @@ function MakefileManifestation(basedirpath, solution) {
 	}
 	function cppOptionsFromDependencies(basedir, dependencies) {
 		local result = std::list_new();
-		foreach (local dep, dependencies)
+		foreach (local dep, u.list_to_stdlist(dependencies))
 			if (dep.isLibrary())
 				result.push_back(optionPair(
 					// prefix getter functor
@@ -129,7 +125,7 @@ function MakefileManifestation(basedirpath, solution) {
 	}
 	function ldOptionsFromDependencies(basedir, dependencies) {
 		local result = std::list_new();
-		foreach (local dep, dependencies)
+		foreach (local dep, u.list_to_stdlist(dependencies))
 			if (dep.isLibrary()) {
 				local libLocation = basedir
 						.Concatenate(dep.getLocation())
@@ -211,7 +207,7 @@ function MakefileManifestation(basedirpath, solution) {
 		return ::util.Path_castFromPath(pathstr);
 	}
 	function pathMapping(paths, pathmapf) {
-		return ::util.iterable_map(paths,
+		return ::util.list_to_stdlist(::util.iterable_map_to_list(paths,
 			[
 				method @operator ()(path) {
 					assert( ::util.Path_isaPath(path) );
@@ -221,7 +217,7 @@ function MakefileManifestation(basedirpath, solution) {
 				},
 				@pathmapf: pathmapf
 			]
-		);
+		));
 	}
 	function relocateAndReextensionise(prefixpath, name, ext) {
 		assert( ::util.Path_isaPath(prefixpath) );
@@ -243,7 +239,7 @@ function MakefileManifestation(basedirpath, solution) {
 		assert( ::util.CProject_isaCProject(proj) );
 		assert( ::util.Path_isaPath(builddir) );
 
-		return pathMapping(proj.Sources(), makeSourceTransformer(proj, builddir, transformationExtensionPrefix));
+		return pathMapping(u.list_to_stdlist(proj.Sources()), makeSourceTransformer(proj, builddir, transformationExtensionPrefix));
 	}
 	function objectsFromSources(proj, builddir) {
 		return transformSources(proj, builddir, #Object);
@@ -399,8 +395,8 @@ function MakefileManifestation(basedirpath, solution) {
 				std::filewrite(@fh, VAR_MKCPPFLAGS + " = \\");
 				@writePre(VAR_MKCPPFLAGS);
 				@writeDependencyRelatedCPPFLAGS();
-				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.PreprocessorDefinitions(), "-D", deltastringToString));
-				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.IncludeDirectories()     , "-I", pathToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(u.list_to_stdlist(@proj.PreprocessorDefinitions()), "-D", deltastringToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(u.list_to_stdlist(@proj.IncludeDirectories()     ), "-I", pathToString));
 				// Include own API dir in include paths
 				if (@proj.isLibrary())
 					@writePrefixedOptions([optionPair("-I", pathToString(@proj.getAPIDirectory()))]);
@@ -417,8 +413,8 @@ function MakefileManifestation(basedirpath, solution) {
 				std::filewrite(@fh, VAR_MKLDFLAGS + " = \\");
 				@writePre(VAR_MKLDFLAGS);
 				@writeDependenyRelatedLDFLAGS();
-				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.LibrariesPaths(), "-L", pathToString));
-				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(@proj.Libraries()     , "-l", deltastringToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(u.list_to_stdlist(@proj.LibrariesPaths()), "-L", pathToString));
+				@writePrefixedOptions(optionsFromIterableConstantPrefixAndValueToStringFunctor(u.list_to_stdlist(@proj.Libraries()     ), "-l", deltastringToString));
 				@writePost(VAR_MKLDFLAGS);
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
@@ -449,7 +445,7 @@ function MakefileManifestation(basedirpath, solution) {
 			// --------------------------------------
 			method writeSourcesVariables {
 				std::filewrite(@fh, VAR_SOURCES, " = \\");
-				foreach (local src, @proj.Sources())
+				foreach (local src, u.list_to_stdlist(@proj.Sources()))
 					@writeLine(pathToString(src));
 				std::filewrite(@fh, ::util.ENDL(), ::util.ENDL());
 			},
@@ -566,7 +562,7 @@ function MakefileManifestation(basedirpath, solution) {
 					std::list_push_back(deps, MKVAR(VAR_OBJECTS));
 					std::list_push_back(deps, basename_path_str);
 					// real dependencies are also the static libs
-					foreach (local dep, project.Dependencies())
+					foreach (local dep, ::util.list_to_stdlist(project.Dependencies()))
 						if (dep.isStaticLibrary())
 							std::list_push_back(deps, basedir_ccat_solution_path
 									.Concatenate(dep.getLocation())
@@ -657,7 +653,7 @@ function MakefileManifestation(basedirpath, solution) {
 			// --------------------------------------
 			method writeObjectsRules {
 				local sourceTransformer = makeSourceTransformer(@proj, @builddir, #Object);
-				foreach (local src, @proj.Sources()) {
+				foreach (local src, ::util.list_to_stdlist(@proj.Sources())) {
 					local obj             = sourceTransformer(src);
 					local objpath_str     = pathToString(obj);
 					local objbasename_str = obj.basename();
@@ -695,41 +691,43 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			method writeProjectMakefile(project) {
 				local path = @basedirpath
-						.Concatenate(@solution.getLocation())
-						.Concatenate(project.getLocation())
-						.Concatenate(project.getName() + "Makefile.mk")
+						.Concatenate(@solution.getLocation().basename())
+						.Concatenate(project.getLocation().basename())
+						.Concatenate(::util.file_pathify(project.getName()) + "Makefile.mk")
 				;
 				@config = project.getManifestationConfiguration(#Makefile);
 				@proj = project;
 				@writeAll(path);
 			},
 			method writeProjectsMakefiles {
-				foreach (local project, @solution.Projects())
+				foreach (local project, ::util.list_to_stdlist(@solution.Projects()))
 					@writeProjectMakefile(project);
 			},
 			method writeSolutionMakefileTargets {
 				local projects = @solution.Projects();
-				local projects_targets_names = ::util.iterable_map(projects, projectTargetNameForProject);
+				local projects_stdlist = ::util.list_to_stdlist(projects);
+				local projects_targets_names = ::util.iterable_map_to_list(projects_stdlist, projectTargetNameForProject);
+				local projects_targets_names_stdlist = ::util.list_to_stdlist(projects_targets_names);
 				local commands = std::list_new();
 				// all: proj1 proj2 ...
-				@writeTarget(TARGET_ALL, projects_targets_names, commands);
+				@writeTarget(TARGET_ALL, projects_targets_names_stdlist, commands);
 				// projn: projk projl porjm ...
-				foreach (local project, projects)
+				foreach (local project, ::util.list_to_stdlist(projects))
 					@writeTarget(
 						projectTargetNameForProject(project),
-						::util.iterable_map(project.Dependencies(), projectTargetNameForProject),
+						::util.list_to_stdlist(::util.iterable_map_to_list(::util.list_to_stdlist(project.Dependencies()), projectTargetNameForProject)),
 						[ subbuildCommandForSubproject(project, TARGET_ALL) ]
 					);
 				
 				// clean:
-				appendCommandsFromSubprojects(commands, projects, TARGET_CLEAN);
+				appendCommandsFromSubprojects(commands, projects_stdlist, TARGET_CLEAN);
 				//     also recursively delete the build directory
 				std::list_push_back(commands, "@ if [ -e " + @builddir_str + " ] ; then rm -r -v " + @builddir_str +
 						" ; else printf 'Build dir \"%s\" already missing\\n' \"" + @builddir_str + "\" ; fi");
 				@writeTarget(TARGET_CLEAN, [], commands);
 
 				std::list_clear(commands);
-				local deps = projects_targets_names;
+				local deps = projects_targets_names_stdlist;
 				std::list_push_back(deps, TARGET_ALL);
 				std::list_push_back(deps, TARGET_CLEAN);
 				// .PHONY
@@ -742,8 +740,8 @@ function MakefileManifestation(basedirpath, solution) {
 			// before calling, call init()
 			method writeSolutionMakefile {
 				local makefilepath = @basedirpath
-						.Concatenate(@solution.getLocation())
-						.Concatenate(@solution.getName() + "Makefile.mk");
+						.Concatenate(@solution.getLocation().basename())
+						.Concatenate(::util.file_pathify(@solution.getName()) + "Makefile.mk");
 				local makefile_fh = std::fileopen(makefilepath.deltaString(), "wt");
 				if (makefile_fh) {
 					::util.println("Writing solution makefile: ", makefilepath.deltaString());
@@ -784,7 +782,23 @@ function MakefileManifestation(basedirpath, solution) {
 	//makemani.writeAll(makefile_path_prefix);
 	
 	::util.Assert( ::util.Path_isaPath(basedirpath) );
-	::util.Assert( basedirpath.IsAbsolute() );
+//	::util.Assert( basedirpath.IsAbsolute() );
 	::util.Assert( ::util.CSolution_isaCSolution(solution) );
 	makemani.init(solution, basedirpath);
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Module Initialisation and clean up
+////////////////////////////////////////////////////////////////////////////////////
+init_helper = u.InitialisableModuleHelper("MakefileGenerator", nil, nil);
+
+function Initialise {
+	return ::init_helper.Initialise();
+}
+
+function CleanUp {
+	return ::init_helper.CleanUp();
+}
+////////////////////////////////////////////////////////////////////////////////////

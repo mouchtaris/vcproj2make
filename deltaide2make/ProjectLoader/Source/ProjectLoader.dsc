@@ -12,14 +12,36 @@ assert( pr );
 //////////////////////////////
 // Public
 function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
-	function loadProject (projectFilePath, projectConfiguration, variableEvaluator) {
+	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator) {
+		local projectPath = u.Path_castFromPath(projectPathMaybe);
+		local projectFilePath = solutionBasedirPath.Concatenate(projectPath);
 		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
 		local projectName = pr.GetProjectName(projectXML);
-		local project = u.CProject().createInstance(projectType, projectFilePath, projectName);
+		local project = u.CProject().createInstance(projectType, projectPath, projectName);
 		// Sources
 		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
 			project.addSource(u.assert_str(src_relpath));
+		// Output Directory
+		project.setOutputDirectory("./output/"); // TODO do real
+		// Output Name
+		project.setOutputName("OutputName"); // TODO do real
+		// API Directory
+		project.setAPIDirectory("../Include"); // TODO do real
+		// Manifestation configurations
+		project.setManifestationConfiguration(#Makefile,
+			[
+				@CPPFLAGS_pre : [],
+				@CPPFLAGS_post: [],
+				@LDFLAGS_pre  : [],
+				@LDFLAGS_post : [],
+				@CXXFLAGS_pre : [],
+				@CXXFLAGS_post: [],
+				@ARFLAGS_pre  : [],
+				@ARFLAGS_post : []
+			]
+		);
+
 		return project;
 	}
 
@@ -58,7 +80,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);
 				log(configuration, ": Creating a project for ", projectID, "/", projectEntry.getName());
 				csol.addProject(local cproj = loadProject(
-						u.Path_castFromPath(solutionDirectoryPath.basename()).Concatenate(projectEntry.getLocation()),
+						u.Path_castFromPath(solutionDirectoryPath.basename()), projectEntry.getLocation(),
 						projectConfiguration,
 						variableEvaluator
 				));

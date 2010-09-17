@@ -13,7 +13,7 @@ function myxmlload (filename_str) {
 }
 // Should only be called if xmlload returns falsy
 function xmlloaderror {
-	local error_message = ::util.xmlloaderror();
+	local error_message = ::util.XMLloaderror();
 	if ( not error_message )
 		::util.error().AddError("No error message returned from XML loader");
 	return error_message;
@@ -345,7 +345,7 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 				ProjectConfigurationPlatforms_TypeAttributeValue];
 		// Remove useless "GlobalSection"s
 		log("removing useless GlobalSection-s");
-		foreach (local key, ::util.dobj_keys(local gsects = solutionXML.Global.GlobalSection)) {
+		foreach (local key, ::util.dobj_keys(local gsects = solutionXML.Global[0].GlobalSection)) {
 			local gsect = gsects[key];
 			if ( not ::util.dobj_contains(interesting_global_section_types, gsect.type) )
 				gsects[key] = nil;
@@ -415,7 +415,9 @@ function CSolutionFromVCSolution (solutionFilePath_str, solutionName) {
 		xfree(solutionXML, Global_ElementName);
 	}
 	function xGlobalSection (solutionXML) {
-		return xmlgetchild(xGlobal(solutionXML), GlobalSection_ElementName);
+		local subchild = xmlgetchild(xGlobal(solutionXML), 0);
+		local result = xmlgetchild(subchild, GlobalSection_ElementName);
+		return result;
 	}
 	function xGlobalSectionOfTypeWithElementName (solutionXML, type) {
 		foreach (local key, ::util.dobj_keys(local xGlobalSections = xGlobalSection(solutionXML))) {
