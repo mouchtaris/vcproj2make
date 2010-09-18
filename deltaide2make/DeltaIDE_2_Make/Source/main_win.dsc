@@ -38,7 +38,8 @@ args = [
 	@solution_name:	"IDE",
 	@solution_path:
 				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
-					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+				//	"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+					"/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

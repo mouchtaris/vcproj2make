@@ -690,8 +690,7 @@ function MakefileManifestation(basedirpath, solution) {
 					::util.println("Error, could not open file ", makefile_path.deltaString());
 			},
 			method writeProjectMakefile(project) {
-				local path = @basedirpath
-						.Concatenate(@solution.getLocation().basename())
+				local path = @basedir_ccat_solution_path
 						.Concatenate(project.getLocation().basename())
 						.Concatenate(::util.file_pathify(project.getName()) + "Makefile.mk")
 				;
@@ -739,8 +738,7 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			// before calling, call init()
 			method writeSolutionMakefile {
-				local makefilepath = @basedirpath
-						.Concatenate(@solution.getLocation().basename())
+				local makefilepath = @basedir_ccat_solution_path
 						.Concatenate(::util.file_pathify(@solution.getName()) + "Makefile.mk");
 				local makefile_fh = std::fileopen(makefilepath.deltaString(), "wt");
 				if (makefile_fh) {
@@ -759,8 +757,13 @@ function MakefileManifestation(basedirpath, solution) {
 				::util.Assert( ::util.CSolution_isaCSolution(solution) );
 				::util.Assert( ::util.Path_isaPath(basedirpath) );
 				//
+				local solutionBasename = u.Path_castFromPath(solution.getLocation().basename(), false);
+				//
 				@basedirpath = basedirpath;
-				@basedir_ccat_solution_path = basedirpath.Concatenate(solution.getLocation().basename());
+				if (solutionBasename.IsRelative())
+					@basedir_ccat_solution_path = basedirpath.Concatenate(solutionBasename);
+				else
+					@basedir_ccat_solution_path = solutionBasename;
 				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
 				@builddir_str = pathToString(@builddir);
 				//
