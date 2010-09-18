@@ -380,7 +380,8 @@ function main0 (argc, argv, envp) {
 				mkgen.MakefileManifestation(
 						u.Path_castFromPath(
 							//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
-								"./"
+								"/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make"
+							//	"./"
 								, false
 						),
 						val

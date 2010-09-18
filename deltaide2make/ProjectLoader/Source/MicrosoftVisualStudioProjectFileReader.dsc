@@ -116,6 +116,17 @@ function GetProjectSourceFiles (projectXML) {
 	return result;
 }
 
+function GetProjectOutputDirectoryForConfiguration (projectXML, projectConfiguration) {
+	const OutputDirectory_Name = "OutputDirectory";
+	local configuration = ::p_getConfiguration(projectXML, projectConfiguration);
+	assert( u.isdeltaobject(configuration) );
+	local outputDirectory = ::p_xpath(configuration, OutputDirectory_Name);
+	if (outputDirectory)
+		::p_xfree(configuration, OutputDirectory_Name);
+	assert( u.strlength(outputDirectory) > 0 );
+	return outputDirectory;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Module Initialisation and clean up
 ////////////////////////////////////////////////////////////////////////////////////

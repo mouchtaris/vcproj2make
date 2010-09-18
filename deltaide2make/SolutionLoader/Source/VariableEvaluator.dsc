@@ -43,7 +43,7 @@ function VariableEvaluator {
 								this,
 								VariableEvaluator_stateFields,
 								#VariableEvaluator_root
-						).basename()
+						).basename() + "/"
 				;
 			return result;
 		}

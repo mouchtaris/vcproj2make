@@ -60,12 +60,13 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
 		local projectName = pr.GetProjectName(projectXML);
+		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
 		local project = u.CProject().createInstance(projectType, projectPath, projectName);
 		// Sources
 		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
 			project.addSource(u.Path_fromPath(src_relpath, true));
 		// Output Directory
-		project.setOutputDirectory(eval("$(SolutionDir)/$(ConfigurationName)")); // TODO do real
+		project.setOutputDirectory(eval(outputDirectory)); // TODO do real
 		// Output Name
 		project.setOutputName("OutputName"); // TODO do real
 		// API Directory
