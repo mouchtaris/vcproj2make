@@ -408,8 +408,8 @@ function strsubstr (str, start_index ...) {
 	local result = nil;
 	local end_index = nil;
 	local length = nil;
-	if (local arg3 = arguments[2]) {
-		if ( not std::typeof(arg3) == "Number" )
+	if (not ::isdeltanil(local arg3 = arguments[2])) {
+		if ( not ::isdeltanumber(arg3) )
 			std::error("substring() expects length of type Number but " + arg3 + "(" + std::typeof(arg3) + ") given");
 		length = arg3;
 	}
@@ -2284,6 +2284,7 @@ function Path {
 				assert( ::isdeltaboolean(isWindowsPath) );
 				if (isWindowsPath)
 					path = windowsToUnixPath(path);
+				path = ::file_pathify(path);
 				Class_checkedStateInitialisation(
 					newPathInstance,
 					validStateFieldsNames,
