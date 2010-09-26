@@ -255,6 +255,7 @@ p = [
 	method loadSolutionData {
 		const SolutionDataCoreCache_funcname = #SolutionDataCoreCache;
 		const SolutionDataCoreCache_classMapperAccessorFuncname = #ClassMapper;
+		const SolutionBaseDir = "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make";
 		local cache_hit = false;
 		if (@config.SolutionDataCached) {
 			@log("Looking for cached solution data...");
@@ -318,7 +319,7 @@ p = [
 		
 		if ( not cache_hit ) {
 			@log("Solution data not cached, generating from files...");
-			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML, @solutionDirectory, @solutionName);
+			@solutionData = sl.SolutionLoader_LoadSolution(@solutionXML, SolutionBaseDir, @solutionDirectory, @solutionName);
 			@log("Generating solution data core for storage..");
 			local t0 = std::currenttime();
 			sl_sd.SolutionDataFactory_DumpCore(@solutionData, local sdcore=[]);
@@ -369,6 +370,7 @@ function main0 (argc, argv, envp) {
 	p.loadProjectData();
 
 	// TMP test code
+	// "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make"
 	local solutionData = p.solutionData;
 	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
 	local projectData = p.projectData;
@@ -380,15 +382,16 @@ function main0 (argc, argv, envp) {
 				mkgen.MakefileManifestation(
 						u.Path_castFromPath(
 							//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
-								"/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make"
 							//	"./"
+								@solutionData.SolutionBaseDirectory
 								, false
 						),
 						val
 				);
 			}
 		},
-		@firstrun: true
+		@firstrun: true,
+		@solutionData: solutionData
 	]);
 
 	p.generateReport(solutionData);

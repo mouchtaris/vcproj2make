@@ -41,7 +41,7 @@ badd +39 SolutionLoader\Source\VariableEvaluator.dsc
 badd +217 ReportGenerator\Source\ReportGenerator.dsc
 badd +110 ProjectLoader\Source\MicrosoftVisualStudioProjectFileReader.dsc
 badd +28 ~\vimfiles\syntax\.\deltasourcecode.vim
-badd +0 MakefileGenerator\Source\MakefileGenerator.dsc
+badd +595 MakefileGenerator\Source\MakefileGenerator.dsc
 args SolutionReport.xhtml
 edit Util\Source\util.dsc
 set splitbelow splitright
@@ -145,12 +145,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 2631 - ((30 * winheight(0) + 30) / 61)
+let s:l = 2370 - ((33 * winheight(0) + 34) / 68)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-2631
-normal! 035l
+2370
+normal! 04l
 tabedit DeltaIDE_2_Make\Source\main_win.dsc
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -161,8 +161,8 @@ set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 16 + 31) / 62)
-exe '2resize ' . ((&lines * 43 + 31) / 62)
+exe '1resize ' . ((&lines * 16 + 34) / 69)
+exe '2resize ' . ((&lines * 50 + 34) / 69)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -259,12 +259,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 32 - ((4 * winheight(0) + 8) / 16)
+let s:l = 41 - ((10 * winheight(0) + 8) / 16)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-32
-normal! 0
+41
+normal! 04l
 wincmd w
 argglobal
 edit DeltaIDE_2_Make\Source\main.dsc
@@ -363,15 +363,15 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 384 - ((22 * winheight(0) + 21) / 43)
+let s:l = 322 - ((1 * winheight(0) + 25) / 50)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-384
-normal! 014l
+322
+normal! 080l
 wincmd w
-exe '1resize ' . ((&lines * 16 + 31) / 62)
-exe '2resize ' . ((&lines * 43 + 31) / 62)
+exe '1resize ' . ((&lines * 16 + 34) / 69)
+exe '2resize ' . ((&lines * 50 + 34) / 69)
 tabedit SolutionLoader\Source\VariableEvaluator.dsc
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -390,14 +390,14 @@ set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 29 + 31) / 62)
-exe 'vert 1resize ' . ((&columns * 80 + 89) / 178)
-exe '2resize ' . ((&lines * 30 + 31) / 62)
-exe 'vert 2resize ' . ((&columns * 80 + 89) / 178)
-exe '3resize ' . ((&lines * 29 + 31) / 62)
-exe 'vert 3resize ' . ((&columns * 97 + 89) / 178)
-exe '4resize ' . ((&lines * 30 + 31) / 62)
-exe 'vert 4resize ' . ((&columns * 97 + 89) / 178)
+exe '1resize ' . ((&lines * 29 + 34) / 69)
+exe 'vert 1resize ' . ((&columns * 102 + 118) / 237)
+exe '2resize ' . ((&lines * 37 + 34) / 69)
+exe 'vert 2resize ' . ((&columns * 102 + 118) / 237)
+exe '3resize ' . ((&lines * 36 + 34) / 69)
+exe 'vert 3resize ' . ((&columns * 131 + 118) / 237)
+exe '4resize ' . ((&lines * 30 + 34) / 69)
+exe 'vert 4resize ' . ((&columns * 131 + 118) / 237)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -494,12 +494,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 39 - ((1 * winheight(0) + 14) / 29)
+let s:l = 96 - ((24 * winheight(0) + 14) / 29)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-39
-normal! 0
+96
+normal! 04l
 wincmd w
 argglobal
 edit SolutionLoader\Source\SolutionData.dsc
@@ -598,12 +598,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 563 - ((4 * winheight(0) + 15) / 30)
+let s:l = 87 - ((33 * winheight(0) + 18) / 37)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-563
-normal! 0
+87
+normal! 015l
 wincmd w
 argglobal
 edit SolutionLoader\Source\SolutionLoader.dsc
@@ -702,12 +702,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 251 - ((14 * winheight(0) + 14) / 29)
+let s:l = 417 - ((5 * winheight(0) + 18) / 36)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-251
-normal! 052l
+417
+normal! 01l
 wincmd w
 argglobal
 edit SolutionLoader\Source\SolutionDataCache.dsc
@@ -778,7 +778,7 @@ setlocal path=
 setlocal nopreserveindent
 setlocal nopreviewwindow
 setlocal quoteescape=\\
-setlocal noreadonly
+setlocal readonly
 setlocal norightleft
 setlocal rightleftcmd=search
 setlocal noscrollbind
@@ -806,21 +806,21 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 9 - ((8 * winheight(0) + 15) / 30)
+let s:l = 7 - ((2 * winheight(0) + 15) / 30)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-9
-normal! 023l
+7
+normal! 0
 wincmd w
-exe '1resize ' . ((&lines * 29 + 31) / 62)
-exe 'vert 1resize ' . ((&columns * 80 + 89) / 178)
-exe '2resize ' . ((&lines * 30 + 31) / 62)
-exe 'vert 2resize ' . ((&columns * 80 + 89) / 178)
-exe '3resize ' . ((&lines * 29 + 31) / 62)
-exe 'vert 3resize ' . ((&columns * 97 + 89) / 178)
-exe '4resize ' . ((&lines * 30 + 31) / 62)
-exe 'vert 4resize ' . ((&columns * 97 + 89) / 178)
+exe '1resize ' . ((&lines * 29 + 34) / 69)
+exe 'vert 1resize ' . ((&columns * 102 + 118) / 237)
+exe '2resize ' . ((&lines * 37 + 34) / 69)
+exe 'vert 2resize ' . ((&columns * 102 + 118) / 237)
+exe '3resize ' . ((&lines * 36 + 34) / 69)
+exe 'vert 3resize ' . ((&columns * 131 + 118) / 237)
+exe '4resize ' . ((&lines * 30 + 34) / 69)
+exe 'vert 4resize ' . ((&columns * 131 + 118) / 237)
 tabedit ..\vcproj2make_old\API.txt
 set splitbelow splitright
 set nosplitbelow
@@ -923,12 +923,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 115 - ((9 * winheight(0) + 30) / 61)
+let s:l = 370 - ((33 * winheight(0) + 34) / 68)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-115
-normal! 044l
+370
+normal! 013l
 tabedit ProjectLoader\Source\MicrosoftVisualStudioProjectFileReader.dsc
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -953,18 +953,18 @@ set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
-exe '1resize ' . ((&lines * 20 + 31) / 62)
-exe 'vert 1resize ' . ((&columns * 109 + 89) / 178)
-exe '2resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 2resize ' . ((&columns * 109 + 89) / 178)
-exe '3resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 3resize ' . ((&columns * 109 + 89) / 178)
-exe '4resize ' . ((&lines * 20 + 31) / 62)
-exe 'vert 4resize ' . ((&columns * 68 + 89) / 178)
-exe '5resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 5resize ' . ((&columns * 68 + 89) / 178)
-exe '6resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 6resize ' . ((&columns * 68 + 89) / 178)
+exe '1resize ' . ((&lines * 8 + 34) / 69)
+exe 'vert 1resize ' . ((&columns * 120 + 118) / 237)
+exe '2resize ' . ((&lines * 24 + 34) / 69)
+exe 'vert 2resize ' . ((&columns * 120 + 118) / 237)
+exe '3resize ' . ((&lines * 33 + 34) / 69)
+exe 'vert 3resize ' . ((&columns * 120 + 118) / 237)
+exe '4resize ' . ((&lines * 20 + 34) / 69)
+exe 'vert 4resize ' . ((&columns * 113 + 118) / 237)
+exe '5resize ' . ((&lines * 19 + 34) / 69)
+exe 'vert 5resize ' . ((&columns * 113 + 118) / 237)
+exe '6resize ' . ((&lines * 26 + 34) / 69)
+exe 'vert 6resize ' . ((&columns * 113 + 118) / 237)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -1061,12 +1061,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 90 - ((3 * winheight(0) + 10) / 20)
+let s:l = 10 - ((3 * winheight(0) + 4) / 8)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-90
-normal! 09l
+10
+normal! 022l
 wincmd w
 argglobal
 edit ProjectLoader\Source\MicrosoftVisualStudioProjectFileReader.dsc
@@ -1165,12 +1165,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 90 - ((10 * winheight(0) + 9) / 19)
+let s:l = 152 - ((15 * winheight(0) + 12) / 24)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-90
-normal! 09l
+152
+normal! 0
 wincmd w
 argglobal
 edit ProjectLoader\Source\ProjectLoader.dsc
@@ -1269,12 +1269,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 25 - ((9 * winheight(0) + 9) / 19)
+let s:l = 75 - ((12 * winheight(0) + 16) / 33)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-25
-normal! 020l
+75
+normal! 066l
 wincmd w
 argglobal
 edit ..\vcproj2make_old\API.txt
@@ -1373,12 +1373,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 658 - ((11 * winheight(0) + 10) / 20)
+let s:l = 692 - ((13 * winheight(0) + 10) / 20)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-658
-normal! 065l
+692
+normal! 09l
 wincmd w
 argglobal
 edit ..\vcproj2make_old\API.txt
@@ -1477,12 +1477,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 524 - ((0 * winheight(0) + 9) / 19)
+let s:l = 671 - ((13 * winheight(0) + 9) / 19)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-524
-normal! 026l
+671
+normal! 0
 wincmd w
 argglobal
 edit ..\vcproj2make_old\API.txt
@@ -1581,25 +1581,25 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 434 - ((0 * winheight(0) + 9) / 19)
+let s:l = 441 - ((7 * winheight(0) + 13) / 26)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-434
-normal! 030l
+441
+normal! 024l
 wincmd w
-exe '1resize ' . ((&lines * 20 + 31) / 62)
-exe 'vert 1resize ' . ((&columns * 109 + 89) / 178)
-exe '2resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 2resize ' . ((&columns * 109 + 89) / 178)
-exe '3resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 3resize ' . ((&columns * 109 + 89) / 178)
-exe '4resize ' . ((&lines * 20 + 31) / 62)
-exe 'vert 4resize ' . ((&columns * 68 + 89) / 178)
-exe '5resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 5resize ' . ((&columns * 68 + 89) / 178)
-exe '6resize ' . ((&lines * 19 + 31) / 62)
-exe 'vert 6resize ' . ((&columns * 68 + 89) / 178)
+exe '1resize ' . ((&lines * 8 + 34) / 69)
+exe 'vert 1resize ' . ((&columns * 120 + 118) / 237)
+exe '2resize ' . ((&lines * 24 + 34) / 69)
+exe 'vert 2resize ' . ((&columns * 120 + 118) / 237)
+exe '3resize ' . ((&lines * 33 + 34) / 69)
+exe 'vert 3resize ' . ((&columns * 120 + 118) / 237)
+exe '4resize ' . ((&lines * 20 + 34) / 69)
+exe 'vert 4resize ' . ((&columns * 113 + 118) / 237)
+exe '5resize ' . ((&lines * 19 + 34) / 69)
+exe 'vert 5resize ' . ((&columns * 113 + 118) / 237)
+exe '6resize ' . ((&lines * 26 + 34) / 69)
+exe 'vert 6resize ' . ((&columns * 113 + 118) / 237)
 tabedit ReportGenerator\Source\ReportGenerator.dsc
 set splitbelow splitright
 set nosplitbelow
@@ -1702,7 +1702,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1 - ((0 * winheight(0) + 30) / 61)
+let s:l = 1 - ((0 * winheight(0) + 34) / 68)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -1918,13 +1918,13 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 253 - ((27 * winheight(0) + 30) / 61)
+let s:l = 663 - ((27 * winheight(0) + 34) / 68)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-253
-normal! 01l
-tabnext 5
+663
+normal! 08l
+tabnext 8
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

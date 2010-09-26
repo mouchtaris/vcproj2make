@@ -25,3 +25,4 @@ glob:socketlog.txt
 glob:output.txt
 glob:deltaide2make/ProjectLoader/Lib/ProjectLoader.txt
 glob:deltaide2make/ProjectLoader/Lib/MicrosoftVisualStudioProjectFileReader.txt
+glob:deltaide2make/MakefileGenerator/Lib/MakefileGenerator.txt

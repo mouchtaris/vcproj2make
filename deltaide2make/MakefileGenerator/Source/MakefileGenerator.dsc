@@ -660,7 +660,7 @@ function MakefileManifestation(basedirpath, solution) {
 					local srcpath_str     = pathToString(src);
 					local build_command =
 							MKVAR(VAR_MKCXX) + " " + MKVAR(VAR_MKCPPFLAGS) + " " + MKVAR(VAR_MKCXXFLAGS) +
-							"-c -o" + squote(objpath_str) + " " + squote(srcpath_str);
+							" -c -o" + squote(objpath_str) + " " + squote(srcpath_str);
 					@writeTarget(
 						objpath_str,
 						[ srcpath_str, objbasename_str ],
@@ -785,7 +785,7 @@ function MakefileManifestation(basedirpath, solution) {
 	//makemani.writeAll(makefile_path_prefix);
 	
 	::util.Assert( ::util.Path_isaPath(basedirpath) );
-//	::util.Assert( basedirpath.IsAbsolute() );
+	::util.Assert( basedirpath.IsAbsolute() );
 	::util.Assert( ::util.CSolution_isaCSolution(solution) );
 	makemani.init(solution, basedirpath);
 }

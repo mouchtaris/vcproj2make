@@ -12,6 +12,9 @@ ProjectTypeMappings = [
 	{MSVS_ProjectType_DynamicLibrary    : ProjectTypes.DynamicLibrary},
 	{MSVS_ProjectType_StaticLibrary     : ProjectTypes.StaticLibrary}
 ];
+const RootNode_Name = "VisualStudioProject";
+const RootNode_NameAttribute_Name = "Name";
+
 function p_xpath (xml ...) {
 	function childGetter (xml, child) {
 		local result = xml[child];
@@ -56,6 +59,21 @@ function p_getConfiguration (projectXML, config) {
 		if (configuration.Name == config)
 			return configuration;
 	return nil;
+}
+
+function p_getToolFromConfiguration (configuration, toolName) {
+	const Tool_Name = "Tool";
+	const Name_Name = "Name";
+	local result = nil;
+	foreach (local toolNode, configuration[Tool_Name]) {
+		local name = toolNode[Name_Name];
+		assert( name );
+		if (u.strequal(name, toolName)) {
+			result = toolNode;
+			break;
+		}
+	}
+	return result;
 }
 
 function Trim (projectXML) {
@@ -125,6 +143,22 @@ function GetProjectOutputDirectoryForConfiguration (projectXML, projectConfigura
 		::p_xfree(configuration, OutputDirectory_Name);
 	assert( u.strlength(outputDirectory) > 0 );
 	return outputDirectory;
+}
+
+function GetProjectOutputForConfiguration (projectXML, projectConfiguration, projectType) {
+	const DefaultOutputFile = "$(OutDir)\$(ProjectName).exe";
+	const LinkerToolName = "VCLinkerTool";
+	const OutputFile_Name = "OutputFile";
+	local configuration = ::p_getConfiguration(projectXML, projectConfiguration);
+	assert( u.isdeltaobject(configuration) );
+	local tool = ::p_getToolFromConfiguration(configuration, LinkerToolName);
+	assert( tool or projectType == ::ProjectTypes.StaticLibrary);
+	if (tool and local outputFile = tool[OutputFile_Name])
+		::p_xfree(tool, OutputFile_Name);
+	else
+		outputFile = DefaultOutputFile;
+	assert( u.strlength(outputFile) > 0 );
+	return outputFile;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

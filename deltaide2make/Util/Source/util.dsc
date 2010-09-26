@@ -514,6 +514,14 @@ function strdeltaescape (str) {
 	return ::strgsub(::strgsub(::strgsub(::strgsub(str, 
 			"\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\t", "\\t");
 }
+function strequal (timothy, sandra) {
+	return
+			::isdeltastring(timothy)     and
+			::isdeltastring(sandra)      and
+			timothy == sandra            and
+	true;
+}
+
 //
 // "private field"
 function pfield(field_name) {
@@ -1170,6 +1178,19 @@ function file_basename(filepath) {
 		result = ::strsubstr(filepath, 0, last_index);
 	return result;
 }
+function file_filename (filepath) {
+	assert( ::isdeltastring(filepath) );
+	local result = nil;
+	local last_index;
+	foreach (local separator, ["\\", "/"]) {
+		last_index = ::strrindex(filepath, separator);
+		if (last_index >= 0)
+			break;
+	}
+	if (last_index >= 0)
+		result = ::strsubstr(filepath, last_index + 1);
+	return result;
+}
 function file_copy(src, dst) {
 	local result = nil;
 	if (local fin = std::fileopen(src, "rb")) {
@@ -1203,6 +1224,13 @@ function file_copy(src, dst) {
 }
 function file_pathify (str) {
 	return ::strgsub(str, "|", "_");
+}
+function file_looksLikeWindowsPath (path) {
+	assert( ::isdeltastring(path) );
+	return
+			::strchar(path, 1) == ":"      and
+			::strchar(path, 2) == "\\"     and
+	true;
 }
 function shell(command) {
 	return std::fileexecute(command);
@@ -2338,6 +2366,9 @@ function Path {
 				},
 				method basename {
 					return ::file_basename(self.deltaString());
+				},
+				method filename {
+					return ::file_filename(self.deltaString());
 				},
 				method Append(str) {
 					::assert_str( str );

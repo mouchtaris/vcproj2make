@@ -5,7 +5,7 @@ rg = std::libs::import("ReportGenerator");
 if (not u or not sd or not rg)
 	std::error("Could not acquire necessary VMs");
 
-function SolutionLoader_LoadSolution (solutionXML, solutionDirectory, solutionName) {
+function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, solutionDirectory, solutionName) {
 	
 	
 	/////////////////////////////////////////////////////////////////
@@ -428,7 +428,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionDirectory, solutionNa
 	dexProjectEntry(solutionXML, log, configurationManager, projectEntryHolder, (function addNonBuildables{return true;})());
 
 	// return solution data
-	return sd.SolutionData_make( configurationManager, projectEntryHolder, solutionDirectory, solutionName);
+	return sd.SolutionData_make( configurationManager, projectEntryHolder, solutionBaseDirectory, solutionDirectory, solutionName);
 }
 
 

@@ -537,26 +537,29 @@ function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 
 /////////////////////////////////////////////////////////////////
 // SolutionData
-function SolutionData_make (configurationManager, projectEntryHolder, solutionDirectory, solutionName) {
+function SolutionData_make (configurationManager, projectEntryHolder, solutionBaseDirectory, solutionDirectory, solutionName) {
 	assert( u.Class_isa(configurationManager, ::ConfigurationManager()) );
 	assert( ProjectEntryHolder_isaProjectEntryHolder(projectEntryHolder) );
 	assert( u.isdeltastring(solutionDirectory) );
 	assert( u.isdeltastring(solutionName) );
-	const F_ConfigurationManager = #ConfigurationManager;
-	const F_ProjectEntryHolder   = #ProjectEntryHolder  ;
-	const F_SolutionDirectory    = #SolutionDirectory   ;
-	const F_SolutionName         = #SolutionName        ;
+	const F_ConfigurationManager  = #ConfigurationManager  ;
+	const F_ProjectEntryHolder    = #ProjectEntryHolder    ;
+	const F_SolutionBaseDirectory = #SolutionBaseDirectory ;
+	const F_SolutionDirectory     = #SolutionDirectory     ;
+	const F_SolutionName          = #SolutionName          ;
 //	local Fields = [
-//			[F_ConfigurationManager, configurationManager],
-//			[F_ProjectEntryHolder  , projectEntryHolder  ],
-//			[F_SolutionDirectory   , solutionDirectory   ],
-//			[F_SolutionName        , solutionName        ]
+//			[F_ConfigurationManager , configurationManager  ],
+//			[F_ProjectEntryHolder   , projectEntryHolder    ],
+//			[F_SolutionBaseDirectory, solutionBaseDirectory ],
+//			[F_SolutionDirectory    , solutionDirectory     ],
+//			[F_SolutionName         , solutionName          ]
 //	];
 	local result = [
-		{ F_ConfigurationManager : configurationManager },
-		{ F_ProjectEntryHolder   : projectEntryHolder   },
-		{ F_SolutionDirectory    : solutionDirectory    },
-		{ F_SolutionName         : solutionName         }
+		{ F_ConfigurationManager  : configurationManager  },
+		{ F_ProjectEntryHolder    : projectEntryHolder    },
+		{ F_SolutionBaseDirectory : solutionBaseDirectory },
+		{ F_SolutionDirectory     : solutionDirectory     },
+		{ F_SolutionName          : solutionName          }
 	];
 	return result;
 }
