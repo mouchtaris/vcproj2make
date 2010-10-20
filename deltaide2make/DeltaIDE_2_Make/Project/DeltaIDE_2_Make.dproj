@@ -19,4 +19,5 @@
     <Child type="Script">..\Source\main.dsc</Child>
     <Child type="Script">..\Source\main_win.dsc</Child>
     <Child type="Script">..\Source\main_linux.dsc</Child>
+    <Child type="Script">..\Source\SolutionXMLCache.dsc</Child>
 </Project>

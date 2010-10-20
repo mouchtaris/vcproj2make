@@ -29,7 +29,12 @@ envp = [
 	@report			      : @self.SolutionDataCached,
 	// Root directory of the Delta build used to run this script
 	// (should contain DeltaExtraLibraries/, etc...)
-	@DeltaBuildRoot	      : 	"."
+	@DeltaBuildRoot	      : 	".",
+	// The base directory against which the solution directory will be interpreted
+	// (if it is a relative path). This one better be an absolute path.
+	@solution_base_dir    : "/home/muhtaris/hg_repos/vcproj2make/deltaide2make",
+	// dummy nothing
+	{false:false},{false:nil}
 ];
 
 args = [

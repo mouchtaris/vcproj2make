@@ -116,6 +116,9 @@ function dobj_copy                      (dob)
 function dobj_replace                   (dobj, key, val)                 => oldval
 function dobj_equal                     (dobj1, dobj2)                   // unoverloaded equality check
 function dobj_getaddress                (dobj)                           => string representation of the object's internal memory address
+function dobj_nullify                   (dobj, key)
+function dobj_hasOnlyNumericKeys        (dobj)
+
 //
 function dval_copy                      (dval)                           // deep copy
 function dval_copy_into                 (dst, src)
@@ -132,10 +135,16 @@ function iterable_foreach               (iterable, f)               // iterate o
 // a simple std::list wrapper
 function list_new                       ()
 function list_push_back                 (list, element)
+//function list_push_front                (list, element)
+function list_pop_back                  (list)                      // returns the element poped or nil if it's an empty list
+//function list_pop_front                 (list)
+//function list_back                      (list)
+//function list_front                     (list)
 function list_foreach                   (list, f)
 function list_to_stdlist                (list)
 function list_clone                     (list)
 function list_cardinality               (list)
+function list_empty                     (list)
 function list_clean                     (list)
 function list_concatenate               (...)                       // concatenate given lists into a single resulting list
 function list_concatenate_from_lists    (lists, listAccessor)       // concatenates the lists accessed in elements of "lists" by "listAccessor"
@@ -280,7 +289,7 @@ function Object
 functiob Objcet_isObjectClass       (class)
 
 //////////////////////////////
-// *** Class class - hand made
+// *** class Class - hand made
 //     -----------------------
 //     <^> createInstance( stateInitialiser, prototype, mixInRequirements, stateFields, className )
 //     <^> Public methods
@@ -334,6 +343,11 @@ function Class_linkState     (state, classMap)               // classMap is a si
 function obj_dump_delta    (obj, appendf, objvarname, precode, postcode)
 function obj_load_delta    (core)
 
+//
+function produceVMFunctionInstaller (vm, append_f)           // writes a function that installs all functions of the given VM to a
+                                                             // a given object, considering them defined in global scope of the 
+                                                             // same source file.
+
 
 // Classiness
 function becomeClassy
@@ -376,11 +390,11 @@ function beLean
 //         - Path_absolute
 
 function Path_isaPath     (obj)
-function Path_fromPath    (path)    "path" can be a deltastring or a Path instance.
-                                    If it is a deltastring, the path is checked for
-                                    absolutity by ::file_isabsolutepath.
-function Path_castFromPath(path)    same for "castFromPath" but if passed argument is a Path instance
-                                    already, it is returned as-is.
+function Path_fromPath    (path, isWindowsPath)    "path" can be a deltastring or a Path instance.
+                                                    If it is a deltastring, the path is checked for
+                                                    absolutity by ::file_isabsolutepath.
+function Path_castFromPath(path, isWindowsPath)    same for "castFromPath" but if passed argument is a Path instance
+                                                   already, it is returned as-is.
                                     
 
 
@@ -708,3 +722,48 @@ function SolutionData_make(
 // A map from solution configuration IDs to CSolution objects
 // --------------------------------------------------------------
 //     [ sol_conf_id => cSolution, ... ]
+
+/////////////////////////////////////////////////////////////////
+// class XML
+// A wrapper that adds standard functionality to XML loaded objects.
+// --------------------------------------------------------------
+//     <^> createInstance( name, xml_object )
+//     <^> Mixes in: 
+//     <^> Public methods
+//         - Name
+//               returns the name of this node
+//         - getAttribute(attributeID)
+//               returns the value of the attribute with the given
+//               name. If an attribute of such name does not exist,
+//               nil is returned.
+//         - Attributes
+//               returns an object which maps all attribute of this
+//               XML object from their names to their values.
+//         - getChild(childNodeName)
+//               returns an object in which all the child nodes of
+//               the given name are places with numerical indeces.
+//               The child-nodes are returned as instances of this
+//               class.
+//         - ChildrenNames
+//               returns a delta-iterable with the names of the
+//               children of this node.
+//         - hasChild(childNodeName)
+//               returns true if this XML node has a child node
+//               with the given name, false otherwise.
+//         - NumberOfChildren
+//               returns the number of child-nodes this node has.
+//         - NumberOfChildrenOfName(childNodeName)
+//         - KillChild(childNodeName, Index)
+//               kills the child node in the internal representatio of this
+//               XML tree. "Index" is which of the children with the given
+//               name should die (starting from 0).
+//         - KillAllChildren(childNodeName)
+//               like KillChild() but kills the whole branch of such children.
+//     <^> Static
+//         - createFromXMLRoot(rootXML)
+//     <^> Proxies
+//         - attr: a proxy for attributes (members translated to aruments for getAttribute())
+//     <^> state fields
+//         01. XML_name
+//         02. XML_xml
+

@@ -2,6 +2,10 @@
 //
 #include "isi/f.h"
 #include "isi/g.h"
+#include "main3.h"
+#include "main4.h"
+//
+#include "isi/lambda.h"
 //
 #include <fstream>
 #include <iostream>
@@ -10,7 +14,7 @@
 #include <list>
 #include <algorithm>
 //
-#define RUN_MAIN 1
+#define RUN_MAIN 4
 
 #define CSTR(SOMETHING) ""#SOMETHING
 #define IASSERT(EXPR)   assert(EXPR)
@@ -29,6 +33,27 @@ struct arrlenvalidator {
 #define _ARRLEN(CARR) (sizeof(CARR)/sizeof(CARR[0]))
 #define ARRLEN(CARR) _ARRLENV(CARR)
 
+
+class B;
+class A {
+public:
+	A(void) {}
+	//A(B const&){puts("A(B&)");}
+};
+class B {
+public:
+	operator A (void) const throw () { puts("B::A()"); return A(); }
+};
+static int main2 (int argc, char *argv[]) {
+	(void) argc;
+	(void) argv;
+	A::A(B::B());
+	A a; B b;
+	a = (A)b;
+	a = A(b);
+	static_cast<A>(b);
+	return 0;
+}
 
 struct vuf_t {
     char d[262144]; // 512KiB
@@ -111,8 +136,7 @@ static int main0(int argc, char *argv[]) throw() {
     return 0;
 }
 
-
 int main(int argc, char* argv[]) {
-    static int (*mains[])(int, char*[]) = {main0, main1};
+    static int (*mains[])(int, char*[]) = {main0, main1, main2, main3, main4};
     return (*mains[RUN_MAIN])(argc, argv);
 }

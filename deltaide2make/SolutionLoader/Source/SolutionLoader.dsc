@@ -1,8 +1,7 @@
 // Get util library
 u  = std::libs::import("util");
 sd = std::libs::import("SolutionLoader/SolutionData");
-rg = std::libs::import("ReportGenerator");
-if (not u or not sd or not rg)
+if (not u or not sd)
 	std::error("Could not acquire necessary VMs");
 
 function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, solutionDirectory, solutionName) {
@@ -42,14 +41,14 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	// Utilities for XML nodes
 	// --------------------------------------------------------------
 	function xmlgetchild (parent, childindex) {
-		u.Assert( parent );
-		u.assert_def( childindex );
-		local child = parent[childindex];
-		u.Assert( child );
+		assert( u.XML().isanXMLObject(parent) );
+		local child = parent.getChild(childindex);
+		assert( child );
+		assert( u.forall(u.Iterable_fromDObj(child), u.argumentSelector(u.isdeltanumber, 0)) );
 		return child;
 	}
 	function xmlhaschild (parent, childindex) {
-		return u.toboolean(parent[childindex]);
+		return parent.hasChild(childindex);
 	}
 	function xmlgetchildwithindex (parent, childindex) {
 		return [ childindex, xmlgetchild(parent, childindex) ];
@@ -78,22 +77,22 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	/////////////////////////////////////////////////////////////////
 	// Utilities for abstracted and quick access to standard XPATHs
 	// --------------------------------------------------------------
-	function xfree (parent, childindex) {
-		u.Assert( xmlgetchild(parent, childindex) == parent[childindex] );
-		parent[childindex] = nil;
-	}
-	// --------------------------------------------------------------
 	function xGlobal_parent (solutionXML) {
 		return solutionXML;
 	}
 	function xGlobal (solutionXML) {
 		local Global_elements = xmlgetchild(xGlobal_parent(solutionXML), Global_ElementName);
 		// there is supposed to be only one <Global> element
-		assert( u.dobj_length(Global_elements) == 1);
+		assert( u.dobj_length(Global_elements) == 1 );
+		local result = Global_elements[0];
+		assert( u.XML().isanXMLObject(result) );
 		return u.assert_def(Global_elements[0]);
 	}
 	function xfreeGlobal (solutionXML) {
-		xfree(xGlobal_parent(solutionXML), Global_ElementName);
+		local parent = xGlobal_parent(solutionXML);
+		assert( u.XML().isanXMLObject(parent) );
+		assert( parent.NumberOfChildrenOfName(Global_ElementName) == 1 );
+		parent.KillAllChildren(Global_ElementName);
 	}
 	// --------------------------------------------------------------
 	function xGlobalSection_parent (solutionXML) {
@@ -105,8 +104,12 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	function xGlobalSectionOfType_WithIndex (solutionXML, type) {
 		xmlforeachchild( xGlobalSection_parent(solutionXML), GlobalSection_ElementName, local resulter = [
 			method @operator () (parent, childindex, globalSectionElement, ismany) {
+				assert( ismany );
+				assert( u.dobj_equal(parent[childindex], globalSectionElement) );
+				assert( u.dobj_hasOnlyNumericKeys(parent) );
+				assert( u.XML().isanXMLObject(globalSectionElement) );
 				local keep_iterating = false;
-				if (globalSectionElement.type == @type)
+				if (globalSectionElement.getAttribute("type") == @type)
 					@result = [ childindex, globalSectionElement ];
 				else
 					keep_iterating = true;
@@ -117,7 +120,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 		return resulter.result;
 	}
 	function xGlobalSectionOfType_parent (solutionXML) { // parent for GlobalSection-s of a specific type
-		return xGlobalSection(solutionXML);
+		return xGlobal(solutionXML);
 	}
 	// --------------------------------------------------------------
 	function xSolutionConfigurationPlatforms_parent (solutionXML) {
@@ -137,7 +140,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	function xfreeSolutionConfigurationPlatforms (solutionXML) {
 		local confPlatsAndKey = xSolutionConfigurationPlatforms_WithIndex(solutionXML);
 		local key             = confPlatsAndKey[0];
-		xfree(xSolutionConfigurationPlatforms_parent(solutionXML), key);
+		xSolutionConfigurationPlatforms_parent(solutionXML).KillChild(GlobalSection_ElementName, key);
 	}
 	// --------------------------------------------------------------
 	function xProjectConfigurationPlatforms_parent (solutionXML) {
@@ -157,7 +160,9 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	function xfreeProjectConfigurationPlatforms (solutionXML) {
 		local confPlatsAndKey = xProjectConfigurationPlatforms_WithIndex(solutionXML);
 		local key             = confPlatsAndKey[0];
-		xfree(xProjectConfigurationPlatforms_parent(solutionXML), key);
+		local xml = xProjectConfigurationPlatforms_parent(solutionXML);
+		assert( u.XML().isanXMLObject(xml) );
+		xml.KillChild(GlobalSection_ElementName, key);
 	}
 	// --------------------------------------------------------------
 	function xProject_parent (solutionXML) {
@@ -167,11 +172,25 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 		return xmlgetchild(solutionXML, Project_ElementName);
 	}
 	function xfreeProject (solutionXML) {
-		return xfree(solutionXML, Project_ElementName);
+		local parent = xProject_parent(solutionXML);
+		assert( u.XML().isanXMLObject(parent) );
+		parent.KillAllChildren(Project_ElementName);
 	}
 	// --------------------------------------------------------------
 	// ==============================================================
 	
+
+	/////////////////////////////////////////////////////////////////
+	// Utilities for accessing XML object's attributes as object 
+	// attributes
+	// --------------------------------------------------------------
+	function attrgetter (xml) {
+		local isxml = u.XML().isanXMLObject;
+		assert( isxml(xml) );
+		local result = xml.attrgetter();
+		assert( u.isdeltacallable(std::tabget(result, ".")) );
+		return result;
+	}
 	
 	
 	/////////////////////////////////////////////////////////////////
@@ -184,13 +203,14 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 					ProjectConfigurationPlatforms_TypeAttributeValue];;
 		
 		xmlforeachchild(xGlobalSection_parent(solutionXML), GlobalSection_ElementName, [
-			method UselessGlobalSectionTrimmer (parent, childindex, globalSectionElement, ismany) {
-				u.Assert( xmlgetchild(parent, childindex) == globalSectionElement );
-				u.Assert( childindex == GlobalSection_ElementName or (ismany and u.isdeltanumber(childindex)) );
-				if ( not u.dobj_contains(interesting_global_section_types, globalSectionElement.type) ) {				
-					u.Assert( not u.dobj_contains(interesting_global_section_types, xmlgetchild(parent, childindex).type) );
-					@log("Deleting <GlobalSection> of type \"", globalSectionElement.type, "\"");
-					xfree(parent, childindex);
+			method UselessGlobalSectionTrimmer (globalSectionElements, childindex, globalSectionElement, ismany) {
+				assert( globalSectionElements[childindex] == globalSectionElement );
+				assert( childindex == GlobalSection_ElementName or (ismany and u.isdeltanumber(childindex)) );
+				local type = globalSectionElement.getAttribute("type");
+				if ( not u.dobj_contains(interesting_global_section_types, type) ) {				
+					assert( not u.dobj_contains(interesting_global_section_types, type) );
+					@log("Deleting <GlobalSection> of type \"", type, "\"");
+					u.dobj_nullify(globalSectionElements, childindex);
 				}
 				return true; //keep iterating
 			},
@@ -205,35 +225,43 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 					SolutionItems_TypeAttributeValue];
 				
 		xmlforeachchild(xProject_parent(solutionXML), Project_ElementName, [
-			method NonBuildableProjectTrimmer (parent_solutionXML, childindex, child_project, ismany) {
-				u.Assert( xmlgetchild(parent_solutionXML, childindex) == child_project );
-				u.Assert( childindex == Project_ElementName or (ismany and u.isdeltanumber(childindex)) );
+			method NonBuildableProjectTrimmer (child_projects, childindex, child_project, ismany) {
+				assert( ismany );
+				assert( u.isdeltanumber(childindex) );
+				assert( u.dobj_equal(child_projects[childindex], child_project) );
+				assert( u.XML().isanXMLObject(child_project) );
 				if (local projsect = child_project[ProjectSection_ElementName]) {
 					// if it has a ProjectSection, then...
 					// ... foreach ProjectSection
 					xmlforeachchild(child_project, ProjectSection_ElementName, [
-						method @operator () (parent, childindex, child_projectSection, ismany) {
-							u.Assert( xmlgetchild(parent, childindex) == child_projectSection );
-							u.Assert( childindex == ProjectSection_ElementName or (ismany and u.isdeltanumber(childindex)) );
-							u.Assert( child_projectSection.type );
-							if ( u.dobj_contains(uninteresting_project_section_types, child_projectSection.type) ) {
-								u.Assert( u.dobj_contains(uninteresting_project_section_types, xmlgetchild(parent, childindex).type) );
+						method @operator () (child_projectSections, childindex, child_projectSection, ismany) {
+							assert( ismany );
+							assert( u.dobj_hasOnlyNumericKeys(child_projectSections) );
+							assert( u.dobj_equal(child_projectSections[childindex], child_projectSection) );
+							local isanXMLObject = u.XML().isanXMLObject;
+							assert( isanXMLObject(child_projectSection) );
+							assert( child_projectSection.getAttribute("type") );
+							local parent = @parent;
+							assert( isanXMLObject(parent) );
+							local type = child_projectSection.getAtribute("type");
+							if ( u.dobj_contains(uninteresting_project_section_types, type) ) {
 								// delete a "WebsiteProperties" or "SolutionItems" ProjectSection
 								local proj = @proj;
 								@log("Trimming <ProjectSection> of type \"", child_projectSection.type, "\" "
 										"for project ", proj.name, ", ", proj.id, ", ", proj.path);
-								xfree(parent, childindex);
+								parent.KillChild(ProjectSection_ElementName, childindex);
 							}
 							return true;
 						},
 						@log  : @log,
-						@proj : child_project
+						@proj : child_project,
+						@parent: child_project
 					]);
 					
 					// kill an alltogethere empty ProjectSection
 					if (u.dobj_empty(projsect)) {
 						@log("Deleting an all-together empty <ProjectSection>");
-						xfree(child_project, ProjectSection_ElementName);
+						child_project.KillAllChildren(ProjectSection_ElementName);
 					}
 				}
 
@@ -246,18 +274,29 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	function trimFakeProjects (solutionXML, log) {
 		xmlforeachchild(solutionXML, Project_ElementName, [
 			method NonProjectProjectEntryRemover
-				(parent, childindex, projelem, ismany)
+				(projelems, childindex, projelem, ismany)
 			{
-				local path = u.Path_castFromPath(projelem.path, true);
+				assert( ismany );
+				assert( u.isdeltanumber(childindex) );
+				assert( u.dobj_hasOnlyNumericKeys(projelems) );
+				assert( u.dobj_equal(projelems[childindex], projelem) );
+				local path = u.Path_castFromPath(projelem.getAttribute("path"), true);
 				if (path.Extension() != VCPROJ_Extension) {
-					u.assert_eq( projelem.name , projelem.path );
-					@l("Deleting nonProject project: ", projelem.name, ", ",
-							projelem.id, ", ", projelem.path);
-					xfree(parent, childindex);
+					local parent = @parent;
+					local isanXMLObject = u.XML().isanXMLObject;
+					assert( isanXMLObject(parent) );
+					local name_attr = projelem.getAttribute("name");
+					local path_attr = projelem.getAttribute("path");
+					u.assert_eq( name_attr , path_attr );
+					local id_attr = projelem.getAttribute("id");
+					@l("Deleting nonProject project: ", name_attr, ", ",
+							id_attr, ", ", path_attr);
+					parent.KillChild(Project_ElementName, childindex);
 				}
 				return true; //keep iterating
 			},
-			@l: log
+			@l: log,
+			@parent: solutionXML
 		].NonProjectProjectEntryRemover);
 	}
 	// --------------------------------------------------------------
@@ -289,11 +328,14 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	function dexSolutionConfigurations (solutionXML, log, configurationManager) {
 		u.Assert( sd.ConfigurationManager_isaConfigurationManager(configurationManager) );
 		local configurations_element = xSolutionConfigurationPlatforms(solutionXML);
-		u.assert_eq( configurations_element.type , SolutionConfigurationPlatforms_TypeAttributeValue );
+		assert( u.XML().isanXMLObject(configurations_element) );
+		u.assert_eq( configurations_element.getAttribute("type"), SolutionConfigurationPlatforms_TypeAttributeValue );
 		xmlforeachchild(configurations_element, Pair_ElementName, [
-			method @operator () (parent, childindex, pair, ismany) {
-				u.assert_eq( pair.left , pair.right );
-				@configurationAdder(local solconf = pair.right);
+			method @operator () (pairs, childindex, pair, ismany) {
+				assert( ismany );
+				assert( u.dobj_equal(pairs[childindex], pair) );
+				u.assert_eq( pair.getAttribute("left") , pair.getAttribute("right") );
+				@configurationAdder(local solconf = pair.getAttribute("right"));
 				@l("Adding solution configuration ", solconf);
 				return true;
 			},
@@ -304,13 +346,18 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 		xfreeSolutionConfigurationPlatforms(solutionXML);
 	}
 	function dexProjectsConfigurations (solutionXML, log, configurationManager) {
-		u.Assert( sd.ConfigurationManager_isaConfigurationManager(configurationManager) );
+		assert( sd.ConfigurationManager_isaConfigurationManager(configurationManager) );
 		local configurations_XMLelement = xProjectConfigurationPlatforms(solutionXML);
-		u.Assert( configurations_XMLelement.type == ProjectConfigurationPlatforms_TypeAttributeValue );
+		assert( configurations_XMLelement.getAttribute("type") == ProjectConfigurationPlatforms_TypeAttributeValue );
 		xmlforeachchild(configurations_XMLelement, Pair_ElementName, [
 			method @operator () (parent, childindex, pair_element, ismany) {
-				local config_elems = u.strsplit(pair_element.left, ".", 0);
-				local proj_config = pair_element.right;
+				assert( u.dobj_equal(parent[childindex], pair_element) );
+				local left = pair_element.getAttribute("left");
+				local right = pair_element.getAttribute("right");
+				assert( u.isdeltastring(left) );
+				assert( u.isdeltastring(right) );
+				local config_elems = u.strsplit(left, ".", 0);
+				local proj_config = right;
 				//
 				local projid          = config_elems[0];
 				local solution_config = config_elems[1];
@@ -353,10 +400,10 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 						(function(parent, childindex, projectElement, ismany){if(ismany)return u.dobj_length(parent);else return(1);})
 								(parent, childindex, projectElement, ismany), ")");
 					//
-					local id              = projectElement.id;
-					local name            = projectElement.name;
-					local parentReference = projectElement.parentref;
-					local path            = projectElement.path;
+					local id              = attrgetter(projectElement).id;
+					local name            = attrgetter(projectElement).name;
+					local parentReference = attrgetter(projectElement).parentref;
+					local path            = attrgetter(projectElement).path;
 					//
 					if ((local buildable = @isBuildable(id)) or @addNonBuildables) {
 						local projectEntry = sd.ProjectEntry().createInstance();
@@ -388,7 +435,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 							]);
 
 							// kill all ProjectSections
-							xfree(projectElement, ProjectSection_ElementName);
+							projectElement.KillAllChildren(ProjectSection_ElementName);
 						}
 						// add project data to holder
 						@holder.addProjectEntry(projectEntry);
@@ -421,6 +468,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 	local configurationManager = sd.ConfigurationManager().createInstance();
 	local projectEntryHolder   = sd.ProjectEntryHolder().createInstance();
 	// Trim and extract data
+	solutionXML = u.XML().createFromXMLRoot(solutionXML);
 	trim(solutionXML);
 	dexSolutionConfigurations(solutionXML, log, configurationManager);
 	dexProjectsConfigurations(solutionXML, log, configurationManager);

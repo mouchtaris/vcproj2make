@@ -13,7 +13,8 @@ envp = [
 	//@strict_delta       : "linux_debug",
 	//@strict_delta	      : "linux_release",
 	// Copy libraries from predefined paths, so as to have the latest versions
-	@update_libs	      : true,
+	@update_libs	      : 	true,
+							//	false,
 	// unixify sources
 	@unixify		      : false,
 	// lean classes
@@ -22,15 +23,23 @@ envp = [
 	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
-	@SolutionDataCache    : true,
+	@SolutionDataCache    : //	true,
+								false,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML: not @self.SolutionDataCached,
+	@RegenerateSolutionXML: // 	not @self.SolutionDataCached,
+								false,
 	// An HTML Report: generate it or not? (takes time)
-	@report			      : @self.SolutionDataCached,
+	@report			      : //	@self.SolutionDataCached,
+								false,
 	// Root directory of the Delta build used to run this script
 	// (should contain DeltaExtraLibraries/, etc...)
-	@DeltaBuildRoot	      : 	"../../../../thesis_new/deltaide/Tools"
-							//	"..\\..\\..\\..\\thesis_new\\SkriptBarbarian"
+	@DeltaBuildRoot	      : 	"../../../../thesis_new/deltaide/Tools",
+							//	"../../../../thesis_new/SkriptBarbarian",
+	// The base directory against which the solution directory will be interpreted
+	// (if it is a relative path). This one better be an absolute path.
+	@solution_base_dir    : "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make",
+	// dummy nothing
+	{false:false},{false:nil}
 ];
 
 args = [
@@ -43,3 +52,5 @@ args = [
 ];
 
 main.main(std::tablength(args), args, envp);
+
+

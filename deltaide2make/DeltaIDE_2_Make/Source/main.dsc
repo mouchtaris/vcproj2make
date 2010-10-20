@@ -83,7 +83,15 @@ p = [
 				return result;
 			}
 			function makelibpath(libid, configuration, basename, root) {
-				local libpathcomponents = std::vmfuncaddr(std::vmthis(), libid + "_libpathcomponents");
+				if (std::isundefined(static libpathcomponents_functions))
+					libpathcomponents_functions = [
+						{ "xml": xml_libpathcomponents },
+						{ "vcsp": vcsp_libpathcomponents }
+					];
+				else
+					libpathcomponents_functions = libpathcomponents_functions;
+				local libpathcomponents = libpathcomponents_functions[libid];
+				assert( u.isdeltacallable(libpathcomponents) );
 				local result = u.file_pathconcatenate(|libpathcomponents(root, configuration)|) + libifyname(libid, configuration, basename);
 				return result;
 			}
@@ -157,6 +165,28 @@ p = [
 		local data = u.xmlload(SolutionXMLpath);
 		if (not data)
 			u.error().AddError(u.xmlloaderror());
+		local fout = std::fileopen("./DeltaIDE_2_Make/Source/SolutionXMLCache.dsc", "wt");
+		assert(fout);
+		method append (...) {
+			u.foreacharg(arguments, [
+				method @operator () (arg) {
+					std::filewrite(@fout, arg);
+					return true;
+				},
+				@fout: @fout
+			]);
+		}
+		append.self.fout = fout;
+		op = [ method @operator () {
+			u.obj_dump_delta(
+					@data,
+					@append,
+					"SolutionXML",
+					"function getSolutionXML { ", "return SolutionXML; } "
+			);
+		}, @data: data, @append: append];
+		//time("Writing Solution xml to cache file...", op);
+		std::fileclose(fout);
 		return @solutionXML = data;
 	},
 	@bashescape: function bashescape (str) {
@@ -255,7 +285,7 @@ p = [
 	method loadSolutionData {
 		const SolutionDataCoreCache_funcname = #SolutionDataCoreCache;
 		const SolutionDataCoreCache_classMapperAccessorFuncname = #ClassMapper;
-		const SolutionBaseDir = "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make";
+		local SolutionBaseDir = @config.solution_base_dir;
 		local cache_hit = false;
 		if (@config.SolutionDataCached) {
 			@log("Looking for cached solution data...");
@@ -325,24 +355,26 @@ p = [
 			sl_sd.SolutionDataFactory_DumpCore(@solutionData, local sdcore=[]);
 			local t1 = std::currenttime();
 			@log("Core generation needed: ", t1-t0, "msec");
-			@log("Writing core as a delta source file...");
-			t0 = std::currenttime();
-			const sdcorecache_varname = "p__sdcore";
-			u.obj_dump_delta(
-					sdcore,
-					(local fileappender =
-							u.func_FileAppender(
-									"./SolutionLoader/Source/" +
-											SolutionDataCoreCache_filename + ".dsc"
-							).init()
-					).append,
-					sdcorecache_varname,
-					"function " + SolutionDataCoreCache_funcname +
-							" { " + u.ENDL(),
-					u.ENDL() + " return local " + sdcorecache_varname + ";" + u.ENDL() + "}");
-			fileappender.cleanup();
-			t1 = std::currenttime();
-			@log("Writing cache to delta source needed: ", t1 - t0, "msec");
+			if (@config.SolutionDataCache) {
+				@log("Writing core as a delta source file...");
+				t0 = std::currenttime();
+				const sdcorecache_varname = "p__sdcore";
+				u.obj_dump_delta(
+						sdcore,
+						(local fileappender =
+								u.func_FileAppender(
+										"./SolutionLoader/Source/" +
+												SolutionDataCoreCache_filename + ".dsc"
+								).init()
+						).append,
+						sdcorecache_varname,
+						"function " + SolutionDataCoreCache_funcname +
+								" { " + u.ENDL(),
+						u.ENDL() + " return local " + sdcorecache_varname + ";" + u.ENDL() + "}");
+				fileappender.cleanup();
+				t1 = std::currenttime();
+				@log("Writing cache to delta source needed: ", t1 - t0, "msec");
+			}
 		}
 		
 		assert( @solutionData );
@@ -372,25 +404,22 @@ function main0 (argc, argv, envp) {
 	// TMP test code
 	// "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make"
 	local solutionData = p.solutionData;
-	time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
+	//time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
 	local projectData = p.projectData;
 	u.Iterable_foreach(u.Iterable_fromDObj(projectData), [
 		method @operator () (key, val) {
-			if (@firstrun) {
-				@firstrun = false;
-				p.log("Generating makefiles for onfiguration ", key);
-				mkgen.MakefileManifestation(
-						u.Path_castFromPath(
-							//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
-							//	"./"
-								@solutionData.SolutionBaseDirectory
-								, false
-						),
-						val
-				);
-			}
+			p.log("Generating makefiles for configuration ", key);
+			mkgen.MakefileManifestation(
+					u.Path_castFromPath(
+						//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
+						//	"./"
+							@solutionData.SolutionBaseDirectory
+							, false
+					),
+					val
+			);
+			return false; // one iteration
 		},
-		@firstrun: true,
 		@solutionData: solutionData
 	]);
 
@@ -515,16 +544,242 @@ function main8 {
 	})(#MUSTNOTBESHOWN, #a, #b, #c, #d, #e,#f, [#g], [#h], [#i], #j , #k , #l, #m, #n , #o, #MUSTNOTBESHOWN);
 }
 
+function main9 {
+//<?xml version=\"1.0\" encoding=\"windows-1253\"?>
+	const str = "
+<VisualStudioProject
+	ProjectType=\"Visual C++\"
+	Version=\"9,00\"
+	Name=\"isiapp_VS\"
+	ProjectGUID=\"{F6459465-11D4-4CFD-99B9-5D8BDC5B598C}\"
+	RootNamespace=\"isiapp_VS\"
+	Keyword=\"Win32Proj\"
+	TargetFrameworkVersion=\"196613\"
+	>
+	<Platforms>
+		<Platform
+			Name=\"Win32\"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name=\"Debug|Win32\"
+			OutputDirectory=\"$(SolutionDir)$(ConfigurationName)\"
+			IntermediateDirectory=\"$(ConfigurationName)\"
+			ConfigurationType=\"1\"
+			InheritedPropertySheets=\"..\..\..\commonPropertiesSheet.vsprops\"
+			CharacterSet=\"1\"
+			>
+			<Tool
+				Name=\"VCPreBuildEventTool\"
+			/>
+			<Tool
+				Name=\"VCCustomBuildTool\"
+			/>
+			<Tool
+				Name=\"VCXMLDataGeneratorTool\"
+			/>
+			<Tool
+				Name=\"VCWebServiceProxyGeneratorTool\"
+			/>
+			<Tool
+				Name=\"VCMIDLTool\"
+			/>
+			<Tool
+				Name=\"VCCLCompilerTool\"
+				Optimization=\"0\"
+				PreprocessorDefinitions=\"ISIAPP_VERSION=\&quot;Mironeus_Miraculum_Malefocarus_334.22212\&quot;;_DEBUG;WIN32;_CONSOLE;ISIDLL_VS_IMPORTS\"
+				MinimalRebuild=\"true\"
+				BasicRuntimeChecks=\"3\"
+				RuntimeLibrary=\"3\"
+				UsePrecompiledHeader=\"0\"
+				WarningLevel=\"4\"
+				DebugInformationFormat=\"4\"
+			/>
+			<Tool
+				Name=\"VCManagedResourceCompilerTool\"
+			/>
+			<Tool
+				Name=\"VCResourceCompilerTool\"
+			/>
+			<Tool
+				Name=\"VCPreLinkEventTool\"
+			/>
+			<Tool
+				Name=\"VCLinkerTool\"
+				LinkIncremental=\"2\"
+				GenerateDebugInformation=\"true\"
+				SubSystem=\"1\"
+				TargetMachine=\"1\"
+			/>
+			<Tool
+				Name=\"VCALinkTool\"
+			/>
+			<Tool
+				Name=\"VCManifestTool\"
+			/>
+			<Tool
+				Name=\"VCXDCMakeTool\"
+			/>
+			<Tool
+				Name=\"VCBscMakeTool\"
+			/>
+			<Tool
+				Name=\"VCFxCopTool\"
+			/>
+			<Tool
+				Name=\"VCAppVerifierTool\"
+			/>
+			<Tool
+				Name=\"VCPostBuildEventTool\"
+			/>
+		</Configuration>
+		<Configuration
+			Name=\"Release|Win32\"
+			OutputDirectory=\"$(SolutionDir)$(ConfigurationName)\"
+			IntermediateDirectory=\"$(ConfigurationName)\"
+			ConfigurationType=\"1\"
+			CharacterSet=\"1\"
+			WholeProgramOptimization=\"1\"
+			>
+			<Tool
+				Name=\"VCPreBuildEventTool\"
+			/>
+			<Tool
+				Name=\"VCCustomBuildTool\"
+			/>
+			<Tool
+				Name=\"VCXMLDataGeneratorTool\"
+			/>
+			<Tool
+				Name=\"VCWebServiceProxyGeneratorTool\"
+			/>
+			<Tool
+				Name=\"VCMIDLTool\"
+			/>
+			<Tool
+				Name=\"VCCLCompilerTool\"
+				Optimization=\"2\"
+				EnableIntrinsicFunctions=\"true\"
+				PreprocessorDefinitions=\"ISIAPP_VERSION=\&quot;Mironeus_Miraculum_Malefocarus_334.22212\&quot;;WIN32;NDEBUG;_CONSOLE;ISIDLL_VS_IMPORTS\"
+				RuntimeLibrary=\"2\"
+				EnableFunctionLevelLinking=\"true\"
+				UsePrecompiledHeader=\"0\"
+				WarningLevel=\"3\"
+				DebugInformationFormat=\"3\"
+			/>
+			<Tool
+				Name=\"VCManagedResourceCompilerTool\"
+			/>
+			<Tool
+				Name=\"VCResourceCompilerTool\"
+			/>
+			<Tool
+				Name=\"VCPreLinkEventTool\"
+			/>
+			<Tool
+				Name=\"VCLinkerTool\"
+				LinkIncremental=\"1\"
+				GenerateDebugInformation=\"true\"
+				SubSystem=\"1\"
+				OptimizeReferences=\"2\"
+				EnableCOMDATFolding=\"2\"
+				TargetMachine=\"1\"
+			/>
+			<Tool
+				Name=\"VCALinkTool\"
+			/>
+			<Tool
+				Name=\"VCManifestTool\"
+			/>
+			<Tool
+				Name=\"VCXDCMakeTool\"
+			/>
+			<Tool
+				Name=\"VCBscMakeTool\"
+			/>
+			<Tool
+				Name=\"VCFxCopTool\"
+			/>
+			<Tool
+				Name=\"VCAppVerifierTool\"
+			/>
+			<Tool
+				Name=\"VCPostBuildEventTool\"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier=\"{E67531FD-67A7-4A61-A098-945EAA03DC89}\"
+			RelativePathToProject=\".\isidll\Project\isidll_VS\isidll_VS.vcproj\"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier=\"{2BC9A5B4-DE5D-4855-ACB7-A6835190C0D7}\"
+			RelativePathToProject=\".\isistatic\Project\isistatic_VS\isistatic_VS.vcproj\"
+		/>
+	</References>
+	<Files>
+		<Filter
+			Name=\"Source Files\"
+			Filter=\"cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx\"
+			UniqueIdentifier=\"{4FC737F1-C7A5-4376-A066-2A32D752A2FF}\"
+			>
+			<File
+				RelativePath=\"..\..\Source\main.cpp\"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name=\"Header Files\"
+			Filter=\"h;hpp;hxx;hm;inl;inc;xsd\"
+			UniqueIdentifier=\"{93995380-89BD-4b04-88EB-625FBE52EBFB}\"
+			>
+		</Filter>
+		<Filter
+			Name=\"Resource Files\"
+			Filter=\"rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav\"
+			UniqueIdentifier=\"{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}\"
+			>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
+";
+	local xml = #xmlparse(str);
+	std::print(xml, "\n", #xmlloadgeterror());
+}
+
+function main10 (argc, argv, envp) {
+	foreach (local vm_file_pair, [
+		[u, "utilFunctionInstaller"],
+		[sl_sd, "solutionDataFunctionInstaller"],
+		[sl, "solutionLoaderFunctionInstaller"]
+	]) {
+		local vm = vm_file_pair[0];
+		local filename = vm_file_pair[1];
+		u.println("Writing functions to ./", filename, ".dsc ...");
+		u.produceVMFunctionInstaller(vm,
+			u.bindfront(std::filewrite, local fh = std::fileopen("./" + filename + ".dsc", "wt"))
+		);
+		std::fileclose(fh);
+	}
+}
+
+
 function main (argc, argv, envp) {
 	p.config = envp;
 	p.init(argv);
-	
+
 	(function mains_dispatcher (...) {
 		return std::vmfuncaddr(
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		)(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0, 9, 0, 10, 0);
 	
 	p.cleanup();
 

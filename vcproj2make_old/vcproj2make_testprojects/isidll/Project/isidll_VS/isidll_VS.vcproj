@@ -164,6 +164,10 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{2BC9A5B4-DE5D-4855-ACB7-A6835190C0D7}"
+			RelativePathToProject=".\isistatic\Project\isistatic_VS\isistatic_VS.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -172,9 +176,21 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\Source\isi\f.cpp"
+				RelativePath="..\..\Source\main3.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Source\main4.cpp"
+				>
+			</File>
+			<Filter
+				Name="isi"
+				>
+				<File
+					RelativePath="..\..\Source\isi\f.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -182,13 +198,25 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\Include\isi\dll.h"
+				RelativePath="..\..\Include\main3.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\isi\f.h"
+				RelativePath="..\..\Include\main4.h"
 				>
 			</File>
+			<Filter
+				Name="isi"
+				>
+				<File
+					RelativePath="..\..\Include\isi\dll.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Include\isi\f.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

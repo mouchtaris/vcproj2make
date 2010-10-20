@@ -59,14 +59,26 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 			assert( u.isdeltastring(result) );
 			return result;
 		}
+		function loadProjectXMLFromPath (projectFilePath) {
+			local xml = u.xmlload(projectFilePath.deltaString());
+			if (u.isdeltanil(xml))
+				u.error().AddError("Could not load xml from path \"",
+						projectFilePath.deltaString(), "\" xmlerror: \"",
+						u.xmlloaderror());
+			else
+				xml = pr.Trim(xml);
+			xml = u.XML().createFromXMLRoot(xml);
+			return xml;
+		}
 		local eval = u.bindback(evaluateVariables, variableEvaluator);
 		local projectPath = u.Path_castFromPath(projectPathMaybe, false);
 		local projectFilePath = solutionBasedirPath.Concatenate(projectPath);
-		local projectXML = pr.Trim(u.xmlload(projectFilePath.deltaString()));
+		local projectXML = loadProjectXMLFromPath(projectFilePath);
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
 		local projectName = pr.GetProjectName(projectXML);
 		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
 		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
+		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
 		local project = u.CProject().createInstance(projectType, projectPath, projectName);
 		// Enrich variableEvaluator
 		variableEvaluator.setProjectName(projectName);
@@ -81,7 +93,9 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		// Output Name
 		project.setOutputName(outputFilePath.filename());
 		// API Directory
-		project.setAPIDirectory(u.Path_fromPath("../Include", false)); // TODO do real
+		project.setAPIDirectory(u.Path_fromPath("../Include", false));
+		// Set this project's properties
+		local projprops = u.CProjectProperties().createInstance();
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
 			[
@@ -129,8 +143,8 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		for (local ite = iterable.iterator(); not ite.end(); ite.next()) {
 			local projectID            = ite.key();
 			local projectBuildInfo     = ite.value();
-			local projectConfiguration = projectBuildInfo.buildable;
-			local projectBuildable     = projectBuildInfo.config;
+			local projectConfiguration = projectBuildInfo.config;
+			local projectBuildable     = projectBuildInfo.buildable;
 			if (projectBuildable) {
 				assert( configurationManager.isBuildable(configuration, projectID) );
 				local projectEntry = projectEntryHolder.getProjectEntry(projectID);

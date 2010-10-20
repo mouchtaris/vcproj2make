@@ -338,10 +338,7 @@ function libifyname(filename) {
 		::error().AddError("Unknown platform for libifyname(): " + ::platform());
 	return result;
 }
-PATH_SEPARATOR = nil;
-if (iswin32()) PATH_SEPARATOR = "\\";
-else if (islinux()) PATH_SEPARATOR = "/";
-else ::error().UnknownPlatform();
+PATH_SEPARATOR = "/";
 
 private__loadlibsStaticData = [];
 const private__DELTA_DLL_INSTALLATION_FUNCTION_NAME = "Install";
@@ -379,7 +376,7 @@ function loadlibs {
 	}
 	return ::private__loadlibsStaticData.libsloaded = 
 			loadlib("XMLParser")                                           and
-			(((not ::isASsafe()) and loadlib("VCSolutionParser")) or true) and
+		//	(((not ::isASsafe()) and loadlib("VCSolutionParser")) or true) and
 			true
 	;
 }
@@ -601,34 +598,26 @@ function dobj_getaddress (dobj) {
 	local addr = ::strsubstr(str, addr_begin, addr_end - addr_begin + 1);
 	return addr;
 }
+function dobj_nullify (dobj, key) {
+	dobj[key] = nil;
+	return dobj;
+}
+
 //
-function dval_copy (val) {
-	if ( not (::isdeltaobject(val) or ::isdeltatable(val)) )
-		local result = val;
-	else {
-		result = [];
-		foreach (local key, ::dobj_keys(val))
-			result[key] = ::dval_copy(val[key]);
-	}
-	return result;
-}
-function dval_copy_into (dst, src) {
-	::assert_or( ::isdeltaobject(dst) , ::isdeltatable(dst) );
-	::assert_or( ::isdeltaobject(src) , ::isdeltatable(src) );
-	foreach (local key, ::dobj_keys(src))
-		dst[key] = ::dval_copy(src[key]);
-	return dst;
-}
 function dobj_equal (one, two) {
-	local previousOverloadingEnabled1 = std::tabisoverloadingenabled(one);
-	local previousOverloadingEnabled2 = std::tabisoverloadingenabled(two);
-	std::tabdisableoverloading(one);
-	std::tabdisableoverloading(two);
-	local result = one == two;
-	if (previousOverloadingEnabled1)
-		std::tabenableoverloading(one);
-	if (previousOverloadingEnabled2)
-		std::tabenableoverloading(two);
+	if (not ::isdeltaobject(one) or not ::isdeltaobject(two))
+		local result = false;
+	else {
+		local previousOverloadingEnabled1 = std::tabisoverloadingenabled(one);
+		local previousOverloadingEnabled2 = std::tabisoverloadingenabled(two);
+		std::tabdisableoverloading(one);
+		std::tabdisableoverloading(two);
+		result = one == two;
+		if (previousOverloadingEnabled1)
+			std::tabenableoverloading(one);
+		if (previousOverloadingEnabled2)
+			std::tabenableoverloading(two);
+	}
 	return result;
 }
 
@@ -827,18 +816,23 @@ function list_new {
 	];
 }
 function list_push_back (list, element) {
-	assert( ::isdeltalist(list) );
 	std::list_push_back(::p__list.getlist(list), element);
 }
+function list_pop_back (list) {
+	local dlist = ::p__list.getlist(list);
+	local result = std::list_back(dlist);
+	assert( (not std::list_total(dlist) == 0) or ::isdeltanil(result) ); //length = 0 -> result = nil
+	if ( not ::isdeltanil(result) )
+		std::list_pop_back(dlist);
+	return result;
+}
 function list_foreach (list, f) {
-	assert( ::isdeltalist(list) );
 	return ::iterable_foreach(::p__list.getlist(list), f);
 }
 function list_to_stdlist (list) {
 	return ::p__list.getlist(list);
 }
 function list_clone (list) {
-	assert( ::isdeltalist(list) );
 	local result = std::list_new();
 	foreach (local el, ::p__list.getlist(list))
 		std::list_push_back(result, el);
@@ -851,6 +845,9 @@ function list_clone (list) {
 }
 function list_cardinality (list) {
 	return std::list_total(::p__list.getlist(list));
+}
+function list_empty (list) {
+	return ::list_cardinality(list) == 0;
 }
 function list_clear (list) {
 	std::list_clear(::p__list.getlist(list));
@@ -979,7 +976,7 @@ function Iterable_fromList (list) {
 }
 
 function Iterable_fromDObj (dobj) {
-	assert( ::isdeltaobject(dobj) );
+	assert( ::isdeltaobject(dobj) or ::isdeltatable(dobj) );
 	if (std::isundefined(static iterator_prototype))
 		iterator_prototype = [ // state fields [ #ite:tabiter, #obj:deltaobj ]
 			method end {
@@ -1110,6 +1107,35 @@ function Iterable_find (iterable, predicate) {
 	else
 		result = ite;
 	return result;
+}
+
+// addition delta-object utils
+function dobj_hasOnlyNumericKeys (dobj) {
+	return ::forall(::Iterable_fromDObj(dobj), 
+			::argumentSelector(
+					  ::isdeltanumber
+					, 0
+			)
+	);
+}
+function dval_copy (val) {
+	if ( not (::isdeltaobject(val) or ::isdeltatable(val)) )
+		local result = val;
+	else if (::isdeltalist(val))
+		result = ::list_clone(val);
+	else {
+		result = [];
+		foreach (local key, ::dobj_keys(val))
+			result[key] = ::dval_copy(val[key]);
+	}
+	return result;
+}
+function dval_copy_into (dst, src) {
+	::assert_or( ::isdeltaobject(dst) , ::isdeltatable(dst) );
+	::assert_or( ::isdeltaobject(src) , ::isdeltatable(src) );
+	foreach (local key, ::dobj_keys(src))
+		dst[key] = ::dval_copy(src[key]);
+	return dst;
 }
 
 /// File utilities
@@ -1995,8 +2021,8 @@ function obj_dump_delta (dobj, appendf, objvarname, precode, postcode) {
 				write(fetchRegisteredObjectExpression(visited, val));
 		}
 
-		// -- Delta Objects
-		else if ( ::isdeltaobject(local objval = val) ) {
+		// -- Delta Objects or Table
+		else if ( ::isdeltaobject(local objval = val) or ::isdeltatable(objval) ) {
 			if ( not visited.isEncountered(objval) ) {
 				// register in our own visited list
 				visited.visitingStarting(objval);
@@ -2149,6 +2175,25 @@ function obj_load_delta (core, classMap) {
 	return result;
 }
 
+function produceVMFunctionInstaller (vm, append_f) {
+	local funcs = ::Iterable_fromDObj(std::vmfuncs(vm));
+	append_f("function InstallVMFunctionsOnObject (o) {\n"
+		"\tassert( std::typeof(o) == \"Object\" or std::typeof(o) == \"Table\");\n"
+	);
+
+	::Iterable_foreach(funcs, [
+		method @operator () (fname, f) {
+			local append = @append_f;
+			assert (::isdeltastring(fname) and ::isdeltaidentifier(fname));
+			assert (::isdeltafunction(f));
+			append("\to.", fname, " = ::", fname, ";\n");
+			return true;
+		},
+		@append_f: append_f
+	]);
+
+	append_f("\treturn o;\n}\n");
+}
 
 function TESTING_THE_CLASS_MODEL {
 ///////////// TESTING THE CLASS MODEL /////////////
@@ -2608,7 +2653,7 @@ function CProjectProperties {
 			}
 		];
 		//
-		Class = ::Class().createInstance(prototype, mixInRequirements, stateFields, className);
+		Class = ::Class().createInstance(stateInitialiser, prototype, mixInRequirements, stateFields, className);
 		//
 		assert( std::isundefined(static_variables_defined) );
 		static_variables_defined = true;
@@ -2972,6 +3017,226 @@ function xmlparseerror {
 	return result;
 }
 
+// Class xml
+function XML {
+	static static_variables_defined;
+	static class;
+	static fields;
+	static prototype;
+	static mixinRequirements;
+	const  name = "XML";
+	const  StateField_name = "XML_name"   ;
+	const  StateField_xml  = "XML_xml"    ;
+	const  AttributesKey   = "$Attributes";
+	const  NameKey         = "$Name"      ;
+	//
+	// private methods
+	function getname (this) {
+		return ::dobj_checked_get(this, fields, StateField_name);
+	}
+	function getxml (this) {
+		return ::dobj_checked_get(this, fields, StateField_xml);
+	}
+	function getattributes (this) {
+		local xml = getxml(this);
+		local attrs = xml[AttributesKey];
+		assert (attrs);
+		return attrs;
+	}
+	function getRootName (rootXML) {
+		local name = rootXML[NameKey];
+		assert (::isdeltastring(name));
+		return name;
+	}
+	function heuristicallyIsXMLObject (xmlObject) {
+		return
+				    (::isdeltatable(xmlObject) or ::isdeltaobject(xmlObject))
+				and (
+				    	    ::forall(local xmlObjectIterable = ::Iterable_fromDObj(xmlObject), ::argumentSelector(::isdeltastring, 0))
+				    	or  ::forall(xmlObjectIterable, function isNumericalIndexMappingToXMLObject (key, value) {
+				    	    	return ::isdeltanumber(key) and heuristicallyIsXMLObject(value);
+				    	    })
+				    )
+		;
+	}
+	function getchildren (this, nodeName) {
+		assert( ::isdeltastring(nodeName) );
+		local xml = getxml(this);
+		assert( heuristicallyIsXMLObject(xml) );
+		local result = local children = xml[nodeName];
+		if (children) {
+			assert( ::isdeltaobject(children) );
+			assert( ::forall(::Iterable_fromDObj(children), ::argumentSelector(::isdeltanumber, 0)) );
+			result = children;
+		}
+		return result;
+	}
+	function getchild (this, nodeName, nodeIndex) {
+		assert( ::isdeltanumber(nodeIndex) );
+		if (local result = local children = getchildren(this, nodeName)) {
+			local child = children[nodeIndex];
+			assert( heuristicallyIsXMLObject(child) );
+			result = child;
+		}
+		return result;
+	}
+	if (std::isundefined(static_variables_defined)) {
+		function stateInitialiser (newInstance, stateFields, name, xmlObject) {
+			assert ( ::isdeltastring(name) );
+			assert ( heuristicallyIsXMLObject(xmlObject) );
+			::Class_checkedStateInitialisation(newInstance, stateFields,
+					[
+						{ StateField_name: name       },
+						{ StateField_xml : xmlObject  }
+					]
+			);
+			// TODO probably related to bug #663301, reports a cyclic lookup error
+		//	local attr_getter = [
+		//		method @operator () {
+		//			local result = [];
+		//			local dotOverloading = [
+		//					method attrgetter_getattr (this, attrname) {
+		//						assert( ::isdeltastring(attrname) );
+		//						if (std::isoverloadableoperator(attrname))
+		//							local result = nil;
+		//						else
+		//							result = @attrget(attrname);
+		//						return result;
+		//					},
+		//					@attrget: @newInstance.getAttribute // cyclic lookup here
+		//				].attrgetter_getattr;
+		//			result."." = dotOverloading;
+		//			return result;
+		//		},
+		//		@newInstance: newInstance
+		//	];
+		//	std::tabnewattribute(newInstance, #attr, ::nothing, attr_getter);
+
+		}
+		//
+		assert(std::isundefined(static_variables_defined));
+		fields = [ StateField_name, StateField_xml ];
+		//
+		assert(std::isundefined(static_variables_defined));
+		mixinRequirements = [];
+		//
+		assert(std::isundefined(static_variables_defined));
+		prototype = [
+			method Name { return getname(self); },
+			method getAttribute (attrName) {
+				local result = getattributes(self) [attrName];
+				assert (::isdeltanil(result) or ::isdeltastring(result));
+				return result;
+			},
+			method Attributes {
+				return getattributes(self);
+			},
+			method hasChild (nodeName) {
+				return ::toboolean(self.getChild(nodeName));
+			},
+			method NumberOfChildren {
+				local children = getxml(self);
+				local num = ::dobj_length(children);
+				if (children[AttributesKey])
+					--num;
+				if (children[NameKey])
+					--num;
+				return num;
+			},
+			method NumberOfChildrenOfName (childname) {
+				local children = getchildren(self, childname);
+				assert( ::dobj_hasOnlyNumericKeys(children) );
+				local result = nil;
+				if (children)
+					result = ::dobj_length(children);
+				return result;
+			},
+			method KillChild (nodeName, nodeIndex) {
+				local children = getchildren(self, nodeName);
+				local child = getchild(self, nodeName, nodeIndex);
+				assert( child );
+				// kill it
+				::dobj_nullify(children, nodeIndex);
+			},
+			method KillAllChildren (nodeName) {
+				local children = getchildren(self, nodeName);
+				assert( children );
+				local xml = getxml(self);
+				// kill it
+				::dobj_nullify(xml, nodeName);
+			},
+			method ChildrenNames {
+				local children = getxml(self);
+				children = ::dobj_copy(children);
+				if (children[AttributesKey])
+					children[AttributesKey] = nil;
+				if (children[NameKey])
+					children[NameKey] = nil;
+				local result = ::dobj_keys(children);
+				return result;
+			},
+			// Add an attribute proxy
+			// TODO when bug #663301 is fixedd, make  attr_getter an attribute
+			// (.attr)
+			method attrgetter {
+				local result = [];
+				local attrgetter = [
+					method getattr (this, attrname) {
+						assert( ::isdeltastring(attrname) );
+						if (std::isoverloadableoperator(attrname))
+							local result = nil;
+						else
+							result = @attrget(attrname);
+						return result;
+					},
+					@attrget: self.getAttribute
+				].getattr;
+				result."." = attrgetter;
+				return result;
+			}
+		];
+		//
+		class = ::Class().createInstance(stateInitialiser, prototype, mixinRequirements, fields, name);
+		//
+		prototype.getChild = ::methodinstalled(prototype,
+			method getChild (nodeName) {
+				local result = getchildren(self, nodeName);
+				if (result) {
+					::Iterable_foreach(::Iterable_fromDObj(result), local instanceCreator = [
+						@result        : [],
+						@nodeName      : nodeName,
+						@createInstance: class.createInstance,
+						method @operator () (key, value) {
+							assert (::isdeltanumber(key));
+							assert (heuristicallyIsXMLObject(value));
+							local nodeName = @nodeName;
+							local createInstance = @createInstance;
+							(local result = @result)[key] = createInstance(nodeName, value);
+							return true;
+						}
+					]);
+					result = instanceCreator.result;
+					assert (result);
+				}
+				return result;
+			}
+		);
+		//
+		// static methods
+		class.createFromXMLRoot = (function createFromXMLRoot (rootXML) {
+			local rootName = getRootName(rootXML);
+			assert (::isdeltastring(rootName));
+			return class.createInstance(rootName, rootXML); // TODO the debugger cannot inspect "class" here
+		});
+		class.isanXMLObject = (function isaXMLObject (obj) {
+			return ::Class_isa(obj, class);
+		});
+		//
+		assert(std::isundefined(static_variables_defined));
+		static_variables_defined = true;
+	}
+	return class;
+} // function XML
 
 ////////////////////////////////////////
 // Logging
