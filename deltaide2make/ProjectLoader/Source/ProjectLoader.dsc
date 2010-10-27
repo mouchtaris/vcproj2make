@@ -54,6 +54,28 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		return result;
 	}
 	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator) {
+		local tick = [ // TODO remove tick and stuff
+			method @operator () {
+				local now = std::currenttime();
+				local prev = @prev;
+				local diff = now - prev;
+				local total = @total + diff;
+				local diffs = @diffs;
+				local diffs_i = @diffs_i;
+				diffs[diffs_i] = diff;
+				u.println(" --- tick --- [", diffs_i, "] ", diff, "msec    (", total, "msec)");
+				// update self
+				@prev = now, @total = total; ++@diffs_i;
+			},
+			method max {
+				local max = [ @diff: 0 ];
+				foreach (local diff_i, u.dobj_keys(local diffs = @diffs))
+					if ((local diff = diffs[diff_i]) > max.diff)
+						max = [ @diff: diff, @diff_i: diff_i ];
+				return max;
+			},
+			@total: 0, @diffs: [], @diffs_i: 0, @prev: 0
+		];
 		function preproOutputFile (outFileStr) {
 			local result = u.Path_castFromPath(outFileStr).filename();
 			assert( u.isdeltastring(result) );
@@ -70,32 +92,51 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 			xml = u.XML().createFromXMLRoot(xml);
 			return xml;
 		}
+		tick.prev = std::currenttime();
 		local eval = u.bindback(evaluateVariables, variableEvaluator);
+		tick(); // 0
 		local projectPath = u.Path_castFromPath(projectPathMaybe, false);
+		tick(); // 1
 		local projectFilePath = solutionBasedirPath.Concatenate(projectPath);
+		tick(); // 2
 		local projectXML = loadProjectXMLFromPath(projectFilePath);
+		tick(); // 3
 		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
+		tick(); // 4
 		local projectName = pr.GetProjectName(projectXML);
+		tick(); // 5
 		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
+		tick(); // 6
 		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
+		tick(); // 7
 		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
+		tick(); // 8
 		local project = u.CProject().createInstance(projectType, projectPath, projectName);
+		tick(); // 9
 		// Enrich variableEvaluator
 		variableEvaluator.setProjectName(projectName);
+		tick(); // 10
 		variableEvaluator.setOutdir(eval(outputDirectory));
+		tick(); // 11
 		//
 		local outputFilePath = u.Path_castFromPath(eval(outputFile), true);
+		tick(); // 12
 		// Sources
 		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
 			project.addSource(u.Path_fromPath(src_relpath, true));
+		tick(); // 13
 		// Output Directory
 		project.setOutputDirectory(outputFilePath.basename());
+		tick(); // 14
 		// Output Name
 		project.setOutputName(outputFilePath.filename());
+		tick(); // 15
 		// API Directory
 		project.setAPIDirectory(u.Path_fromPath("../Include", false));
+		tick(); // 16
 		// Set this project's properties
 		local projprops = u.CProjectProperties().createInstance();
+		tick(); // 17
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
 			[
@@ -109,6 +150,8 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				@ARFLAGS_post : []
 			]
 		);
+		tick(); // 18
+		u.println(tick.max());
 
 		return project;
 	}
