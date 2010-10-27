@@ -18,7 +18,7 @@ envp = [
 	// unixify sources
 	@unixify		      : false,
 	// lean classes
-	@lean_classes	      : false,
+	@lean_classes	      : true, //false,
 	// Try to load Solution Data from cache
 	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the

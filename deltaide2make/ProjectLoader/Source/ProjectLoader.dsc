@@ -154,11 +154,14 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 						solutionBaseDirectoryPath, solutionDirectoryPath, solutionName);
 				variableEvaluator.setConfigurationName(configuration);
 				//
+				local time0 = std::currenttime(); // TODO remove
 				csol.addProject(local cproj = loadProject(
 						u.Path_castFromPath(solutionDirectoryPath.basename(), false), projectEntry.getLocation(),
 						projectConfiguration,
 						variableEvaluator
 				));
+				local time1 = std::currenttime();
+				log("addProject(loadProject()) takes ", time1 - time0, " msec (??)");
 			}
 			else
 				log("Project ", projectID, " not buildable");

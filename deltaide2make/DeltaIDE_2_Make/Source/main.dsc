@@ -404,6 +404,7 @@ p = [
 			},
 			@total: 0
 		]);
+		u.println("Total: ", ObjPairPrinter.total);
 	}
 ];
 

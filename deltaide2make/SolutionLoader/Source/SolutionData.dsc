@@ -103,7 +103,7 @@ function ProjectEntry {
 					method setName(name) { @name = name; },
 					method setID  (id)   { @id = id; },
 					method setParentReference(pr) { @pr = pr; },
-					method setLocation(path) { @path = [@path:path, method deltaString { return @path; }]; },
+					method setLocation(path) { @path = path; },
 					method addDependency(projID) { u.list_push_back(@deps, projID); },
 					@deps: u.list_new(),
 					method getName { return @name; },
@@ -111,7 +111,7 @@ function ProjectEntry {
 					method getParentReference { return @pr; },
 					method getLocation { return @path; },
 					method Dependencies { return u.iterable_clone_to_list(@deps); },
-					{"()": method_toString_for_ProjectEntry_installed(@self)}
+					{"tostring()": method_toString_for_ProjectEntry_installed(@self)}
 				];
 			},
 			{"$___CLASS_LIGHT___": "ProjectEntry"}
@@ -373,14 +373,14 @@ function light_ConfigurationManager {
 	if ( std::isundefined(static ConfigurationManager_class) )
 		ConfigurationManager_class = [
 			method createInstance {
-				return [
+				return u.LeanClassify([
 					{ u.pfield(#ConfigurationManager_configurationsMap): [] },
 					method getmap { return self[u.pfield("ConfigurationManager_configurationsMap")]; },
 					//
 					method addConfiguration (conf) { @getmap()[conf] = []; },
 					method Configurations { return u.dobj_keys(@getmap()); },
-					method registerProjectConfiguration (conf, projid, projconf) { @getmap()[conf][projid] = [ {"id": projconf}, {"buildable": false}]; },
-					method Projects (conf) { return u.dobj_keys(@getmap()[conf]); },
+					method registerProjectConfiguration (conf, projid, projconf) { @getmap()[conf][projid] = [ {"config": projconf}, {"buildable": false}]; },
+					method Projects (conf) { return u.dval_copy(@getmap()[conf]); },
 					method markNonBuildable (conf, projid) { @getmap()[conf][projid].buildable = false; },
 					method markBuildable (conf, projid) { @getmap()[conf][projid].buildable = true; },
 					method hasConfiguration (conf) { return not not @getmap()[conf]; },
@@ -390,7 +390,7 @@ function light_ConfigurationManager {
 					{ "isBuildableInAnyConfiguration"     : std::tabmethodonme(@self, (local stealingPrototype = classy_ConfigurationManager().getPrototype()).isBuildableInAnyConfiguration) },
 					{ "isNonBuildableInEveryConfiguration": std::tabmethodonme(@self, stealingPrototype.isNonBuildableInEveryConfiguration)     },
 					{ "hasProjectInAnyConfiguration"      : std::tabmethodonme(@self, stealingPrototype.hasProjectInAnyConfiguration)           }
-				];
+				], "ConfigurationManager");
 			}
 		];
 	return ConfigurationManager_class;
@@ -405,7 +405,7 @@ function ConfigurationManager {
 function ConfigurationManager_isaConfigurationManager (obj) {
 	local confmanag = ConfigurationManager();
 	if (confmanag == light_ConfigurationManager())
-		local result = true;
+		local result = u.LeanClassIsa(obj, "ConfigurationManager");
 	else
 		result = u.Class_isa(obj, confmanag);
 	return result;
@@ -538,7 +538,7 @@ function ProjectEntryHolder_isaProjectEntryHolder (obj) {
 /////////////////////////////////////////////////////////////////
 // SolutionData
 function SolutionData_make (configurationManager, projectEntryHolder, solutionBaseDirectory, solutionDirectory, solutionName) {
-	assert( u.Class_isa(configurationManager, ::ConfigurationManager()) );
+	assert( ::ConfigurationManager_isaConfigurationManager(configurationManager) );
 	assert( ProjectEntryHolder_isaProjectEntryHolder(projectEntryHolder) );
 	assert( u.isdeltastring(solutionDirectory) );
 	assert( u.isdeltastring(solutionName) );

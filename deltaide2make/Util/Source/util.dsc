@@ -599,7 +599,8 @@ function dobj_getaddress (dobj) {
 	return addr;
 }
 function dobj_nullify (dobj, key) {
-	dobj[key] = nil;
+	if (::dobj_contains_key(dobj, key))
+		dobj[key] = nil;
 	return dobj;
 }
 
@@ -891,6 +892,12 @@ function list_concatenate(...) {
 }
 
 //
+function iterable_clone_to_std_list (iterable) {
+	local result = std::list_new();
+	foreach (local something, iterable)
+		std::list_push_back(result, something);
+	return result;
+}
 function iterable_clone_to_list (iterable) {
 	local result = ::list_new();
 	foreach (local something, iterable)
@@ -1504,6 +1511,18 @@ function Object_stateInitialiser {
 		});
 	return stateInitialiser;
 }
+function Object_looksLikeAnObject (obj) {
+	assert( ::dobj_length(::Object_stateFields()) == 3 );
+	return
+			(::isdeltaobject(obj))                                                 and
+			(local classes = ::dobj_get(obj, ::p__Object__stateField__classes))    and
+			::isdeltalist(classes)                                                 and
+			(local ObjectID = ::dobj_get(obj, ::p__Object__stateField__Object_ID)) and
+			::isdeltanumber(ObjectID)                                              and
+			(local CreatedBy = ::dobj_get(obj, ::p__Object__stateField__createdBy)) and
+			(::isdeltanumber(CreatedBy))                                            and
+	true;
+}
 function Object_prototype {
 	function getclasses (this) {
 		return ::list_to_stdlist(::dobj_get(this, #classes));
@@ -1552,16 +1571,6 @@ function Object_prototype {
 }
 function Object_mixinRequirements {
 	return [];
-}
-function Object_looksLikeAnObject (obj) {
-	assert( ::dobj_length(::Object_stateFields()) == 3 );
-	return
-			(::isdeltaobject(obj))                                                 and
-			(local classes = ::dobj_get(obj, ::p__Object__stateField__classes))    and
-			::isdeltalist(classes)                                                 and
-			(local ObjectID = ::dobj_get(obj, ::p__Object__stateField__Object_ID)) and
-			::isdeltanumber(ObjectID)                                              and
-	true;
 }
 function mixinObject(newInstance, newInstanceStateFields, newInstancePrototype, createdByClassObjID) {
 	// manually mix-in the object class (by default)
@@ -1618,6 +1627,21 @@ function Object_getInstanceCounters {
 			result[className = classObjectID] = counter[classObjectID];
 		}
 	return result;
+}
+
+
+p__classyClasses = true;
+function becomeClassy {
+	::p__classyClasses = true;
+}
+function becomeLean {
+	::p__classyClasses = false;
+}
+function beClassy {
+	return ::p__classyClasses;
+}
+function beLean {
+	return not ::beClassy();
 }
 
 function Class {
@@ -1797,6 +1821,19 @@ function Class {
 	return Class_state;
 }
 
+function LeanClassify (obj, className) {
+	obj."$___CLASS_LIGHT___" = className;
+	return obj;
+}
+function LeanClassIsa (obj, className) {
+	assert( ::isdeltastring(className) );
+	return
+		::isdeltaobject(obj)                                          and
+		::isdeltastring(local classLight = obj."$___CLASS_LIGHT___")  and
+		classLight == className                                       and
+	true;
+}
+
 function Class_linkState (state, classMap) {
 	// state must have initialised fields for all the state fields
 	// of the given class (plus all the mix-ins)
@@ -1890,19 +1927,6 @@ function Class_linkState (state, classMap) {
 	assert( ::dobj_empty(oldMixIns) );
 }
 
-p__classyClasses = true;
-function becomeClassy {
-	::p__classyClasses = true;
-}
-function becomeLean {
-	::p__classyClasses = false;
-}
-function beClassy {
-	return ::p__classyClasses;
-}
-function beLean {
-	return not ::beClassy();
-}
 
 ///////////////////
 // Object serialisation utils
@@ -2351,7 +2375,8 @@ function Path {
 		local result = nil;
 		if ( ::isdeltastring(path) )
 			result = ::Path().createInstance(path, ::file_isabsolutepath(path), isWindowsPath);
-		else if ( isaPath(path) )
+		else if ( ::Path().isaPath(path) ) // this has to be called through the class accessor because this
+		                                   // function is also used by the lean-class implementation
 			result = ::Path().createInstance(path.deltaString(), path.IsAbsolute(), isWindowsPath);
 		return result;
 	}
@@ -2359,7 +2384,8 @@ function Path {
 		local result = nil;
 		if ( ::isdeltastring(path) )
 			result = fromPath(path, isWindowsPath);
-		else if ( isaPath(path) )
+		else if ( ::Path().isaPath(path) ) // this has to be called through the class accessor because this
+		                                   // function is also used by the lean-class implementation
 			result = path;
 		return result;
 	}
@@ -2458,30 +2484,9 @@ function Path {
 		classy_Path_class.fromPath     = fromPath;
 		classy_Path_class.castFromPath = castFromPath;
 		//
-		light_Path_class = [
-			method createInstance (path, absolute) {
-				return [
-					@path: path, @absolute: absolute,
-					method deltaString { return @path; },
-					method IsAbsolute { return @absolute; },
-					method IsRelative { return not @absolute; },
-					method Concatenate (path) { return ::Path().createInstance(@path + "/" + path, @absolute); },
-					method Extension { return ::strsubstr(@path, ::strrindex(@path, ".") + 1); },
-					method asWithExtension (newext) { return ::Path().createInstance(::strsubstr(@path, 0, ::strrindex(@path, ".")) + newext, @absolute); },
-					method Append (extrapath) { @path += extrapath; return self; },
-					method basename { return ::file_basename(@path); }
-				];
-			},
-			method isaPath (obj) { return self."$___CLASS_LIGHT___" == "Path"; },
-			@fromPath: fromPath,
-			@castFromPath: castFromPath
-		];
 	}
 	
-	return ::ternary(::beClassy(),
-			classy_Path_class,
-			light_Path_class
-	);
+	return classy_Path_class;
 }
 function Path_isaPath     (obj                ) { return Path().isaPath     (obj                ); }
 function Path_fromPath    (path, isWindowsPath) { return Path().fromPath    (path, isWindowsPath); }
@@ -2520,7 +2525,19 @@ function Locatable {
 			// className
 			#Locatable
 		);
-	return Locatable_class;
+	if (std::isundefined(static lean_locatable)) {
+		lean_locatable = [
+			method createInstance (path) {
+				return ::LeanClassify([
+					@path: path,
+					method getLocation { return @path; },
+					method setLocation (p) { @path = p; }
+				], "Locatable");
+			}
+		];
+	}
+
+	return ::ternary(::beClassy(), Locatable_class, lean_locatable);
 }
 
 
@@ -2555,7 +2572,18 @@ function Namable {
 			// className
 			#Namable
 		);
-	return Namable_class;
+	if (std::isundefined(static lean_namable)) {
+		lean_namable = [
+			method createInstance (name) {
+				return ::LeanClassify([
+					@name: name,
+					method getName { return @name; },
+					method setName (name) { @name = name; }
+				], "Namable");
+			}
+		];
+	}
+	return ::ternary(::beClassy(), Namable_class, lean_namable);
 }
 
 // IDable
@@ -2588,7 +2616,19 @@ function IDable {
 			// Class name
 			#IDable
 		);
-	return IDable_class;
+	if (std::isundefined(static lean_idable)) {
+		lean_idable = [
+			method createInstance (id) {
+				return::LeanClassify([
+					@id: id,
+					method getID { return @id; },
+					method setID (id) { @id = id; }
+				], "IDable");
+			}
+		];
+	}
+
+	return ::ternary(::beClassy(), IDable_class, lean_idable);
 }
 
 
@@ -2621,6 +2661,7 @@ function CProjectProperties {
 	const StateField_librariesPaths = "CProjectProperties_librariesPaths";
 	const className = #CProjectProperties;
 	static Class;
+	static LeanClass;
 	static static_variables_defined;
 	static stateFields;
 	static prototype;
@@ -2676,10 +2717,26 @@ function CProjectProperties {
 		//
 		Class = ::Class().createInstance(stateInitialiser, prototype, mixInRequirements, stateFields, className);
 		//
+		// // // // //
+		//
+		LeanClass = [
+			method createInstance {
+				return ::LeanClassify([
+					@includes: std::list_new(), @definitions: std::list_new(), @librariesPaths: std::list_new(),
+					method addIncludeDirectory (path) { std::list_push_back(@includes, path); },
+					method IncludeDirectories { return ::iterable_clone_to_std_list(@includes); },
+					method addPreprocessorDefinition (def) { std::list_push_back(@definitions, def); },
+					method PreprocessorDefinitions { return ::iterable_clone_to_std_list(@definitions); },
+					method addLibraryPath (lpath) { std::list_push_back(@librariesPaths, lpath); },
+					method LibrariesPaths { return ::iterable_clone_to_std_list(@librariesPaths); }
+				], className);
+			}
+		];
+		//
 		assert( std::isundefined(static_variables_defined) );
 		static_variables_defined = true;
 	}
-	return Class;
+	return ::ternary(::beClassy(), Class, LeanClass);
 }
 function CProjectProperties_isa (obj) {
 	return ::Class_isa(obj, ::CProjectProperties());
@@ -3045,6 +3102,7 @@ function XML {
 	static fields;
 	static prototype;
 	static mixinRequirements;
+	static lean_class;
 	const  name = "XML";
 	const  StateField_name = "XML_name"   ;
 	const  StateField_xml  = "XML_xml"    ;
@@ -3135,13 +3193,13 @@ function XML {
 
 		}
 		//
-		assert(std::isundefined(static_variables_defined));
+		assert(std::isundefined(fields));
 		fields = [ StateField_name, StateField_xml ];
 		//
-		assert(std::isundefined(static_variables_defined));
+		assert(std::isundefined(mixinRequirements));
 		mixinRequirements = [];
 		//
-		assert(std::isundefined(static_variables_defined));
+		assert(std::isundefined(prototype));
 		prototype = [
 			method Name { return getname(self); },
 			method getAttribute (attrName) {
@@ -3166,7 +3224,6 @@ function XML {
 			},
 			method NumberOfChildrenOfName (childname) {
 				local children = getchildren(self, childname);
-				assert( ::dobj_hasOnlyNumericKeys(children) );
 				local result = nil;
 				if (children)
 					result = ::dobj_length(children);
@@ -3189,10 +3246,8 @@ function XML {
 			method ChildrenNames {
 				local children = getxml(self);
 				children = ::dobj_copy(children);
-				if (children[AttributesKey])
-					children[AttributesKey] = nil;
-				if (children[NameKey])
-					children[NameKey] = nil;
+				::dobj_nullify(children, AttributesKey);
+				::dobj_nullify(children, NameKey);
 				local result = ::dobj_keys(children);
 				return result;
 			},
@@ -3217,6 +3272,7 @@ function XML {
 			}
 		];
 		//
+		assert(std::isundefined(class));
 		class = ::Class().createInstance(stateInitialiser, prototype, mixinRequirements, fields, name);
 		//
 		prototype.getChild = ::methodinstalled(prototype,
@@ -3253,10 +3309,59 @@ function XML {
 			return ::Class_isa(obj, class);
 		});
 		//
+		// // // / /
+		//
+		assert(std::isundefined(lean_class));
+		lean_class = [
+			method createInstance (name, xml) {
+				local result = ::dobj_copy(@instanceProto);
+				result.name = name, result.xml = xml;
+				return result;
+			},
+			@instanceProto: ::LeanClassify([
+					method Name { return @name; },
+					method getAttribute (attrName) { return @xml[AttributesKey][attrName]; },
+					method Attributes { return @xml[AttributesKey]; },
+					method hasChild (nodeName) { if (self.getChild(nodeName)) true; else false; },
+					method NumberOfChildren {
+						local num = ::dobj_length(local xml = @xml);
+						if (xml[AttributesKey]) --num;
+						if (xml[NameKey]) --num;
+						return num;
+					},
+					method NumberOfChildrenOfName (childName) {
+						if (local result = @xml[childName])
+							result = ::dobj_length(result);
+						return result;
+					},
+					method KillChild (nodeName, nodeIndex) { @xml[nodeName][nodeIndex] = nil; },
+					method KillAllChildren (nodeName) { @xml[nodeName] = nil; },
+					method ChildrenNames {
+						local result = ::dobj_copy(@xml);
+						if (result[AttributesKey]) result[AttributesKey] = nil;
+						if (result[NameKey]) result[NameKey] = nil;
+						return ::dobj_keys(result);
+					},
+					{ .attrgetter: ::methodinstalled(@self, prototype.attrgetter) }
+				], name)
+		];
+		lean_class.instanceProto.getChild = ::methodinstalled(lean_class.instanceProto,
+			method getChild (nodeName) {
+				if (local result = local children = @xml[nodeName]) {
+					result = [];
+					foreach (local key, local keys = ::dobj_keys(children))
+						result[::assert_num(key)] = local childXML = lean_class.createInstance(nodeName, local child = children[key]);
+				}
+				return result;
+			}
+		);
+		lean_class.createFromXMLRoot = (function leanCreatFromXMLRoot (rootXML) { return lean_class.createInstance(getRootName(rootXML), rootXML); });
+		lean_class.isanXMLObject = (function leanIsanXMLObject (obj) { return ::LeanClassIsa(obj, name); });
+		//
 		assert(std::isundefined(static_variables_defined));
 		static_variables_defined = true;
 	}
-	return class;
+	return ::ternary(::beClassy(), class, lean_class);
 } // function XML
 
 ////////////////////////////////////////

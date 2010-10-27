@@ -103,24 +103,9 @@ function VariableEvaluator {
 			#VariableEvaluator
 		);
 		//
-		// light implementaton
-		VariableEvaluator_class_light = [
-			method createInstance (root) {
-				return [
-					{u.pfield(VariableEvaluator_stateFields[0]): []                       },
-					{u.pfield(VariableEvaluator_stateFields[1]): u.Path_fromPath(root)    },
-					{#eval: u.methodinstalled(@self, VariableEvaluator_class_classy.eval) }
-				];
-			},
-			{"$___CLASS_LIGHT___": "VariableEvaluator"}
-		];
-		//
 		static_variables_initialised = true;
 	}
-	return u.ternary(u.beClassy(),
-			VariableEvaluator_class_classy,
-			VariableEvaluator_class_light
-	);
+	return VariableEvaluator_class_classy;
 }
 
 
