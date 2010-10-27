@@ -26,8 +26,8 @@ envp = [
 	@SolutionDataCache    : //	true,
 								false,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML: // 	not @self.SolutionDataCached,
-								false,
+	@RegenerateSolutionXML:  	not @self.SolutionDataCached,
+							//	false,
 	// An HTML Report: generate it or not? (takes time)
 	@report			      : //	@self.SolutionDataCached,
 								false,

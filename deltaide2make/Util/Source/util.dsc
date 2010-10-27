@@ -1469,6 +1469,13 @@ function Class_classRegistry {
 // Object-class-elements
 p__Object = [
 	method nextID { return @id++; },
+	@counter: [], // indexed by class object id
+	method IncCounterFor (classObjectID) {
+		local counter = @counter;
+		if ( ::isdeltanil(counter[classObjectID]) )
+			counter[classObjectID] = 0;
+		return ++counter[classObjectID];
+	},
 	@id: 0
 ];
 const p__Object__stateField__classes      = #classes;
@@ -1493,7 +1500,7 @@ function Object_stateInitialiser {
 					{ p__Object__stateField__createdBy: createdByClass       }
 				]
 			);
-
+			::p__Object.IncCounterFor(createdByClass);
 		});
 	return stateInitialiser;
 }
@@ -1597,6 +1604,20 @@ function Object_isObjectClass (class) {
 			::isdeltaobject(class)          and
 			::dobj_equal(::Object(), class) and
 	true;
+}
+
+function Object_getInstanceCounters {
+	local result = [];
+	local reg = ::Class_classRegistry();
+	foreach (local classObjectID, local classObjectIDs = ::dobj_keys(local counter = ::p__Object.counter))
+		if ( ::isdeltanumber(classObjectID) )
+			result[local className = reg.get(classObjectID).getClassName()] = counter[classObjectID];
+		else {
+			assert( ::isdeltastring(classObjectID) );
+			assert( classObjectID == "Class" );
+			result[className = classObjectID] = counter[classObjectID];
+		}
+	return result;
 }
 
 function Class {

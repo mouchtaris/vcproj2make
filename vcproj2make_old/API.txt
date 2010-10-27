@@ -286,7 +286,8 @@ function Object_looksLikeAnObject   (dobj)
 function mixinObject                (newInstance, newInstanceStateFields, newInstancePrototype)
 function unmixinObject              (instance)
 function Object
-functiob Objcet_isObjectClass       (class)
+function Objcet_isObjectClass       (class)
+function Object_getInstanceCounters 
 
 //////////////////////////////
 // *** class Class - hand made

@@ -393,6 +393,17 @@ p = [
 		@log("Loading projects...");
 		time("", op);
 		@projectData = local projectData = op.projectData;
+	},
+	method printObjectStatistics {
+		local instanceCounters = u.Object_getInstanceCounters();
+		u.Iterable_foreach(u.Iterable_fromDObj(instanceCounters), local ObjPairPrinter = [
+			method @operator () (key, val) {
+				u.println("- ", key, ": ", val);
+				@total += val;
+				return true; // keep iterating
+			},
+			@total: 0
+		]);
 	}
 ];
 
@@ -424,6 +435,7 @@ function main0 (argc, argv, envp) {
 	]);
 
 	p.generateReport(solutionData);
+	p.printObjectStatistics();
 }
 
 function main1 {
