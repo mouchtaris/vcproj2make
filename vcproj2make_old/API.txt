@@ -215,6 +215,7 @@ function xmlload            (filename_str)
 function xmlloaderror
 function xmlparse			(string)
 function xmlparseerror
+function xmlstore           (obj, filepath)
 
 // logging
 function log     (from, ...)
@@ -654,7 +655,7 @@ function ProjectType_isValid(type)
 //               adds the given project id to the list of dependencies
 //               (must be a valid ID).
 //         - Dependencies
-//               returns an iterable with all the IDs (as strings)
+//               returns a wrapped list with all the IDs (as strings)
 //               of the dependencies.
 //     <^> Static
 //         - validProjectID(projid:deltastring)

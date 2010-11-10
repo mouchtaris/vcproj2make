@@ -180,6 +180,9 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		result[configuration] = local csol = u.CSolution().createInstance(
 				u.Path_fromPath(solutionDirectory, false),
 				solutionName + "_" + configuration);
+		// storing buildable projects and mapping their IDs to their Names
+		// in order to resolve dependencies after all CProjects have been created.
+		local buildableProjects = []; // [ projid => projName, ... ]
 		local projectsBuildInfos = configurationManager.Projects(configuration);
 		local iterable           = u.Iterable_fromDObj(projectsBuildInfos);
 		// foreach projectInfo
@@ -198,17 +201,39 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				variableEvaluator.setConfigurationName(configuration);
 				//
 				local time0 = std::currenttime(); // TODO remove
-				csol.addProject(local cproj = loadProject(
+				local cproj = loadProject(
 						u.Path_castFromPath(solutionDirectoryPath.basename(), false), projectEntry.getLocation(),
 						projectConfiguration,
 						variableEvaluator
-				));
+				);
+				assert( u.CProject_isaCProject(cproj) );
+				csol.addProject(cproj);
 				local time1 = std::currenttime();
 				log("addProject(loadProject()) takes ", time1 - time0, " msec (??)");
+				buildableProjects[projectID] = cproj.getName();
 			}
 			else
 				log("Project ", projectID, " not buildable");
 		}
+		// Add dependencies
+		foreach (local buildableProjectId, local buildableProjectsIds = u.dobj_keys(buildableProjects)) {
+			local buildableProjectName = buildableProjects[buildableProjectId];
+			assert( configurationManager.isBuildable(configuration, buildableProjectId) );
+			local project = csol.findProject(buildableProjectName);
+			assert( u.CProject_isaCProject(project) );
+			local projectEntry = projectEntryHolder.getProjectEntry(buildableProjectId);
+			local projectDependencies = projectEntry.Dependencies();
+			log("Adding dependencies (", u.dobj_length(projectDependencies), ") for ", buildableProjectId, " ...");
+			foreach (local depId, u.list_to_stdlist(projectDependencies)) {
+				local dependencyProjectName = buildableProjects[depId];
+				assert( u.isdeltastring(dependencyProjectName) );
+				local dependencyProject = csol.findProject(dependencyProjectName);
+				assert( u.CProject_isaCProject(dependencyProject) );
+				project.addDependency(dependencyProject);
+				log("        ", depId, "/", dependencyProjectName);
+			}
+		}
+			
 	}
 	return result;
 }

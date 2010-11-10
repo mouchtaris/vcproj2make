@@ -1,3 +1,4 @@
+std::vmloadaddpath(".");
 main = std::vmload("DeltaIDE_2_Make/Lib/main.dbc", "main");
 std::vmrun(main);
 
@@ -18,7 +19,7 @@ envp = [
 	// unixify sources
 	@unixify		      : false,
 	// lean classes
-	@lean_classes	      : true, //false,
+	@lean_classes	      : true,//false,
 	// Try to load Solution Data from cache
 	@SolutionDataCached   : false,
 	// If Solution Data are not loaded from the cache, generate the

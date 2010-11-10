@@ -782,6 +782,29 @@ function main10 (argc, argv, envp) {
 	}
 }
 
+function main11 (argc, argv, envp) {
+	u.println(u.xmlstore);
+	u.println("Writing XML with xmlstore()");
+	u.xmlstore([
+				{"$Name": "SuperXMLRoot"},
+				// This gets printed as an invalid key
+				{"$Attributes": [
+						{ "attr1": "v1" },
+						{ "attr2": "v2" }
+					]},
+				// This gets printed as an invalid key
+				{"$CharData": "Abla blab alb alba blab albabl "},
+				{"Choild1": "Atrtr"},
+				{"Choild2": [
+						// This gets printed as three attributes, all named "Choild2-1"
+						{"Choild2-1": ["one", "two", "three"]}
+					]},
+				{"Choild3": []}, // Wishlist: empty elements could close right away, ie <Choild3 />
+				{"Choild4": []}
+			], "./xmlstore_tost.xml");
+	u.println("Done writing");
+}
+
 
 function main (argc, argv, envp) {
 	p.config = envp;
@@ -792,7 +815,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		)(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0, 9, 0, 10, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0, 9, 0, 10, 0, 11, 0);
 	
 	p.cleanup();
 

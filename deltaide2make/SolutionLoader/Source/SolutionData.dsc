@@ -110,7 +110,7 @@ function ProjectEntry {
 					method getID { return @id; },
 					method getParentReference { return @pr; },
 					method getLocation { return @path; },
-					method Dependencies { return u.iterable_clone_to_list(@deps); },
+					method Dependencies { return u.list_clone(@deps); },
 					{"tostring()": method_toString_for_ProjectEntry_installed(@self)}
 				];
 			},

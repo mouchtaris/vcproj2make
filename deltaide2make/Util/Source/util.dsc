@@ -2943,6 +2943,8 @@ function CSolution {
 							)
 						)
 					;
+					if (not ::isdeltanil(result) )
+						result = result.value();
 					return result;
 				},
 				method addProject(project) {
@@ -3068,6 +3070,7 @@ function IDableHolder (holdingItemName) {
 ////////////////////////
 xmlload_LibFunc         = #xmlload;
 xmlparse_LibFunc        = #xmlparse;
+xmlstore_LibFunc        = #xmlstore;
 xmlloadgeterror_LibFunc = #xmlloadgeterror;
 xmlparsegeterror_LibFunc= #xmlloadgeterror;
 function xmlload(filename_str) {
@@ -3092,6 +3095,13 @@ function xmlparseerror {
 	::Assert( ::libsloaded() );
 	local xmlparsegeterror = std::libfuncget(::xmlparsegeterror_LibFunc);
 	local result = xmlparsegeterror();
+	return result;
+}
+function xmlstore (dobj, filepath) {
+	assert( ::libsloaded() );
+	assert( ::isdeltaobject(dobj) );
+	assert( ::isdeltastring(filepath) );
+	local result = ::xmlstore_LibFunc(dobj, filepath);
 	return result;
 }
 

@@ -6,7 +6,6 @@ glob:*.dll
 glob:.*swp
 glob:*_build.log
 glob:*.so
-glob:deltaide2make/GNUmakefile
 glob:deltaide2make/output.txt
 glob:deltaide2make/Solution.xml
 glob:deltaide2make/solutionData.rc
@@ -35,3 +34,10 @@ glob:deltaide2make/DeltaIDE_2_Make/Lib/SolutionXMLCache.txt
 glob:vcproj2make_old/vcproj2make_testprojects/IDE_Debug_Win32Makefile.mk
 glob:vcproj2make_old/vcproj2make_testprojects/IDE_Release_Win32Makefile.mk
 glob:vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.ncb
+glob:*.dbi
+glob:commitmsg.txt
+glob:deltaide2make/BreakpointsConsole.txt
+glob:deltaide2make/xmlstore_tost.xml
+glob:vcproj2make_old/vcproj2make_testprojects/isidll/Project/isidll_VS/isidll_VSMakefile.mk
+glob:vcproj2make_old/vcproj2make_testprojects/isistatic/Project/isistatic_VS/isistatic_VSMakefile.mk
+glob:vcproj2make_old/vcproj2make_testprojects/isiapp/Project/isiapp_VS/isiapp_VSMakefile.mk
