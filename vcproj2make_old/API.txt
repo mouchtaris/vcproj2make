@@ -118,9 +118,10 @@ function dobj_equal                     (dobj1, dobj2)                   // unov
 function dobj_getaddress                (dobj)                           => string representation of the object's internal memory address
 function dobj_nullify                   (dobj, key)
 function dobj_hasOnlyNumericKeys        (dobj)
+function dobj_copy_delegates            (from, to)
 
 //
-function dval_copy                      (dval)                           // deep copy
+function dval_copy                      (dval)                           // deep copy, changing ownership of methods and setting delegators too
 function dval_copy_into                 (dst, src)
 //
 function methodinstalled                (dobj, method)                   => method
@@ -359,7 +360,7 @@ function beLean
 
 ////////////////////////////////////////////////////////////////////////
 //////////////////////////////
-// *** Path class
+// *** class Path
 //     Modeling a path, which can be relative or absolute.
 //     -----------------------
 //     <^> createInstance( path:deltastring, isabsolute:boolean )
@@ -387,6 +388,9 @@ function beLean
 //         - filename
 //               returns a deltastring with the filename of this path
 //               (the path begining from the last "/").
+//         - equals(anotherPath)
+//               returns true if those two paths have exactly the same
+//               string representation
 //     <^> state fields
 //         - Path_path
 //         - Path_absolute

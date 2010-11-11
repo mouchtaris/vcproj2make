@@ -127,9 +127,14 @@ function MakefileManifestation(basedirpath, solution) {
 		local result = std::list_new();
 		foreach (local dep, u.list_to_stdlist(dependencies))
 			if (dep.isLibrary()) {
-				local libLocation = basedir
-						.Concatenate(dep.getLocation())
-						.Concatenate(dep.getOutputDirectory());
+				local outputDirectory = dep.getOutputDirectory();
+				// outputDirectory could already be an absolute path
+				if (outputDirectory.IsRelative())
+					local libLocation = basedir
+							.Concatenate(dep.getLocation())
+							.Concatenate(dep.getOutputDirectory());
+				else
+					libLocation = outputDirectory;
 				// Add a library path option (-L)
 				result.push_back(
 					optionPair(
@@ -563,12 +568,18 @@ function MakefileManifestation(basedirpath, solution) {
 					std::list_push_back(deps, basename_path_str);
 					// real dependencies are also the static libs
 					foreach (local dep, ::util.list_to_stdlist(project.Dependencies()))
-						if (dep.isStaticLibrary())
-							std::list_push_back(deps, basedir_ccat_solution_path
-									.Concatenate(dep.getLocation())
-									.Concatenate(outputPathname(dep))
-									.deltaString()
-							);
+						if (dep.isStaticLibrary()) {
+							local outputPathnamePath = outputPathname(dep);
+							// it is possibe that output paths are absolute
+							if (outputPathnamePath.IsRelative())
+								std::list_push_back(deps, basedir_ccat_solution_path
+										.Concatenate(dep.getLocation())
+										.Concatenate(outputPathnamePath)
+										.deltaString()
+								);
+							else
+								std::list_push_back(deps, outputPathnamePath.deltaString());
+						}
 					return deps;
 				}
 				const ExecutableDependenciesGenerator     = DependenciesGeneratorForAll;

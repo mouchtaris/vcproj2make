@@ -100,6 +100,13 @@ function p_getConfiguration (projectXML, config) {
 	return nil;
 }
 
+const p_ReferencesName = "References";
+function p_xReferences (projectXML) {
+	assert( u.XML().isanXMLObject(projectXML) );
+	local references = projectXML.getChild(p_ReferencesName);
+	return references;
+}
+
 function p_getToolFromConfiguration (configuration, toolName) {
 	const Tool_Name = "Tool";
 	const Name_Name = "Name";
@@ -279,6 +286,34 @@ function GetProjectIncludeDirsForConfiguration (projectXML, configurationName) {
 		result = u.iterable_map_to_list(dirs, u.bindback(u.Path_castFromPath, true));
 	}
 	return result;
+}
+
+const p_ProjectReference_ReferencedProjectIdentifierName = "ReferencedProjectIdentifier";
+const p_ProjectReference_RelativePathToProjectName       = "RelativePathToProject"      ;
+const p_ProjectReference_ProjectReferenceName            = "ProjectReference"           ;
+// @return [refProjId => [path => path(..)], ...]
+function GetProjectReferences (projectXML) {
+	local isXMLObject = u.XML().isanXMLObject;
+	local references = [];
+	local referencesXML_all = ::p_xReferences(projectXML);
+	assert( u.dobj_length(referencesXML_all) == 1 );
+	local referencesXML = referencesXML_all[0];
+	assert( isXMLObject(referencesXML) );
+	if (local referencesXMLs = referencesXML.getChild(::p_ProjectReference_ProjectReferenceName))
+		foreach (local referenceProjectXMLKey, local referenceProjectsXMLsKeys = u.dobj_keys(referencesXMLs)) {
+			assert( u.isdeltanumber(referenceProjectXMLKey) );
+			local referenceProjectXML = referencesXMLs[referenceProjectXMLKey];
+			assert( isXMLObject(referenceProjectXML) );
+			local refId = referenceProjectXML.getAttribute(p_ProjectReference_ReferencedProjectIdentifierName);
+			assert( u.isdeltastring(refId) );
+			local refPath = referenceProjectXML.getAttribute(p_ProjectReference_RelativePathToProjectName);
+			assert( u.isdeltastring(refPath) );
+			refPath = u.Path_castFromPath(refPath, true);
+			assert( u.Path_isaPath(refPath) );
+			references[refId] = local refInfo = [];
+			refInfo.path = refPath;
+		}
+	return references;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

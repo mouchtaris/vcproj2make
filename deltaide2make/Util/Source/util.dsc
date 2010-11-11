@@ -604,6 +604,11 @@ function dobj_nullify (dobj, key) {
 	return dobj;
 }
 
+function dobj_copy_delegates (from, to) {
+	foreach (local delegate, std::getdelegates(from))
+		std::delegate(to, delegate);
+}
+
 //
 function dobj_equal (one, two) {
 	if (not ::isdeltaobject(one) or not ::isdeltaobject(two))
@@ -1125,24 +1130,56 @@ function dobj_hasOnlyNumericKeys (dobj) {
 			)
 	);
 }
+
+p__dval_copy = [
+	method copy (val, visited) {
+		local result = nil;
+		if (@isanObject(val))
+			result = val;
+		else
+		if (::isdeltalist(val))
+			result = ::list_clone(val);
+		else
+		if (::isdeltaobject(val) or ::isdeltatable(val))
+			@copy_to(val, local result = [], visited);
+		else
+			result = val;
+		return result;
+	},
+	method copy_to (src, dst, visited) {
+		::assert_or( ::isdeltaobject(dst) , ::isdeltatable(dst) );
+		::assert_or( ::isdeltaobject(src) , ::isdeltatable(src) );
+		if (not local result = visited[src]) {
+			visited[src] = dst;
+			foreach (local key, ::dobj_keys(src)) {
+				local val = src[key];
+				local valcopy;
+				if (@isanObject(val) or ::isdeltalist(val))
+					valcopy = @copy(val, visited);
+				else
+				if (::isdeltaobject(val)) {
+					valcopy = @lambda(val, [], visited);
+					::dobj_copy_delegates(val, valcopy);
+				}
+				else
+				if (::isdeltamethod(val))
+					valcopy = ::methodinstalled(dst, val);
+				else
+					valcopy = @copy(val, visited);
+
+				dst[key] = valcopy;
+			}
+			result = dst;
+		}
+		return result;
+	},
+	@isanObject: ::forward(#Object_isanObject)
+];
 function dval_copy (val) {
-	if ( not (::isdeltaobject(val) or ::isdeltatable(val)) )
-		local result = val;
-	else if (::isdeltalist(val))
-		result = ::list_clone(val);
-	else {
-		result = [];
-		foreach (local key, ::dobj_keys(val))
-			result[key] = ::dval_copy(val[key]);
-	}
-	return result;
+	return ::p__dval_copy.copy(val, []);
 }
 function dval_copy_into (dst, src) {
-	::assert_or( ::isdeltaobject(dst) , ::isdeltatable(dst) );
-	::assert_or( ::isdeltaobject(src) , ::isdeltatable(src) );
-	foreach (local key, ::dobj_keys(src))
-		dst[key] = ::dval_copy(src[key]);
-	return dst;
+	return ::p__dval_copy.copy_to(src, dst, []);
 }
 
 /// File utilities
@@ -1613,6 +1650,15 @@ function Object_isObjectClass (class) {
 			::isdeltaobject(class)          and
 			::dobj_equal(::Object(), class) and
 	true;
+}
+
+function Object_isanObject (obj) {
+	// only way to know is by finding if something
+	// "looks like" an object and is an object delegator.
+	return 
+			::Object_looksLikeAnObject(obj)                                     and 
+			::iterable_contains(std::getdelegates(obj), ::Object_prototype())   and
+		true;
 }
 
 function Object_getInstanceCounters {
@@ -2383,9 +2429,9 @@ function Path {
 	function castFromPath(path, isWindowsPath) {
 		local result = nil;
 		if ( ::isdeltastring(path) )
-			result = fromPath(path, isWindowsPath);
-		else if ( ::Path().isaPath(path) ) // this has to be called through the class accessor because this
-		                                   // function is also used by the lean-class implementation
+			result = ::Path().fromPath(path, isWindowsPath);
+		else if ( ::Path().isaPath(path) ) // these have to be called through the class accessor because these
+		                                   // functions are also used by the lean-class implementation
 			result = path;
 		return result;
 	}
@@ -2467,6 +2513,13 @@ function Path {
 					local pathstr = self.deltaString();
 					::dobj_checked_set(self, ::Path().stateFields(), #Path_path, pathstr + str);
 					return self;
+				},
+				method equals (anotherPath) {
+					assert( isaPath(anotherPath) );
+					local thisStr = self.deltaString();
+					local otherStr = anotherPath.deltaString();
+					local result = thisStr == otherStr;
+					return result;
 				},
 				// NOT API related
 				method @ {

@@ -53,7 +53,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				result += token.name;
 		return result;
 	}
-	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator) {
+	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator, out_References) {
 		local tick = [ // TODO remove tick and stuff
 			method @operator () {
 				local now = std::currenttime();
@@ -137,6 +137,10 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		// Set this project's properties
 		local projprops = u.CProjectProperties().createInstance();
 		tick(); // 17
+		// Load this project's references
+		local references = pr.GetProjectReferences(projectXML);
+		tick();
+		u.dval_copy_into(out_References, references);
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
 			[
@@ -182,7 +186,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				solutionName + "_" + configuration);
 		// storing buildable projects and mapping their IDs to their Names
 		// in order to resolve dependencies after all CProjects have been created.
-		local buildableProjects = []; // [ projid => projName, ... ]
+		local buildableProjects = []; // [ projid => [.name => projName, .references => [(as returned by GetProjectReferences)]], ... ]
 		local projectsBuildInfos = configurationManager.Projects(configuration);
 		local iterable           = u.Iterable_fromDObj(projectsBuildInfos);
 		// foreach projectInfo
@@ -200,40 +204,62 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 						solutionBaseDirectoryPath, solutionDirectoryPath, solutionName);
 				variableEvaluator.setConfigurationName(configuration);
 				//
+				local references = []; // will be filled by loadProject()
 				local time0 = std::currenttime(); // TODO remove
 				local cproj = loadProject(
 						u.Path_castFromPath(solutionDirectoryPath.basename(), false), projectEntry.getLocation(),
 						projectConfiguration,
-						variableEvaluator
+						variableEvaluator,
+						references // result destination
 				);
 				assert( u.CProject_isaCProject(cproj) );
 				csol.addProject(cproj);
 				local time1 = std::currenttime();
 				log("addProject(loadProject()) takes ", time1 - time0, " msec (??)");
-				buildableProjects[projectID] = cproj.getName();
+				buildableProjects[projectID] = [
+						{ .name      : cproj.getName() },
+						{ .references: references      }
+					];
 			}
 			else
 				log("Project ", projectID, " not buildable");
 		}
 		// Add dependencies
 		foreach (local buildableProjectId, local buildableProjectsIds = u.dobj_keys(buildableProjects)) {
-			local buildableProjectName = buildableProjects[buildableProjectId];
+			local buildableProjectInfo = buildableProjects[buildableProjectId];
+			local buildableProjectName = buildableProjectInfo.name;
+			local references           = buildableProjectInfo.references;
 			assert( configurationManager.isBuildable(configuration, buildableProjectId) );
 			local project = csol.findProject(buildableProjectName);
 			assert( u.CProject_isaCProject(project) );
 			local projectEntry = projectEntryHolder.getProjectEntry(buildableProjectId);
 			local projectDependencies = projectEntry.Dependencies();
-			log("Adding dependencies (", u.dobj_length(projectDependencies), ") for ", buildableProjectId, " ...");
+			log("Adding dependencies (", u.list_cardinality(projectDependencies), "/", u.dobj_length(references), ") for ", buildableProjectId, " ...");
 			foreach (local depId, u.list_to_stdlist(projectDependencies)) {
-				local dependencyProjectName = buildableProjects[depId];
+				assert( configurationManager.isBuildable(configuration, depId) );
+				local dependencyProjectName = buildableProjects[depId].name;
 				assert( u.isdeltastring(dependencyProjectName) );
 				local dependencyProject = csol.findProject(dependencyProjectName);
 				assert( u.CProject_isaCProject(dependencyProject) );
 				project.addDependency(dependencyProject);
 				log("        ", depId, "/", dependencyProjectName);
 			}
+			// also add project references
+			foreach (local depId, local depIds = u.dobj_keys(references)) {
+				assert( configurationManager.isBuildable(configuration, depId) );
+				local depInfo = references[depId];
+				local depPath = depInfo.path;
+				assert( u.Path_isaPath(depPath) );
+				local depName = buildableProjects[depId].name;
+				assert( u.isdeltastring(depName) );
+				local depProj = csol.findProject(depName);
+				assert( u.CProject_isaCProject(depProj) );
+				// TODO normalise paths for this comparison to work
+				// assert( depPath.equals(depProj.getLocation()) );
+				project.addDependency(depProj);
+				log("        ", depId, "/", depName, "  (from reference)");
+			}
 		}
-			
 	}
 	return result;
 }
