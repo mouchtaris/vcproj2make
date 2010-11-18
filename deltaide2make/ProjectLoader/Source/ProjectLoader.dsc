@@ -132,7 +132,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		project.setOutputName(outputFilePath.filename());
 		tick(); // 15
 		// API Directory
-		project.setAPIDirectory(u.Path_fromPath("../Include", false));
+		project.setAPIDirectory(u.Path_fromPath("../../Include", false));
 		tick(); // 16
 		// Set this project's properties
 		local projprops = u.CProjectProperties().createInstance();

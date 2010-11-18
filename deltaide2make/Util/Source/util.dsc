@@ -609,6 +609,10 @@ function dobj_copy_delegates (from, to) {
 		std::delegate(to, delegate);
 }
 
+function dobj_clear (dobj) {
+	std::tabclear(dobj);
+}
+
 //
 function dobj_equal (one, two) {
 	if (not ::isdeltaobject(one) or not ::isdeltaobject(two))
@@ -2699,10 +2703,10 @@ function ProjectType_isValid(type) {
 function ProjectType {
 	if (std::isundefined(static projectTypeEnum))
 		projectTypeEnum = [
-			@StaticLibrary  : ::ProjectType_StaticLibrary,
-			@DynamicLibrary : ::ProjectType_DynamicLibrary,
-			@Executable     : ::ProjectType_Executable,
-			@isValid        : ::ProjectType_isValid
+			@StaticLibrary  { @set nil @get lambda { ::ProjectType_StaticLibrary  } },
+			@DynamicLibrary { @set nil @get lambda { ::ProjectType_DynamicLibrary } },
+			@Executable     { @set nil @get lambda { ::ProjectType_Executable     } },
+			@isValid        { @set nil @get lambda { ::ProjectType_isValid        } }
 		];
 	return projectTypeEnum;
 }
@@ -2829,6 +2833,35 @@ function CProject {
 		return ::list_concatenate_from_lists(props, ::membercalltransformer(methodName, ::EMPTY_OBJ));
 	}
 
+	function dressOutputName (projectType, basename) {
+		assert( ::ProjectType_isValid(projectType) );
+		if (std::isundefined(static outputNameDressersDispatcher))
+			outputNameDressersDispatcher = [
+				{ ::ProjectType_StaticLibrary: 	function StaticLibraryOutputNameDresser (basename) {
+													assert( ::isdeltastring(basename) );
+													return "lib" + basename + ".a";
+												} },
+				{ ::ProjectType_DynamicLibrary:	function DynamicLibraryOutputNameDresser (basename) {
+													assert( ::isdeltastring(basename) );
+													return "lib" + basename + ".so";
+												} },
+				{ ::ProjectType_Executable:		function ExecutableLibraryOutputNameDresser (basename) {
+													assert( ::isdeltastring(basename) );
+													return basename + ".exe";
+												} }
+			];
+		else
+			outputNameDressersDispatcher = outputNameDressersDispatcher;
+		// ignoring the dressers above, everything goes through the 
+		// transparent dresser
+		{
+			local ondd = outputNameDressersDispatcher;
+			ondd[::ProjectType_StaticLibrary] = ondd[::ProjectType_DynamicLibrary] =
+					ondd[::ProjectType_Executable] = lambda (x) { x };
+		}
+		return outputNameDressersDispatcher[projectType](basename);
+	}
+
 
 	if (std::isundefined(static CProject_class)) {
 		CProject_class = ::Class().createInstance(
@@ -2923,9 +2956,13 @@ function CProject {
 					::assert_str( name );
 					return name;
 				},
-				method setOutputName(name) {
-					::assert_str( name );
-					::dobj_checked_set(self, ::CProject().stateFields(), #CProject_outputName, name);
+				method setOutputName (name) {
+					assert( ::isdeltastring(name) );
+					assert( ::strindex(name, ::PATH_SEPARATOR) == -1 );
+					local CProject_stateFields = ::CProject().stateFields();
+					local projectType = ::dobj_checked_get(self, CProject_stateFields, #CProject_type);
+					local outputName = dressOutputName(projectType, name);
+					::dobj_checked_set(self, CProject_stateFields, #CProject_outputName, outputName);
 				},
 				method setAPIDirectory(path) {
 					assert( ::Path_isaPath(path) );

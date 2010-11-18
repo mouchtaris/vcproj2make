@@ -260,7 +260,7 @@ function GetProjectOutputDirectoryForConfiguration (projectXML, projectConfigura
 }
 
 function GetProjectOutputForConfiguration (projectXML, projectConfiguration, projectType) {
-	const DefaultOutputFile = "$(OutDir)\$(ProjectName).exe";
+	const DefaultOutputFile = "$(OutDir)\$(ProjectName)";
 	const LinkerToolName = "VCLinkerTool";
 	const OutputFile_Name = "OutputFile";
 	local configuration = ::p_getConfiguration(projectXML, projectConfiguration);

@@ -111,11 +111,11 @@ function MakefileManifestation(basedirpath, solution) {
 							local dep = @dep;
 							local basedir = @basedir;
 							assert( dep.isLibrary() );
-							return pathToString(
-									basedir
-											.Concatenate(dep.getLocation())
-											.Concatenate(dep.getAPIDirectory())
-							);
+							local depLocation = dep.getLocation();
+							local depDirectory = depLocation.basename();
+							local apiDirectory = dep.getAPIDirectory();
+							local fullApiDirectory = basedir.Concatenate(depDirectory).Concatenate(apiDirectory);
+							return pathToString(fullApiDirectory);
 						},
 						@dep       : dep     ,
 						@basedir   : basedir
@@ -131,7 +131,7 @@ function MakefileManifestation(basedirpath, solution) {
 				// outputDirectory could already be an absolute path
 				if (outputDirectory.IsRelative())
 					local libLocation = basedir
-							.Concatenate(dep.getLocation())
+							.Concatenate(dep.getLocation().basename())
 							.Concatenate(dep.getOutputDirectory());
 				else
 					libLocation = outputDirectory;
@@ -392,8 +392,9 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			method writeDependencyRelatedCPPFLAGS {
 				local dependenciesGeneratedOptions = cppOptionsFromDependencies(
-						@basedir_ccat_solution_path,
-						@proj.Dependencies());
+														@basedir_ccat_solution_path,
+														@proj.Dependencies()
+													);
 				@writePrefixedOptions(dependenciesGeneratedOptions);
 			},
 			method writeCPPFLAGS {
@@ -677,13 +678,32 @@ function MakefileManifestation(basedirpath, solution) {
 						[ srcpath_str, objbasename_str ],
 						[ build_command ]
 					);
-					@writeDirectoryTarget(objbasename_str);
+					@appendDirectoryTarget(objbasename_str);
 				}
 			},
 			method writeRules {
 				@writeObjectsRules();
 			},
+			method writeDirectoriesTargets {
+				foreach (local directory, @directoriesInNeedOfTargets)
+					@writeDirectoryTarget(u.assert_str(directory));
+				@resetDirectoriesTargets();
+			},
 			
+			// utilities and buffers
+			method appendDirectoryTarget (directory) {
+				assert( u.isdeltastring(directory) );
+				directoriesInNeedOfTargets = @directoriesInNeedOfTargets;
+				local previousEntry = directoriesInNeedOfTargets[directory];
+				if ( u.isdeltanil(previousEntry) )
+					directoriesInNeedOfTargets[directory] = directory;
+				else
+					assert( u.strequal(previousEntry, directory) );
+			},
+			method resetDirectoriesTargets {
+				u.dobj_clear(@directoriesInNeedOfTargets);
+			},
+
 			// high-level methods (for projects, solutions)
 			method writeAll(makefile_path) {
 				assert( ::util.Path_isaPath(makefile_path) );
@@ -695,6 +715,7 @@ function MakefileManifestation(basedirpath, solution) {
 					@writeVariables();
 					@writeTargets();
 					@writeRules();
+					@writeDirectoriesTargets();
 					std::fileclose(@fh);
 				}
 				else
@@ -779,6 +800,8 @@ function MakefileManifestation(basedirpath, solution) {
 				@builddir_str = pathToString(@builddir);
 				//
 				@solution = solution;
+				//
+				@directoriesInNeedOfTargets = [];
 				//
 				@writeSolutionMakefile();
 			},
