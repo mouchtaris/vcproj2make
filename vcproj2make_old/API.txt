@@ -119,7 +119,7 @@ function dobj_getaddress                (dobj)                           => stri
 function dobj_nullify                   (dobj, key)
 function dobj_hasOnlyNumericKeys        (dobj)
 function dobj_copy_delegates            (from, to)
-
+function dobj_clear                     (dobj)
 //
 function dval_copy                      (dval)                           // deep copy, changing ownership of methods and setting delegators too
 function dval_copy_into                 (dst, src)
@@ -152,6 +152,7 @@ function list_concatenate_from_lists    (lists, listAccessor)       // concatena
 //
 function iterable_clone_to_list         (iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns a list with all the contents
+function iterable_map_to_std_list       (iterable, mapf)
 //
 ///////////////////////////
 // Iterator interface
