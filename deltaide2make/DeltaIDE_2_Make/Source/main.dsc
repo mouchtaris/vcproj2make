@@ -418,22 +418,22 @@ function main0 (argc, argv, envp) {
 	local solutionData = p.solutionData;
 	//time("Writing solution data to rc...",[method@operator(){std::rcstore(@solutionData, "./solutionData.rc");},@solutionData:solutionData]);
 	local projectData = p.projectData;
-	u.Iterable_foreach(u.Iterable_fromDObj(projectData), [
-		method @operator () (key, val) {
-			p.log("Generating makefiles for configuration ", key);
-			mkgen.MakefileManifestation(
-					u.Path_castFromPath(
-						//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
-						//	"./"
-							@solutionData.SolutionBaseDirectory
-							, false
-					),
-					val
-			);
-			return false; // one iteration
-		},
-		@solutionData: solutionData
-	]);
+	// cheatingly generate makefiles only for the Debug|Win32 configuration
+	const DebugWin32Configuration = "Debug|Win32";
+	{
+		local key = DebugWin32Configuration;
+		local val = projectData[key];
+		p.log("Generating makefiles for configuration ", key);
+		mkgen.MakefileManifestation(
+				u.Path_castFromPath(
+					//	"C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\metaterrestrial\\saviwork\\vcproj2make\\deltaide2make"
+					//	"./"
+						solutionData.SolutionBaseDirectory
+						, false
+				),
+				val
+		);
+	}
 
 	p.generateReport(solutionData);
 	p.printObjectStatistics();

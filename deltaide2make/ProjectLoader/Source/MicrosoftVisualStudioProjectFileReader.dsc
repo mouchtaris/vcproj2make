@@ -275,15 +275,38 @@ function GetProjectOutputForConfiguration (projectXML, projectConfiguration, pro
 
 const CompilerToolName = "VCCLCompilerTool";
 const IncludeDirectoriesName = "AdditionalIncludeDirectories";
-function GetProjectIncludeDirsForConfiguration (projectXML, configurationName) {
-	local configuration = ::p_getConfiguration(projectXML, configurationName);
-	local compiler = ::p_getToolFromConfiguration(configuration, CompilerToolName);
+function p__getIncludeDirectoriesFromCompilerToolParent (parentXml) {
+	local compiler = ::p_getToolFromConfiguration(parentXml, CompilerToolName);
 	local dirsstring = compiler.getAttribute(IncludeDirectoriesName);
+	local result;
 	if (u.isdeltanil(dirsstring))
 		result = u.list_new();
 	else {
 		local dirs = u.strsplit(dirsstring, ";", 0);
 		result = u.iterable_map_to_list(dirs, u.bindback(u.Path_castFromPath, true));
+	}
+	return result;
+}
+
+function GetProjectIncludeDirsForConfiguration (projectXML, configurationName) {
+	local configuration = ::p_getConfiguration(projectXML, configurationName);
+	local result = ::p__getIncludeDirectoriesFromCompilerToolParent(configuration);
+	return result;
+}
+
+function GetProjectIncludeDirectoriesFromPropertySheet (pSheetXml) {
+	local result = ::p__getIncludeDirectoriesFromCompilerToolParent(pSheetXml);
+	return result;
+}
+const InheritedPropertySheetsName = "InheritedPropertySheets";
+function GetProjectPropertySheetsForConfiguration (projectXml, configurationName) {
+	local configuration = ::p_getConfiguration(projectXml, configurationName);
+	local sheets_str = configuration.getAttribute(InheritedPropertySheetsName);
+	if (u.isdeltanil(sheets_str))
+		local result = u.list_new();
+	else {
+		local sheets = u.strsplit(sheets_str, ";", 0);
+		result = u.iterable_map_to_list(sheets, u.bindback(u.Path_castFromPath, true));
 	}
 	return result;
 }

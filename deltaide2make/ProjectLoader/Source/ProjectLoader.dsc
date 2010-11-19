@@ -54,6 +54,13 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		return result;
 	}
 	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator, out_References) {
+		function makeProjectPropertyFromSheetXml (sheetXml) {
+			local includeDirs = pr.GetProjectIncludeDirectoriesFromPropertySheet(sheetXml);
+			local projprops = u.CProjectProperties().createInstance();
+			foreach (local includeDir, u.list_to_stdlist(includeDirs))
+				projprops.addIncludeDirectory(includeDir);
+			return projprops;
+		}
 		local tick = [ // TODO remove tick and stuff
 			method @operator () {
 				local now = std::currenttime();
@@ -81,13 +88,13 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 			assert( u.isdeltastring(result) );
 			return result;
 		}
-		function loadProjectXMLFromPath (projectFilePath) {
-			local xml = u.xmlload(projectFilePath.deltaString());
+		function loadXMLFromPath (filePath, withTrimming) {
+			local xml = u.xmlload(filePath.deltaString());
 			if (u.isdeltanil(xml))
 				u.error().AddError("Could not load xml from path \"",
-						projectFilePath.deltaString(), "\" xmlerror: \"",
+						filePath.deltaString(), "\" xmlerror: \"",
 						u.xmlloaderror());
-			else
+			else if (withTrimming)
 				xml = pr.Trim(xml);
 			xml = u.XML().createFromXMLRoot(xml);
 			return xml;
@@ -99,47 +106,72 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 		tick(); // 1
 		local projectFilePath = solutionBasedirPath.Concatenate(projectPath);
 		tick(); // 2
-		local projectXML = loadProjectXMLFromPath(projectFilePath);
+		local projectXML = loadXMLFromPath(projectFilePath, true);
 		tick(); // 3
-		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
+		local projectPropertySheetsPathsStrings = pr.GetProjectPropertySheetsForConfiguration(projectXML, projectConfiguration);
 		tick(); // 4
-		local projectName = pr.GetProjectName(projectXML);
+		local projectDirectory = u.Path_castFromPath(projectFilePath.basename(), false);
 		tick(); // 5
-		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
+		local projectSheetsXmls = u.iterable_map_to_std_list(u.list_to_stdlist(projectPropertySheetsPathsStrings), [
+				method @operator () (sheetPathMaybe) {
+					local sheetPath = u.Path_castFromPath(sheetPathMaybe, true);
+					assert( sheetPath.IsRelative() );
+					local fullSheetPathString = @projectDirectory.Concatenate(sheetPath.deltaString());
+					local sheetXml = loadXMLFromPath(fullSheetPathString, false);
+					return sheetXml;
+				},
+				@projectDirectory: projectDirectory
+			]);
+		tick(); // 4
+		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
+		tick(); // 5
+		local projectName = pr.GetProjectName(projectXML);
 		tick(); // 6
-		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
+		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
 		tick(); // 7
-		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
+		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
 		tick(); // 8
-		local project = u.CProject().createInstance(projectType, projectPath, projectName);
+		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
 		tick(); // 9
+		local project = u.CProject().createInstance(projectType, projectPath, projectName);
+		tick(); // 10
 		// Enrich variableEvaluator
 		variableEvaluator.setProjectName(projectName);
-		tick(); // 10
-		variableEvaluator.setOutdir(eval(outputDirectory));
 		tick(); // 11
+		variableEvaluator.setOutdir(eval(outputDirectory));
+		tick(); // 12
 		//
 		local outputFilePath = u.Path_castFromPath(eval(outputFile), true);
-		tick(); // 12
+		tick(); // 13
 		// Sources
 		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
 			project.addSource(u.Path_fromPath(src_relpath, true));
-		tick(); // 13
+		tick(); // 14
 		// Output Directory
 		project.setOutputDirectory(outputFilePath.basename());
-		tick(); // 14
+		tick(); // 15
 		// Output Name
 		project.setOutputName(outputFilePath.filename());
-		tick(); // 15
+		tick(); // 16
 		// API Directory
 		project.setAPIDirectory(u.Path_fromPath("../../Include", false));
-		tick(); // 16
+		tick(); // 17
 		// Set this project's properties
 		local projprops = u.CProjectProperties().createInstance();
-		tick(); // 17
+		tick(); // 18
+		foreach (local includeDir, u.list_to_stdlist(includeDirs))
+			projprops.addIncludeDirectory(includeDir);
+		tick(); // 19
+		project.addProjectProperties(projprops);
+		tick(); // 20
+		foreach (local sheetXml, projectSheetsXmls) {
+			local prop = makeProjectPropertyFromSheetXml(sheetXml);
+			project.addProjectProperties(prop);
+		}
+		tick(); // 21
 		// Load this project's references
 		local references = pr.GetProjectReferences(projectXML);
-		tick();
+		tick(); // 22
 		u.dval_copy_into(out_References, references);
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
@@ -154,7 +186,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				@ARFLAGS_post : []
 			]
 		);
-		tick(); // 18
+		tick(); // 23
 		u.println(tick.max());
 
 		return project;

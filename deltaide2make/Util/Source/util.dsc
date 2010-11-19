@@ -872,9 +872,11 @@ function list_concatenate_from_lists (lists, listAccessor) {
 				method @operator () (element) {
 					local c = @concatenation;
 					::list_push_back(c, element);
+					return true; // keep iterating
 				},
 				@concatenation: @concatenation
 			]);
+			return true; // keep iterating
 		},
 		@concatenation: ::list_new(),
 		@listAccessor: listAccessor
@@ -919,6 +921,13 @@ function iterable_map_to_list (iterable, mapf) {
 		::list_push_back(result, mapf(el));
 	return result;
 }
+function iterable_map_to_std_list (iterable, mapf) {
+	local result = std::list_new();
+	foreach (local something, iterable)
+		std::list_push_back(result, mapf(something));
+	return result;
+}
+
 //
 function forall (iterable, predicate) {
 	for (local ite = iterable.iterator(); not ite.end(); ite.next())
