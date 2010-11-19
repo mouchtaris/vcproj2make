@@ -21,7 +21,6 @@ namespace isi {
 		Variable (Name_t const& _name = "") throw();
 		friend class VariablesLifeSpace;
 	public:
-		typedef std::string Name_t;
 		const Name_t Name (void) const throw();
 
 		void operator >> (std::ostream&) const throw();
