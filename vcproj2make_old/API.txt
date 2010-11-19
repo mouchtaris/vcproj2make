@@ -200,7 +200,7 @@ function strrindex                      (hay, needle)
 function strlength                      (str)
 function strchar                        (str, charindex)
 function strmul                         (str, num)
-function strsplit                       (str, split, limit)
+function strsplit                       (str, split, limit)         // => dobj
 function strdeltaescape                 (str)
 function strequal                       (str1, str2)
 

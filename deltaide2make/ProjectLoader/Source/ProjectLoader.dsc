@@ -56,9 +56,12 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 	function loadProject (solutionBasedirPath, projectPathMaybe, projectConfiguration, variableEvaluator, out_References) {
 		function makeProjectPropertyFromSheetXml (sheetXml) {
 			local includeDirs = pr.GetProjectIncludeDirectoriesFromPropertySheet(sheetXml);
+			local preprocessorDefinitions = pr.GetProjectPreprocessorFromPropertySheet(sheetXml);
 			local projprops = u.CProjectProperties().createInstance();
-			foreach (local includeDir, u.list_to_stdlist(includeDirs))
-				projprops.addIncludeDirectory(includeDir);
+			{ foreach (local includeDir, u.list_to_stdlist(includeDirs))
+				projprops.addIncludeDirectory(includeDir); }
+			{ foreach (local def, u.list_to_stdlist(preprocessorDefinitions))
+				projprops.addPreprocessorDefinition(def); }
 			return projprops;
 		}
 		local tick = [ // TODO remove tick and stuff
@@ -122,56 +125,61 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				},
 				@projectDirectory: projectDirectory
 			]);
-		tick(); // 4
-		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
-		tick(); // 5
-		local projectName = pr.GetProjectName(projectXML);
 		tick(); // 6
-		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
+		local projectType = pr.GetProjectTypeForConfiguration(projectXML, projectConfiguration);
 		tick(); // 7
-		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
+		local projectName = pr.GetProjectName(projectXML);
 		tick(); // 8
-		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
+		local outputDirectory = pr.GetProjectOutputDirectoryForConfiguration(projectXML, projectConfiguration);
 		tick(); // 9
-		local project = u.CProject().createInstance(projectType, projectPath, projectName);
+		local outputFile = pr.GetProjectOutputForConfiguration(projectXML, projectConfiguration, projectType);
 		tick(); // 10
+		local includeDirs = pr.GetProjectIncludeDirsForConfiguration(projectXML, projectConfiguration);
+		tick(); // 11
+		local preprocessorDefinitions = pr.GetProjectPreprocessorDefinitionsForConfiguration(projectXML, projectConfiguration);
+		tick(); // 12
+		local project = u.CProject().createInstance(projectType, projectPath, projectName);
+		tick(); // 13
 		// Enrich variableEvaluator
 		variableEvaluator.setProjectName(projectName);
-		tick(); // 11
+		tick(); // 14
 		variableEvaluator.setOutdir(eval(outputDirectory));
-		tick(); // 12
+		tick(); // 15
 		//
 		local outputFilePath = u.Path_castFromPath(eval(outputFile), true);
-		tick(); // 13
+		tick(); // 16
 		// Sources
-		foreach (local src_relpath, u.list_to_stdlist(pr.GetProjectSourceFiles(projectXML)))
-			project.addSource(u.Path_fromPath(src_relpath, true));
-		tick(); // 14
+		{ foreach (local src_relpath, u.list_to_stdlist(local projectSourceFiles = pr.GetProjectSourceFiles(projectXML)))
+			project.addSource(u.Path_fromPath(src_relpath, true)); }
+		tick(); // 17
 		// Output Directory
 		project.setOutputDirectory(outputFilePath.basename());
-		tick(); // 15
+		tick(); // 18
 		// Output Name
 		project.setOutputName(outputFilePath.filename());
-		tick(); // 16
+		tick(); // 19
 		// API Directory
 		project.setAPIDirectory(u.Path_fromPath("../../Include", false));
-		tick(); // 17
+		tick(); // 20
 		// Set this project's properties
 		local projprops = u.CProjectProperties().createInstance();
-		tick(); // 18
-		foreach (local includeDir, u.list_to_stdlist(includeDirs))
-			projprops.addIncludeDirectory(includeDir);
-		tick(); // 19
+		tick(); // 21
+		{ foreach (local includeDir, u.list_to_stdlist(includeDirs))
+			projprops.addIncludeDirectory(includeDir); }
+		tick(); // 22
+		{ foreach (local def, u.list_to_stdlist(preprocessorDefinitions))
+			projprops.addPreprocessorDefinition(def); }
+		tick(); // 23
 		project.addProjectProperties(projprops);
-		tick(); // 20
+		tick(); // 24
 		foreach (local sheetXml, projectSheetsXmls) {
 			local prop = makeProjectPropertyFromSheetXml(sheetXml);
 			project.addProjectProperties(prop);
 		}
-		tick(); // 21
+		tick(); // 25
 		// Load this project's references
 		local references = pr.GetProjectReferences(projectXML);
-		tick(); // 22
+		tick(); // 26
 		u.dval_copy_into(out_References, references);
 		// Manifestation configurations
 		project.setManifestationConfiguration(#Makefile,
@@ -186,7 +194,7 @@ function ProjectLoader_loadProjectsFromSolutionData (solutionData, outer_log) {
 				@ARFLAGS_post : []
 			]
 		);
-		tick(); // 23
+		tick(); // 27
 		u.println(tick.max());
 
 		return project;

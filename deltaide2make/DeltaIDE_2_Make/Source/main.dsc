@@ -805,6 +805,16 @@ function main11 (argc, argv, envp) {
 	u.println("Done writing");
 }
 
+function main12 (argc, argv, envp) {
+	u.println(u.strsplit("What what what = in the butt = 1636 = o kolos toy aytokratora", "=", 1));
+	local a, local b = [0,1,2,3,4];
+	u.println(a, b);
+	a, b = [0];
+	u.println(a, b);
+	a, b = 0;
+	u.println(a, b);
+}
+
 
 function main (argc, argv, envp) {
 	p.config = envp;
@@ -815,7 +825,7 @@ function main (argc, argv, envp) {
 				std::vmthis(),
 				"main" + u.tostring(u.lastarg(arguments))
 		)(|u.firstarg(arguments)|);
-	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0, 9, 0, 10, 0, 11, 0);
+	})(arguments, 0, 1, 0, 1, 0, 1, 0, 2, 3, 4, 5, 3, 2, 3, 4, 5, 0, 6, 0, 7, 8, 0, 7, 0, 9, 0, 10, 0, 11, 0, 12, 0);
 	
 	p.cleanup();
 

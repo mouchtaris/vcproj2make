@@ -273,18 +273,42 @@ function GetProjectOutputForConfiguration (projectXML, projectConfiguration, pro
 	return outputFile;
 }
 
-const CompilerToolName = "VCCLCompilerTool";
-const IncludeDirectoriesName = "AdditionalIncludeDirectories";
-function p__getIncludeDirectoriesFromCompilerToolParent (parentXml) {
-	local compiler = ::p_getToolFromConfiguration(parentXml, CompilerToolName);
-	local dirsstring = compiler.getAttribute(IncludeDirectoriesName);
+function p__getListAttributeValueFromToolParent (parentXml, toolName, attributeName, valueTransformation) {
+	local tool = ::p_getToolFromConfiguration(parentXml, toolName);
+	local valueString= tool.getAttribute(attributeName);
 	local result;
-	if (u.isdeltanil(dirsstring))
+	if (u.isdeltanil(valueString))
 		result = u.list_new();
 	else {
-		local dirs = u.strsplit(dirsstring, ";", 0);
-		result = u.iterable_map_to_list(dirs, u.bindback(u.Path_castFromPath, true));
+		local values = u.strsplit(valueString, ";", 0);
+		result = u.iterable_map_to_list(values, valueTransformation);
 	}
+	return result;
+}
+
+function preprocessorDefinitionProcessor (preprocessorDefinitionString) {
+	local definitionNameValuePair = u.strsplit(preprocessorDefinitionString, "=", 1);
+	local name = definitionNameValuePair[0];
+	local result = name;
+	if (not u.isdeltanil(local valueUnprocessed = definitionNameValuePair[1])) {
+		local value = u.strgsub(valueUnprocessed, "\\\"", "\"");
+		result += "=" + value;
+	}
+	return result;
+}
+
+const CompilerToolName = "VCCLCompilerTool";
+const IncludeDirectoriesName = "AdditionalIncludeDirectories";
+const PreprocessorDefinitionsName = "PreprocessorDefinitions";
+function p__getIncludeDirectoriesFromCompilerToolParent (parentXml) {
+	local result =
+		::p__getListAttributeValueFromToolParent(parentXml, CompilerToolName, IncludeDirectoriesName, u.bindback(u.Path_castFromPath, true));
+	return result;
+}
+
+function p__getPreprocessorDefinitionsFromCompilerToolParent (parentXml) {
+	local result =
+		::p__getListAttributeValueFromToolParent(parentXml, CompilerToolName, PreprocessorDefinitionsName, preprocessorDefinitionProcessor);
 	return result;
 }
 
@@ -298,6 +322,18 @@ function GetProjectIncludeDirectoriesFromPropertySheet (pSheetXml) {
 	local result = ::p__getIncludeDirectoriesFromCompilerToolParent(pSheetXml);
 	return result;
 }
+
+function GetProjectPreprocessorDefinitionsForConfiguration (projectXml, configurationName) {
+	local configuration = ::p_getConfiguration(projectXml, configurationName);
+	local result = ::p__getPreprocessorDefinitionsFromCompilerToolParent(configuration);
+	return result;
+}
+
+function GetProjectPreprocessorFromPropertySheet (pSheetXml) {
+	local result = ::p__getPreprocessorDefinitionsFromCompilerToolParent(pSheetXml);
+	return result;
+}
+
 const InheritedPropertySheetsName = "InheritedPropertySheets";
 function GetProjectPropertySheetsForConfiguration (projectXml, configurationName) {
 	local configuration = ::p_getConfiguration(projectXml, configurationName);
