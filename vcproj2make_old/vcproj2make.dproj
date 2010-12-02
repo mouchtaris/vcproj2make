@@ -1,67 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project name="vcproj2make.dproj" version="alpha">
     <ProjectProperties>
-        <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-        <type>22 serialization::archive 4 0 0 1 0 41 22 serialization::archive 4 0 0 7 console</type>
-        <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</text>
-        <symbolic>22 serialization::archive 4 0 0 1 0 71 22 serialization::archive 4 0 0 36 ../vcproj2make_old/vcproj2make.dproj</symbolic>
-        <startup>22 serialization::archive 4 0 0 1 0 42 22 serialization::archive 4 0 0 8 tost.dsc</startup>
-        <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
-        <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
-        <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</icode>
-        <hostd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </hostd>
-        <host>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </host>
-        <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
-        <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
-        <argsd>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </argsd>
-        <args>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </args>
+        <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
+        <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
+        <symbolic>22 serialization::archive 8 0 0 1 0 71 22 serialization::archive 8 0 0 36 ../vcproj2make_old/vcproj2make.dproj</symbolic>
+        <startup>22 serialization::archive 8 0 0 1 0 42 22 serialization::archive 8 0 0 8 tost.dsc</startup>
+        <output_path>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</output_path>
+        <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
+        <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
+        <hostd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </hostd>
+        <host>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </host>
+        <deployment>22 serialization::archive 8 0 0 1 0 52 22 serialization::archive 8 0 0 17 Delta Application</deployment>
+        <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
+        <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
+        <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+        <argsd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </argsd>
+        <args>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </args>
     </ProjectProperties>
     <Child type="Script" name="util.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</text>
-            <symbolic>22 serialization::archive 4 0 0 1 0 62 22 serialization::archive 4 0 0 27 ../vcproj2make_old/util.dsc</symbolic>
-            <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
-            <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
-            <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</icode>
-            <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
-            <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
+            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</text>
+            <symbolic>22 serialization::archive 8 0 0 1 0 62 22 serialization::archive 8 0 0 27 ../vcproj2make_old/util.dsc</symbolic>
+            <output_path>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</output_path>
+            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
+            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</icode>
+            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
+            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
+            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
+            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="main.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</text>
-            <symbolic>22 serialization::archive 4 0 0 1 0 62 22 serialization::archive 4 0 0 27 ../vcproj2make_old/main.dsc</symbolic>
-            <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
-            <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
-            <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</icode>
-            <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
-            <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
+            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</text>
+            <symbolic>22 serialization::archive 8 0 0 1 0 62 22 serialization::archive 8 0 0 27 ../vcproj2make_old/main.dsc</symbolic>
+            <output_path>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</output_path>
+            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
+            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</icode>
+            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
+            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
+            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
+            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="vcproj2proj.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</text>
-            <symbolic>22 serialization::archive 4 0 0 1 0 69 22 serialization::archive 4 0 0 34 ../vcproj2make_old/vcproj2proj.dsc</symbolic>
-            <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
-            <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
-            <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</icode>
-            <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
-            <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
+            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</text>
+            <symbolic>22 serialization::archive 8 0 0 1 0 69 22 serialization::archive 8 0 0 34 ../vcproj2make_old/vcproj2proj.dsc</symbolic>
+            <output_path>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</output_path>
+            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
+            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</icode>
+            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
+            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
+            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
+            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="tost.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</text>
-            <symbolic>22 serialization::archive 4 0 0 1 0 62 22 serialization::archive 4 0 0 27 ../vcproj2make_old/tost.dsc</symbolic>
-            <output_path>22 serialization::archive 4 0 0 1 0 36 22 serialization::archive 4 0 0 2 ./</output_path>
-            <libs>22 serialization::archive 4 0 0 1 0 34 22 serialization::archive 4 0 0 0 </libs>
-            <icode>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</icode>
-            <debug>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 1</debug>
-            <collapsed>22 serialization::archive 4 0 0 1 0 29 22 serialization::archive 4 0</collapsed>
+            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
+            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</text>
+            <symbolic>22 serialization::archive 8 0 0 1 0 62 22 serialization::archive 8 0 0 27 ../vcproj2make_old/tost.dsc</symbolic>
+            <output_path>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</output_path>
+            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
+            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</icode>
+            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
+            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
+            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
+            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
         </ScriptProperties>
     </Child>
 </Project>

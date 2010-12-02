@@ -3,15 +3,9 @@ assert( u );
 
 //////////////////////////////
 // *** MakefileManifestation
-//     Produces Makefiles given a solution.
-//    _basedirpath_ is a Path instance of the directory
-//    against which the solution's location will be interpreted.
-//    The basedir can be relative or absolute. In case it is relative
-//    it is interpreted against the script's execution directory.
-//
 //    TODO
 //    - add generation/inclusion of dependency files in makefiles
-function MakefileManifestation(basedirpath, solution) {
+function MakefileManifestation(solutionDirectory, outputDirectory, solution) {
 	function squote(str) {
 		::util.assert_str( str );
 		return "'" + str + "'";
@@ -722,7 +716,7 @@ function MakefileManifestation(basedirpath, solution) {
 					::util.println("Error, could not open file ", makefile_path.deltaString());
 			},
 			method writeProjectMakefile(project) {
-				local path = @basedir_ccat_solution_path
+				local path = @outputRoot_ccat_solution_path
 						.Concatenate(project.getLocation().basename())
 						.Concatenate(::util.file_pathify(project.getName()) + "Makefile.mk")
 				;
@@ -770,7 +764,7 @@ function MakefileManifestation(basedirpath, solution) {
 			},
 			// before calling, call init()
 			method writeSolutionMakefile {
-				local makefilepath = @basedir_ccat_solution_path
+				local makefilepath = @outputRoot_ccat_solution_path
 						.Concatenate(::util.file_pathify(@solution.getName()) + "Makefile.mk");
 				local makefile_fh = std::fileopen(makefilepath.deltaString(), "wt");
 				if (makefile_fh) {
@@ -785,17 +779,16 @@ function MakefileManifestation(basedirpath, solution) {
 				else
 					::util.error().AddError("Could not open file ", makefilepath.deltaString());
 			},
-			method init(solution, basedirpath) {
+			method init(solution, solutionDirectory) {
 				::util.Assert( ::util.CSolution_isaCSolution(solution) );
-				::util.Assert( ::util.Path_isaPath(basedirpath) );
+				::util.Assert( ::util.Path_isaPath(solutionDirectory) );
 				//
 				local solutionBasename = u.Path_castFromPath(solution.getLocation().basename(), false);
 				//
 				@basedirpath = basedirpath;
-				if (solutionBasename.IsRelative())
-					@basedir_ccat_solution_path = basedirpath.Concatenate(solutionBasename);
-				else
-					@basedir_ccat_solution_path = solutionBasename;
+				//
+				@outputRoot_ccat_solution_path = @basedir_ccat_solution_path = solutionDirectory.Concatenate(solutionBasename);
+				//
 				@builddir = @basedir_ccat_solution_path.Concatenate(::util.file_hidden("build"));
 				@builddir_str = pathToString(@builddir);
 				//
@@ -818,10 +811,11 @@ function MakefileManifestation(basedirpath, solution) {
 	//makemani.init(project, basedir);
 	//makemani.writeAll(makefile_path_prefix);
 	
-	::util.Assert( ::util.Path_isaPath(basedirpath) );
-	::util.Assert( basedirpath.IsAbsolute() );
+	::util.Assert( ::util.Path_isaPath(solutionDirectory) );
+	::util.Assert( solutionDirectory.IsAbsolute() );
 	::util.Assert( ::util.CSolution_isaCSolution(solution) );
-	makemani.init(solution, basedirpath);
+	assert( solution.getLocation().IsRelative() );
+	makemani.init(solution, solutionDirectory);
 }
 
 

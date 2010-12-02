@@ -3167,11 +3167,11 @@ function IDableHolder (holdingItemName) {
 ////////////////////////
 // xml utilities
 ////////////////////////
-xmlload_LibFunc         = #xmlload;
-xmlparse_LibFunc        = #xmlparse;
-xmlstore_LibFunc        = #xmlstore;
-xmlloadgeterror_LibFunc = #xmlloadgeterror;
-xmlparsegeterror_LibFunc= #xmlloadgeterror;
+xmlload_LibFunc         = #xml::load;
+xmlparse_LibFunc        = #xml::parse;
+xmlstore_LibFunc        = #xml::store;
+xmlloadgeterror_LibFunc = #xml::loadgeterror;
+xmlparsegeterror_LibFunc= #xml::loadgeterror;
 function xmlload(filename_str) {
 	::Assert( ::libsloaded() );
 	local xmlload = std::libfuncget(::xmlload_LibFunc);
