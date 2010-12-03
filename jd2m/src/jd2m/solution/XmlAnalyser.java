@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -17,7 +16,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-public class XmlAnalyser {
+public final class XmlAnalyser {
 
     private static class XmlTreeWalker {
         private final ConfigurationManager  _configurationManager;
@@ -281,7 +280,7 @@ public class XmlAnalyser {
      * @param doc
      * @return
      */
-    public static SolutionLoadedData ParseDocument (final Document doc) {
+    public static SolutionLoadedData ParseXML (final Document doc) {
         assert doc.getNodeName().equals("#document");
 
         final ConfigurationManager configurationManager =
@@ -302,7 +301,7 @@ public class XmlAnalyser {
             final Document xmlDoc = DocumentBuilderFactory.newInstance().
                     newDocumentBuilder().parse(ins);
             xmlDoc.normalize();
-            result = ParseDocument(xmlDoc);
+            result = ParseXML(xmlDoc);
         } catch (ParserConfigurationException ex) {
             ex.printStackTrace();
         } catch (SAXException ex) {

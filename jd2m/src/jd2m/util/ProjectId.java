@@ -1,5 +1,5 @@
 package jd2m.util;
- // TODO: check the string ID format
+ // TODO: check the string ID format completely
 
 import java.util.HashMap;
 import java.util.Map;
