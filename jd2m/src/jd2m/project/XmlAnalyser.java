@@ -5,13 +5,20 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jd2m.cbuild.CProject;
+import jd2m.cbuild.CProjectType;
+import jd2m.cbuild.builders.CProjectBuilder;
+import jd2m.solution.ConfigurationManager;
+import jd2m.util.ProjectId;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -20,9 +27,9 @@ import org.xml.sax.SAXException;
 public final class XmlAnalyser {
 
     private static class XmlTreeWalker {
-        private final Map<String, CProject> _projConfToProjMap;
-        XmlTreeWalker (final Map<String, CProject> projConfToProjMap) {
-            _projConfToProjMap = projConfToProjMap;
+        private final Map<String, CProjectBuilder> _builders;
+        XmlTreeWalker (final Map<String, CProjectBuilder> projConfToProjMap) {
+            _builders = projConfToProjMap;
         }
 
         void VisitDocument (final Document doc) {
@@ -73,7 +80,6 @@ public final class XmlAnalyser {
         }
 
         void VisitConfiguration (final Node configuration) {
-            // <editor-fold defaultstate="collapsed" desc="TODO store all these data">
             final NamedNodeMap attrs = configuration.getAttributes();
             final String configurationName = attrs.getNamedItem("Name")
                     .getNodeValue();
@@ -82,18 +88,22 @@ public final class XmlAnalyser {
             final String intermediateDirectory = attrs
                     .getNamedItem("IntermediateDirectory")
                     .getNodeValue();
-            // TODO fix an enum for configuration types
-            final String configurationType = attrs
+            final String projectType = attrs
                     .getNamedItem("ConfigurationType").getNodeValue();
             final String propertySheets = attrs
                     .getNamedItem("InheritedPropertySheets")
                     .getNodeValue();
-            // TODO figure out codes for encodings
+            // TODO figure out codes for encodings (and use it in CProject)
             final String charset = attrs
                     .getNamedItem("CharacterSet").getNodeValue();
-            // </editor-fold>
 
-            assert _projConfToProjMap.containsKey(configurationName);
+            assert _builders.containsKey(configurationName);
+
+            final CProjectBuilder builder = _builders.get(configurationName);
+            builder.SetOutput(new File(outputDirectory));
+            builder.SetIntermediate(new File(intermediateDirectory));
+            builder.SetType(_u_vsProjTypeToCProjType(projectType));
+            _u_addPropertySheets(builder, propertySheets);
 
             for (   Node child = configuration.getFirstChild();
                     child != null;
@@ -225,26 +235,56 @@ public final class XmlAnalyser {
             }
         }
 
+        // -------------------------------------
+        private CProjectType _u_vsProjTypeToCProjType (final String vsProjType){
+            CProjectType result = null;
+            switch (vsProjType) {
+                case "1":   result = CProjectType.Executable;       break;
+                case "2":   result = CProjectType.DynamicLibrary;   break;
+                case "4":   result = CProjectType.StaticLibrary;    break;
+                default: throw new RuntimeException("Unknown VSProjType: "
+                            + vsProjType);
+            }
+            return result;
+        }
+        private static final Pattern _u_SemicolonPattern = Pattern
+                .compile(";");
+        private void _u_addPropertySheets ( final CProjectBuilder builder,
+                                            final String sheetsLine)
+        {
+            final String[] tokens = _u_SemicolonPattern.split(sheetsLine, 0);
+            // TODO load sheets
+        }
     }
 
-    public static CProject ParseProjectXML (final Document doc) {
-        final CProject cproj = new CProject();
+    public static Map<String, CProject> ParseProjectXML (final Document doc,
+                                            final ConfigurationManager m,
+                                            final ProjectId id)
+    {
+        final Map<String, CProjectBuilder> builders = new HashMap<>(5);
 
         {
             // TODO , walk doc
             LOG.info("Ah mista logga loooga");
         }
 
-        return cproj;
+        final Map<String, CProject> result = new HashMap<>(5);
+        for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
+            result.put(entry.getKey(), entry.getValue().MakeProject());
+        
+        return result;
     }
 
-    public static CProject ParseProjectXML (final InputStream ins) {
-        CProject result = null;
+    public static Map<String, CProject> ParseProjectXML (final InputStream ins,
+                                            final ConfigurationManager m,
+                                            final ProjectId id)
+    {
+        Map<String, CProject> result = null;
         try {
             final Document xmlDoc = DocumentBuilderFactory.newInstance().
                     newDocumentBuilder().parse(ins);
             xmlDoc.normalize();
-            result = ParseProjectXML(xmlDoc);
+            result = ParseProjectXML(xmlDoc, m, id);
         } catch (ParserConfigurationException ex) {
             ex.printStackTrace();
         } catch (SAXException ex) {
@@ -256,10 +296,13 @@ public final class XmlAnalyser {
         return result;
     }
 
-    public static CProject ParseProjectXML (final File file) {
-        CProject result = null;
+    public static Map<String, CProject> ParseProjectXML (final File file,
+                                            final ConfigurationManager m,
+                                            final ProjectId id)
+    {
+        Map<String, CProject> result = null;
         try {
-            result = ParseProjectXML(new FileInputStream(file));
+            result = ParseProjectXML(new FileInputStream(file), m, id);
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -267,11 +310,16 @@ public final class XmlAnalyser {
         return result;
     }
 
-    public static CProject ParseProjectXML (final String filepath) {
-        return ParseProjectXML(new File(filepath));
+    public static Map<String, CProject> ParseProjectXML (final String filepath,
+                                            final ConfigurationManager m,
+                                            final ProjectId id)
+    {
+        return ParseProjectXML(new File(filepath), m, id);
     }
-    private static final Logger LOG = Logger.getLogger(XmlAnalyser.class.getName());
 
+    // ---------------------------
+    
+    private static final Logger LOG = Logger.getLogger(XmlAnalyser.class.getName());
     private XmlAnalyser () {
     }
 }

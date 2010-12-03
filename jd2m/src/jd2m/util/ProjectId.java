@@ -48,6 +48,12 @@ public final class ProjectId {
         assert IsValid(value);
         _value = value;
     }
+
+    public String StringValue () {
+        return _value;
+    }
+
+    // ------------------
     
     @Override
     public boolean equals (Object obj) {

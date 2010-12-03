@@ -8,17 +8,7 @@ import jd2m.solution.SolutionLoadedData;
 public class Main {
     public static void main (final String[] args) {
         System.out.println("hi')");
-        switch (1) {
-            case 0:
-                SolutionLoadedData data =
-                        ParseXML("./../deltaide2make/Solution.xml");
-                break;
-
-            case 1:
-                CProject ParseProjectXML =
-                        ParseProjectXML("../../../../thesis_new/deltaide/Base/BaseLibrary/BaseLibrary.vcproj");
-                break;
-        }
+        SolutionLoadedData data = ParseXML("./../deltaide2make/Solution.xml");
     }
 
     private Main () {
