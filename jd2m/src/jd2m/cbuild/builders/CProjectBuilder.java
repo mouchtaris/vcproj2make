@@ -50,6 +50,7 @@ public final class CProjectBuilder {
     private final List<String>      _deps = new LinkedList<>();
     private final List<File>        _sources = new LinkedList<>();
 
+    public void AddProperty (final CProperties p)   { _props.add(p);    }
     public void SetLocation (final File l       )   { _location = l;    }
     public void SetName     (final String n     )   { _name = n;        }
     public void SetId       (final ProjectId id )   { _id = id;         }
@@ -59,5 +60,7 @@ public final class CProjectBuilder {
     public void SetIntermediate (final File intm)   { _intermediate = intm; }
     public void SetApiDirectory (final File api )   { _api = api;       }
     public void SetType     (final CProjectType t)  { _type = t;        }
+    public void AddDependency(final String dep  )   { _deps.add(dep);   }
+    public void AddSource   (final File src     )   { _sources.add(src);}
 
 }

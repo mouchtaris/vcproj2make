@@ -16,6 +16,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jd2m.cbuild.CProject;
 import jd2m.cbuild.CProjectType;
+import jd2m.cbuild.CProperties;
 import jd2m.cbuild.builders.CProjectBuilder;
 import jd2m.solution.ConfigurationManager;
 import jd2m.util.ProjectId;
@@ -104,6 +105,10 @@ public final class XmlAnalyser {
             builder.SetIntermediate(new File(intermediateDirectory));
             builder.SetType(_u_vsProjTypeToCProjType(projectType));
             _u_addPropertySheets(builder, propertySheets);
+            //
+            // the default propject properties
+            final CProperties props = new CProperties();
+            builder.AddProperty(props);
 
             for (   Node child = configuration.getFirstChild();
                     child != null;
@@ -118,21 +123,34 @@ public final class XmlAnalyser {
                             .getNodeValue();
                     switch (toolName) {
                         case "VCCLCompilerTool": {
-                            // <editor-fold defaultstate="collapsed" desc="TODO store all these data">
                             final String definitions = toolAttrs
                                     .getNamedItem("PreprocessorDefinitions")
                                     .getNodeValue();
-                            // </editor-fold>
+                            _u_addDefinitions(props, definitions);
                             break;
                         }
                         case "VCLinkerTool": {
-                            // <editor-fold defaultstate="collapsed" desc="TODO store all these data">
-                            final String outputFile = toolAttrs
+                            //
+                            final String outputFilePath = toolAttrs
                                     .getNamedItem("OutputFile").getNodeValue();
                             final String libDirectories = toolAttrs
                                     .getNamedItem("AdditionalLibraryDirectories")
                                     .getNodeValue();
-                            // </editor-fold>
+                            //
+                            final File outputFile = new File(outputFilePath);
+                            assert outputFile.isFile();
+                            assert !outputFile.isAbsolute();
+                            builder.SetOutput(outputFile.getParentFile());
+                            //
+                            final String nameWithExt = outputFile.getName();
+                            final String[] nameTokens =
+                                    _u_SplitName(nameWithExt);
+                            final String name = nameTokens[0];
+                            final String ext  = nameTokens[1];
+                            builder.SetTarget(name);
+                            builder.SetExt(ext);
+                            //
+                            _u_addLibraryDirectories(props, libDirectories);
                             break;
                         }
                     }
@@ -153,18 +171,23 @@ public final class XmlAnalyser {
                 {
                     final Node projRefNode = child;
                     final NamedNodeMap attrs = projRefNode.getAttributes();
-                    // TODO add these things
+                    //
                     final String referenceId = attrs
                             .getNamedItem("ReferencedProjectIdentifier")
                             .getNodeValue();
-                    final String referencePath = attrs
+                    final String referencePath = attrs // TODO store reference paths somewhere too
                             .getNamedItem("RelativePathToProject")
                             .getNodeValue();
+                    //
+                    // Add references for every project configuration
+                    for (   final Entry<String, CProjectBuilder> entry:
+                            _builders.entrySet())
+                        entry.getValue().AddDependency(referenceId);
                 }
             }
         }
 
-        private final List<File> _sources = new LinkedList<>(); // TODO add to the c-project
+        private final List<File> _sources = new LinkedList<>();
         void VisitFiles (final Node files) {
             assert files.getNodeType() == Node.ELEMENT_NODE;
             assert files.getNodeName().equals("Files");
@@ -185,6 +208,11 @@ public final class XmlAnalyser {
                     }
                 }
             }
+
+            for (final File source: _sources)
+                for (   final Entry<String, CProjectBuilder> entry:
+                        _builders.entrySet())
+                    entry.getValue().AddSource(source);
         }
 
         void VisitFilter (final Node filter) {
@@ -214,8 +242,9 @@ public final class XmlAnalyser {
             assert fileNode.getNodeType() == Node.ELEMENT_NODE;
             assert fileNode.getNodeName().equals("File");
 
-            final String filePath = fileNode.getAttributes() // TODO store to c-project
+            final String filePath = fileNode.getAttributes()
                     .getNamedItem("RelativePath").getNodeValue();
+            _sources.add(new File(filePath));
 
             for (   Node child = fileNode.getFirstChild();
                     child != null;
@@ -255,6 +284,26 @@ public final class XmlAnalyser {
             final String[] tokens = _u_SemicolonPattern.split(sheetsLine, 0);
             // TODO load sheets
         }
+        private void _u_addDefinitions (final CProperties   props,
+                                        final String        definitions) {
+            final String[] tokens = _u_SemicolonPattern.split(definitions, 0);
+            for (final String token: tokens)
+                props.AddDefinition(token);
+        }
+        private String[] _u_SplitName (final String nameWithExt) {
+            final int dotIndex = nameWithExt.lastIndexOf('.');
+            assert dotIndex > 0;
+            assert nameWithExt.length() > dotIndex + 1;
+            final String ext = nameWithExt.substring(dotIndex+1);
+            final String name = nameWithExt.substring(0, dotIndex);
+            return new String[] {name, ext};
+        }
+        private void _u_addLibraryDirectories ( final CProperties   props,
+                                                final String        dirpaths) {
+            final String[] paths = _u_SemicolonPattern.split(dirpaths);
+            final List<String> paths_iterable = java.util.Arrays.asList(paths);
+            props.AddLibraryDirectoriesFromPaths(paths_iterable);
+        }
     }
 
     public static Map<String, CProject> ParseProjectXML (final Document doc,
@@ -264,8 +313,8 @@ public final class XmlAnalyser {
         final Map<String, CProjectBuilder> builders = new HashMap<>(5);
 
         {
-            // TODO , walk doc
-            LOG.info("Ah mista logga loooga");
+            // TODO add loggig to the walking
+            new XmlTreeWalker(builders).VisitDocument(doc);
         }
 
         final Map<String, CProject> result = new HashMap<>(5);
