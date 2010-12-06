@@ -1,10 +1,12 @@
 package jd2m.project;
 
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,22 +20,17 @@ import jd2m.cbuild.CProject;
 import jd2m.cbuild.CProjectType;
 import jd2m.cbuild.CProperties;
 import jd2m.cbuild.builders.CProjectBuilder;
-import jd2m.solution.ConfigurationManager;
-import jd2m.util.ProjectId;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-public final class XmlAnalyser {
+final class XmlAnalyser {
 
     private static class XmlTreeWalker {
-        private final Map<String, CProjectBuilder> _builders;
-        XmlTreeWalker (final Map<String, CProjectBuilder> projConfToProjMap) {
-            _builders = projConfToProjMap;
-        }
+        private final Map<String, CProjectBuilder> _builders = new HashMap<>(5);
 
-        void VisitDocument (final Document doc) {
+        XmlTreeWalker VisitDocument (final Document doc) {
             for (   Node child = doc.getFirstChild();
                     child != null;
                     child = child.getNextSibling())
@@ -44,6 +41,8 @@ public final class XmlAnalyser {
                     VisitRoot(child);
                 }
             }
+
+            return this;
         }
 
         void VisitRoot (final Node root) {
@@ -306,16 +305,12 @@ public final class XmlAnalyser {
         }
     }
 
-    public static Map<String, CProject> ParseProjectXML (final Document doc,
-                                            final ConfigurationManager m,
-                                            final ProjectId id)
+    static Map<String, CProject> ParseProjectXML (final Document doc,
+                                            final XmlAnalyserArguments args)
     {
-        final Map<String, CProjectBuilder> builders = new HashMap<>(5);
-
-        {
-            // TODO add loggig to the walking
-            new XmlTreeWalker(builders).VisitDocument(doc);
-        }
+        // TODO add loggig to the walking
+        final Map<String, CProjectBuilder> builders =
+                new XmlTreeWalker().VisitDocument(doc)._builders;
 
         final Map<String, CProject> result = new HashMap<>(5);
         for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
@@ -324,16 +319,15 @@ public final class XmlAnalyser {
         return result;
     }
 
-    public static Map<String, CProject> ParseProjectXML (final InputStream ins,
-                                            final ConfigurationManager m,
-                                            final ProjectId id)
+    static Map<String, CProject> ParseProjectXML (final InputStream ins,
+                                            final XmlAnalyserArguments args)
     {
         Map<String, CProject> result = null;
         try {
             final Document xmlDoc = DocumentBuilderFactory.newInstance().
                     newDocumentBuilder().parse(ins);
             xmlDoc.normalize();
-            result = ParseProjectXML(xmlDoc, m, id);
+            result = ParseProjectXML(xmlDoc, args);
         } catch (ParserConfigurationException ex) {
             ex.printStackTrace();
         } catch (SAXException ex) {
@@ -345,25 +339,37 @@ public final class XmlAnalyser {
         return result;
     }
 
-    public static Map<String, CProject> ParseProjectXML (final File file,
-                                            final ConfigurationManager m,
-                                            final ProjectId id)
+    static Map<String, CProject> ParseProjectXML (final Path path,
+                                            final XmlAnalyserArguments args)
     {
         Map<String, CProject> result = null;
         try {
-            result = ParseProjectXML(new FileInputStream(file), m, id);
-        } catch (FileNotFoundException ex) {
+            final InputStream is = path.newInputStream(StandardOpenOption.READ);
+            final InputStream bins = new BufferedInputStream(is);
+            result = ParseProjectXML(bins, args);
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
 
         return result;
     }
 
-    public static Map<String, CProject> ParseProjectXML (final String filepath,
-                                            final ConfigurationManager m,
-                                            final ProjectId id)
+    static Map<String, CProject> ParseProjectXML (final File file,
+                                            final XmlAnalyserArguments args)
     {
-        return ParseProjectXML(new File(filepath), m, id);
+        Map<String, CProject> result = null;
+        result = ParseProjectXML(file.toPath(), args);
+
+        return result;
+    }
+
+    static Map<String, CProject> ParseProjectXML (final String filepath,
+                                            final XmlAnalyserArguments args)
+    {
+        Map<String, CProject> result = null;
+        result =  ParseProjectXML(Paths.get(filepath), args);
+
+        return result;
     }
 
     // ---------------------------

@@ -1,14 +1,13 @@
 package jd2m;
 
-import static jd2m.solution.XmlAnalyser.ParseXML;
-import static jd2m.project.XmlAnalyser.ParseProjectXML;
-import jd2m.cbuild.CProject;
-import jd2m.solution.SolutionLoadedData;
+import java.nio.file.Paths;
+import jd2m.solution.SolutionLoader;
 
 public class Main {
     public static void main (final String[] args) {
         System.out.println("hi')");
-        SolutionLoadedData data = ParseXML("./../deltaide2make/Solution.xml");
+        final String pathStr = "./../deltaide2make/Solution.xml";
+        SolutionLoader.LoadSolution(Paths.get(pathStr));
     }
 
     private Main () {

@@ -1,10 +1,12 @@
 package jd2m.solution;
 
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -16,7 +18,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-public final class XmlAnalyser {
+final class XmlAnalyser {
 
     private static class XmlTreeWalker {
         private final ConfigurationManager  _configurationManager;
@@ -278,30 +280,28 @@ public final class XmlAnalyser {
     /**
      * {@code doc} has to be {@link Document#normalize normalized}.
      * @param doc
-     * @return
+     * @param configurationManager
+     * @param projectEntryHolder
      */
-    public static SolutionLoadedData ParseXML (final Document doc) {
+    static void ParseXML (  final Document doc,
+                            final ConfigurationManager configurationManager,
+                            final ProjectEntryHolder projectEntryHolder)
+    {
         assert doc.getNodeName().equals("#document");
-
-        final ConfigurationManager configurationManager =
-                new ConfigurationManager();
-        final ProjectEntryHolder projectEntryHolder = new ProjectEntryHolder();
-        final SolutionLoadedData result = new SolutionLoadedData(
-                configurationManager, projectEntryHolder);
 
         new XmlTreeWalker(configurationManager, projectEntryHolder).
                 VisitDocument(doc);
-
-        return result;
     }
     
-    public static SolutionLoadedData ParseXML (final InputStream ins) {
-        SolutionLoadedData result = null;
+    static void ParseXML (  final InputStream ins,
+                            final ConfigurationManager configurationManager,
+                            final ProjectEntryHolder projectEntryHolder)
+    {
         try {
             final Document xmlDoc = DocumentBuilderFactory.newInstance().
                     newDocumentBuilder().parse(ins);
             xmlDoc.normalize();
-            result = ParseXML(xmlDoc);
+            ParseXML(xmlDoc, configurationManager, projectEntryHolder);
         } catch (ParserConfigurationException ex) {
             ex.printStackTrace();
         } catch (SAXException ex) {
@@ -309,24 +309,33 @@ public final class XmlAnalyser {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
-        return result;
     }
 
-    public static SolutionLoadedData ParseXML (final File file) {
-        SolutionLoadedData result = null;
+    static void ParseXML (  final Path file,
+                            final ConfigurationManager configurationManager,
+                            final ProjectEntryHolder projectEntryHolder)
+    {
         try {
-            final InputStream ins = new FileInputStream(file);
-            result = ParseXML(ins);
-        } catch (FileNotFoundException ex) {
+            final InputStream is = file.newInputStream(StandardOpenOption.READ);
+            final InputStream buffed_ins = new BufferedInputStream(is);
+            ParseXML(buffed_ins, configurationManager, projectEntryHolder);
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
-
-        return result;
     }
 
-    public static SolutionLoadedData ParseXML (final String filepath) {
-        return ParseXML(new File(filepath));
+    static void ParseXML (  final File file,
+                            final ConfigurationManager configurationManager,
+                            final ProjectEntryHolder projectEntryHolder)
+    {
+        ParseXML(file.toPath(), configurationManager, projectEntryHolder);
+    }
+
+    static void ParseXML (  final String filepath,
+                            final ConfigurationManager configurationManager,
+                            final ProjectEntryHolder projectEntryHolder)
+    {
+        ParseXML(Paths.get(filepath), configurationManager, projectEntryHolder);
     }
 
     private XmlAnalyser () {
