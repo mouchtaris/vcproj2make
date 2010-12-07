@@ -2,17 +2,14 @@ package jd2m.solution;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import jd2m.util.ProjectId;
 
 public class PathResolver {
 
-    private final String                _solutionName;
     private final Path                  _solutionDir;
     private final ProjectEntryHolder    _projEntries;
-    public PathResolver (final Path solutionPath, final ProjectEntryHolder _h) {
-        _solutionName   = solutionPath.getName().toString();
-        assert _solutionName.length() > 0;
-        _solutionDir    = solutionPath.getParent();
+    public PathResolver (final Path solutionRoot, final ProjectEntryHolder _h) {
+        _solutionDir    = solutionRoot;
         assert _solutionDir != null;
         _projEntries = _h;
     }
@@ -21,21 +18,42 @@ public class PathResolver {
         return _solutionDir;
     }
 
-    public String GetSolutionName () {
-        return _solutionName;
+    public Path SolutionResolve (final Path path) {
+        final Path result = _solutionDir.resolve(path);
+        return result;
     }
-
-    public Path ProjectDirectory (final String projectId) {
-        final ProjectEntry entry = _projEntries.Get(projectId);
-        final File location = entry.GetLocation();
-        assert !location.isAbsolute();
-        assert location.isDirectory();
-        final Path result = _solutionDir.resolve(entry.GetLocation().getPath());
+    public Path SolutionResolve (final String path) {
+        final Path result = _solutionDir.resolve(path);
         return result;
     }
 
-    public Path ProjectResolve (final String projectId, final Path pat) {
-        final Path result = ProjectDirectory(projectId).resolve(pat);
+    public Path ProjectPath (final ProjectEntry entry) {
+        final File location = entry.GetLocation();
+        assert !location.isAbsolute();
+        final Path result = _solutionDir.resolve(location.getPath());
+        assert new File(result.toAbsolutePath().toString()).isFile();
+        return result;
+    }
+    public Path ProjectPath (final ProjectId projectId) {
+        final ProjectEntry entry = _projEntries.Get(projectId);
+        final Path result = ProjectPath(entry);
+        return result;
+    }
+
+//    public Path ProjectResolve (final ProjectId projectId, final Path pat) {
+//        final Path result = ProjectPath(projectId).resolve(pat);
+//        return result;
+//    }
+//    public Path ProjectResolve (final ProjectEntry entry, final Path path) {
+//        final Path result = ProjectPath(entry).resolve(path);
+//        return result;
+//    }
+    public Path ProjectResolve (final ProjectId projectId, final String path) {
+        final Path result = ProjectPath(projectId).resolve(path);
+        return result;
+    }
+    public Path ProjectResolve (final ProjectEntry entry, final String path) {
+        final Path result = ProjectPath(entry).resolve(path);
         return result;
     }
 }

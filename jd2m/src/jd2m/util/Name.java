@@ -6,12 +6,21 @@ public final class Name {
         _value = value;
     }
 
+    public boolean Equals (final Name other) {
+        final boolean result = _value.equals(other._value);
+        return result;
+    }
+    public boolean Equals (final String other) {
+        final boolean result = _value.equals(other);
+        return result;
+    }
+
     @Override
     public boolean equals (Object obj) {
         boolean result = false;
         if ( obj != null && getClass() == obj.getClass() ) {
             final Name other = (Name) obj;
-            result = _value.equals(other._value);
+            result = Equals(other);
         }
         return result;
     }
@@ -26,5 +35,9 @@ public final class Name {
     @Override
     public String toString () {
         return "Name{" + _value + '}';
+    }
+
+    public String StringValue () {
+        return _value;
     }
 }

@@ -35,8 +35,7 @@ public final class CProperties {
     }
 
     public void AddLibraryDrectory (final File dir) {
-        assert dir.isDirectory();
-        assert dir.isAbsolute();
+        assert dir.isAbsolute() || dir.getPath().length() == 0;
         _libdirs.add(dir);
     }
 

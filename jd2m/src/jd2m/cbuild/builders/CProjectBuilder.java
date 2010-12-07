@@ -6,6 +6,7 @@ import java.util.List;
 import jd2m.cbuild.CProject;
 import jd2m.cbuild.CProjectType;
 import jd2m.cbuild.CProperties;
+import jd2m.util.Name;
 import jd2m.util.ProjectId;
 
 public final class CProjectBuilder {
@@ -38,21 +39,21 @@ public final class CProjectBuilder {
     }
 
     private final List<CProperties> _props = new LinkedList<>();
-    private File              _location;
-    private String            _name;
-    private ProjectId         _id;
-    private String            _target;
-    private String            _targetExt;
-    private File              _output;
-    private File              _intermediate;
-    private File              _api;
-    private CProjectType      _type;
+    private File                    _location;
+    private Name                    _name;
+    private ProjectId               _id;
+    private String                  _target;
+    private String                  _targetExt;
+    private File                    _output;
+    private File                    _intermediate;
+    private File                    _api;
+    private CProjectType            _type;
     private final List<String>      _deps = new LinkedList<>();
     private final List<File>        _sources = new LinkedList<>();
 
     public void AddProperty (final CProperties p)   { _props.add(p);    }
     public void SetLocation (final File l       )   { _location = l;    }
-    public void SetName     (final String n     )   { _name = n;        }
+    public void SetName     (final Name n       )   { _name = n;        }
     public void SetId       (final ProjectId id )   { _id = id;         }
     public void SetTarget   (final String trg   )   { _target = trg;    }
     public void SetExt      (final String ext   )   { _targetExt = ext; }
@@ -63,4 +64,5 @@ public final class CProjectBuilder {
     public void AddDependency(final String dep  )   { _deps.add(dep);   }
     public void AddSource   (final File src     )   { _sources.add(src);}
 
+    public File GetOutput   ()  { return _output; }
 }

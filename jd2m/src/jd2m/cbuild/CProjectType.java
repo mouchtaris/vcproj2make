@@ -1,7 +1,17 @@
 package jd2m.cbuild;
 
 public enum CProjectType {
-    DynamicLibrary,
-    StaticLibrary,
-    Executable
+    DynamicLibrary  ("so"),
+    StaticLibrary   ("a"),
+    Executable      ("exe")
+    ;
+
+    private final String _extension;
+    private CProjectType (final String extension) {
+        _extension = extension;
+    }
+
+    public String GetExtension () {
+        return _extension;
+    }
 }

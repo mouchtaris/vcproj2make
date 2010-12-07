@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import jd2m.util.Name;
 import jd2m.util.ProjectId;
 
 /**
@@ -12,7 +13,7 @@ import jd2m.util.ProjectId;
 public final class CProject {
     private final List<CProperties> _props = new LinkedList<>();
     private final File              _location;
-    private final String            _name;
+    private final Name              _name;
     private final ProjectId         _id;
     private final String            _target;
     private final String            _targetExt;
@@ -24,7 +25,7 @@ public final class CProject {
     private final List<File>        _sources = new LinkedList<>();
 
     public CProject (   final File          location,
-                        final String        name,
+                        final Name          name,
                         final ProjectId     id,
                         final String        target,
                         final String        targetExt,
@@ -59,7 +60,6 @@ public final class CProject {
     }
 
     public void AddSource (final File path) {
-        assert path.isFile();
         assert !path.isAbsolute();
         _sources.add(path);
     }

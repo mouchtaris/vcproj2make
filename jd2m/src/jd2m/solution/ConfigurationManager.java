@@ -18,7 +18,7 @@ public final class ConfigurationManager {
         }
     }
     /**
-     * SolutionConfigurationId -> { ProjectConfigurationId -> {@link
+     * SolutionConfigurationId -> { ProhectID -> {@link
      * ProjectInfo} }
      */
     private final Map<String, Map<String, ProjectInfo>> _configurations =
@@ -43,7 +43,7 @@ public final class ConfigurationManager {
     }
 
     public boolean HasRegisteredProjectConfiguration (  final String solConf,
-                                                        final String projConf)
+                                                        final String projId)
     {
         boolean result = true;
         final Map<String, ProjectInfo> solutionRegistrations =
@@ -51,7 +51,7 @@ public final class ConfigurationManager {
         if (solutionRegistrations == null)
             result = false;
         else {
-            final ProjectInfo pi = solutionRegistrations.get(projConf);
+            final ProjectInfo pi = solutionRegistrations.get(projId);
             if (pi == null)
                 result = false;
         }

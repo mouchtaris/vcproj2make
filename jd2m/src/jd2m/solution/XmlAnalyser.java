@@ -23,11 +23,14 @@ final class XmlAnalyser {
     private static class XmlTreeWalker {
         private final ConfigurationManager  _configurationManager;
         private final ProjectEntryHolder    _projectEntryHolder;
-        XmlTreeWalker ( final ConfigurationManager configurationManager,
-                        final ProjectEntryHolder projectEntryHolder)
+        private final PathResolver          _pathResolver;
+        XmlTreeWalker ( final ConfigurationManager  configurationManager,
+                        final ProjectEntryHolder    projectEntryHolder,
+                        final PathResolver          pathResolver)
         {
             _configurationManager   = configurationManager;
             _projectEntryHolder     = projectEntryHolder;
+            _pathResolver           = pathResolver;
         }
 
         void VisitDocument (final Node doc) {
@@ -46,7 +49,6 @@ final class XmlAnalyser {
         }
 
         void VisitChild (final Node child) {
-            assert child.getNodeType() == Node.ELEMENT_NODE;
             final String name = child.getNodeName();
             final short type = child.getNodeType();
             switch (type) {
@@ -77,6 +79,7 @@ final class XmlAnalyser {
         void VisitProject (final Node project) {
             assert ! _globalVisited;
             assert project.getNodeType() == Node.ELEMENT_NODE;
+            assert project.getNodeName().equals("Project");
 
             final NamedNodeMap attrs = project.getAttributes();
             final Node id           = attrs.getNamedItem("id");
@@ -89,28 +92,37 @@ final class XmlAnalyser {
             assert name.getNodeType()       == Node.ATTRIBUTE_NODE;
             assert parentref.getNodeType()  == Node.ATTRIBUTE_NODE;
 
-            _projectEntry = ProjectEntry.Create(
-                    ProjectId.CreateNew(id.getNodeValue()),
-                    name.getNodeValue(),
-                    path.getNodeValue(),
-                    ProjectId.GetOrCreate(parentref.getNodeValue()));
+            // Only save a project entry if this is actually a project entry.
+            // <Project> tags are also used for solution filters.
+            final Path projectXmlFilePath = _pathResolver
+                    .SolutionResolve(path.getNodeValue());
+            if (projectXmlFilePath.exists()) {
+                _projectEntry = ProjectEntry.Create(
+                        ProjectId.GetOrCreate(id.getNodeValue()),
+                        name.getNodeValue(),
+                        path.getNodeValue(),
+                        ProjectId.GetOrCreate(parentref.getNodeValue()));
 
-            for (   Node child = project.getFirstChild();
-                    child != null;
-                    child = child.getNextSibling())
-            {
-                if (    child.getNodeType() == Node.ELEMENT_NODE        &&
-                        child.getNodeName().equals("ProjectSection")    &&
-                        child.getAttributes().getNamedItem("type").
-                                getNodeValue().equals("ProjectDependencies")
-                )
-                    VisitProjectDependencies(child);
+                for (   Node child = project.getFirstChild();
+                        child != null;
+                        child = child.getNextSibling())
+                {
+                    if (    child.getNodeType() == Node.ELEMENT_NODE        &&
+                            child.getNodeName().equals("ProjectSection")    &&
+                            child.getAttributes().getNamedItem("type").
+                                    getNodeValue().equals("ProjectDependencies")
+                    )
+                        VisitProjectDependencies(child);
+                }
+
+                LOG.log(Level.INFO, "Adding project entry {0}", _projectEntry);
+                _projectEntryHolder.Add(_projectEntry);
+
+                _projectEntry = null;
             }
-
-            LOG.log(Level.INFO, "Adding project entry {0}", _projectEntry);
-            _projectEntryHolder.Add(_projectEntry);
-
-            _projectEntry = null;
+            else
+                LOG.log(Level.INFO, "Ignoring node {0} because file {1} does not exist",
+                        new Object[]{project, projectXmlFilePath});
         }
 
         void VisitProjectDependencies (final Node node) {
@@ -220,7 +232,7 @@ final class XmlAnalyser {
                     //
                     if (!_configurationManager.
                             HasRegisteredProjectConfiguration(  solConfName,
-                                                                projConfName)
+                                                                projId)
                     )
                         _u_registerProject(projId, projConfName, solConfName);
                     if (buildable) {
@@ -280,28 +292,26 @@ final class XmlAnalyser {
     /**
      * {@code doc} has to be {@link Document#normalize normalized}.
      * @param doc
-     * @param configurationManager
-     * @param projectEntryHolder
      */
     static void ParseXML (  final Document doc,
-                            final ConfigurationManager configurationManager,
-                            final ProjectEntryHolder projectEntryHolder)
+                            final XmlAnalyserArguments args)
     {
         assert doc.getNodeName().equals("#document");
 
-        new XmlTreeWalker(configurationManager, projectEntryHolder).
+        new XmlTreeWalker(  args.configurationManager,
+                            args.projectEntryHolder,
+                            args.pathResolver).
                 VisitDocument(doc);
     }
     
     static void ParseXML (  final InputStream ins,
-                            final ConfigurationManager configurationManager,
-                            final ProjectEntryHolder projectEntryHolder)
+                            final XmlAnalyserArguments args)
     {
         try {
             final Document xmlDoc = DocumentBuilderFactory.newInstance().
                     newDocumentBuilder().parse(ins);
             xmlDoc.normalize();
-            ParseXML(xmlDoc, configurationManager, projectEntryHolder);
+            ParseXML(xmlDoc, args);
         } catch (ParserConfigurationException ex) {
             ex.printStackTrace();
         } catch (SAXException ex) {
@@ -312,30 +322,27 @@ final class XmlAnalyser {
     }
 
     static void ParseXML (  final Path file,
-                            final ConfigurationManager configurationManager,
-                            final ProjectEntryHolder projectEntryHolder)
+                            final XmlAnalyserArguments args)
     {
         try {
             final InputStream is = file.newInputStream(StandardOpenOption.READ);
             final InputStream buffed_ins = new BufferedInputStream(is);
-            ParseXML(buffed_ins, configurationManager, projectEntryHolder);
+            ParseXML(buffed_ins, args);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 
     static void ParseXML (  final File file,
-                            final ConfigurationManager configurationManager,
-                            final ProjectEntryHolder projectEntryHolder)
+                            final XmlAnalyserArguments args)
     {
-        ParseXML(file.toPath(), configurationManager, projectEntryHolder);
+        ParseXML(file.toPath(), args);
     }
 
     static void ParseXML (  final String filepath,
-                            final ConfigurationManager configurationManager,
-                            final ProjectEntryHolder projectEntryHolder)
+                            final XmlAnalyserArguments args)
     {
-        ParseXML(Paths.get(filepath), configurationManager, projectEntryHolder);
+        ParseXML(Paths.get(filepath), args);
     }
 
     private XmlAnalyser () {
