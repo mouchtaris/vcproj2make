@@ -2,6 +2,7 @@ package jd2m.project;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -297,13 +298,28 @@ final class XmlAnalyser {
         }
 
 
+        private static final FileFilter _u_CppSourceFilesFilter = new FileFilter() {
+            @Override
+            public boolean accept (final File pathname) {
+                final String path = pathname.getPath();
+                final int dotIndex = path.lastIndexOf('.');
+                boolean resulte = false;
+                if (dotIndex > 0) {
+                    final String ext = path.substring(dotIndex+1);
+                    resulte = ext.equals("cpp");
+                }
+                return resulte;
+            }
+        };
         void VisitFile (final Node fileNode) {
             assert fileNode.getNodeType() == Node.ELEMENT_NODE;
             assert fileNode.getNodeName().equals("File");
 
             final String filePath = fileNode.getAttributes()
                     .getNamedItem("RelativePath").getNodeValue();
-            _sources.add(new File(filePath));
+            final File potentialSourceFile = new File(filePath);
+            if (_u_CppSourceFilesFilter.accept(potentialSourceFile))
+                _sources.add(potentialSourceFile);
 
             for (   Node child = fileNode.getFirstChild();
                     child != null;
