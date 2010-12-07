@@ -66,5 +66,12 @@ public final class CProject {
     public void AddSource (final String path) {
         AddSource(new File(path));
     }
-    
+
+    ////////////////////////////////////////////
+    // getters
+    ////////////////////////////////////////////
+
+    public ProjectId GetId () {
+        return _id;
+    }
 }

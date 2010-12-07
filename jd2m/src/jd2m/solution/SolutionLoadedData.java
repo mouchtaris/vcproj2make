@@ -6,15 +6,18 @@ public class SolutionLoadedData {
     private final ProjectEntryHolder    _h;
     private final PathResolver          _r;
     private final VariableEvaluator     _e;
+    private final String                _n;
     public SolutionLoadedData ( ConfigurationManager m,
                                 ProjectEntryHolder h,
                                 PathResolver r,
-                                VariableEvaluator e)
+                                VariableEvaluator e,
+                                String n)
     {
         _m = m;
         _h = h;
         _r = r;
         _e = e;
+        _n = n;
     }
 
     /** m for <strong>M</strong>anager
@@ -36,5 +39,10 @@ public class SolutionLoadedData {
     /** e for Variable<strong>E</strong>valuator */
     public VariableEvaluator e () {
         return _e;
+    }
+
+    /** n for Solution<strong>N</strong>ame */
+    public String n () {
+        return _n;
     }
 }

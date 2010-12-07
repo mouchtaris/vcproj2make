@@ -29,7 +29,8 @@ public final class SolutionLoader {
                 new SolutionLoadedData( configurationManager,
                                         projectEntryHolder,
                                         pathResolver,
-                                        variableEvaluator);
+                                        variableEvaluator,
+                                        "The Solution"); // TODO get solution name from XML analysis
 
         return result;
     }

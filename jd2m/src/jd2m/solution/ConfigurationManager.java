@@ -1,20 +1,29 @@
 package jd2m.solution;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import jd2m.util.ProjectId;
 
 public final class ConfigurationManager {
-    private final class ProjectInfo {
-        final String    configurationId;
+    public final class ProjectInfo {
+        final String    configurationName;
         private boolean buildable;
-        ProjectInfo (final String _configurationId) {
-            configurationId = _configurationId;
+        private ProjectInfo (final String _configurationId) {
+            configurationName = _configurationId;
             buildable       = false;
         }
 
-        void MarkBuildable () {
+        private void MarkBuildable () {
             buildable = true;
+        }
+
+        public boolean IsBuildable () {
+            return buildable;
+        }
+
+        public String GetConfigurationName () {
+            return configurationName;
         }
     }
     /**
@@ -63,5 +72,13 @@ public final class ConfigurationManager {
                 get(solConfName);
         final ProjectInfo projectInfo = configurationInfo.get(projId);
         projectInfo.MarkBuildable();
+    }
+
+    /**
+     *
+     * @return the internal {@link #_configurations}
+     */
+    public Map<String, Map<String, ProjectInfo>> GetConfigurations () {
+        return Collections.unmodifiableMap(_configurations);
     }
 }

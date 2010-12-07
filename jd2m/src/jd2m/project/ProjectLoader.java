@@ -4,13 +4,17 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import jd2m.cbuild.CProject;
 import jd2m.cbuild.CSolution;
+import jd2m.solution.ConfigurationManager;
+import jd2m.solution.ConfigurationManager.ProjectInfo;
 import jd2m.solution.PathResolver;
 import jd2m.solution.ProjectEntry;
 import jd2m.solution.ProjectEntryHolder;
 import jd2m.solution.SolutionLoadedData;
 import jd2m.solution.VariableEvaluator;
+import jd2m.util.Name;
 import jd2m.util.ProjectId;
 
 public final class ProjectLoader {
@@ -31,9 +35,26 @@ public final class ProjectLoader {
         final Map<String, CSolution> result = new HashMap<>(5);
         final Map<ProjectId, Map<String, CProject>> projects =
                 _loadProjectsFromProjectEntries(solutionLoadedData);
-        // TODO continue here
-        throw new RuntimeException("Not complete");
-//        return result; artificial error, because this method is not complete
+
+        final ConfigurationManager configurationManger = solutionLoadedData.m();
+        final String solutionName = solutionLoadedData.n();
+        final PathResolver pathResolver = solutionLoadedData.r();
+        final Path solutionDirectory = pathResolver.GetSolutionDirectory();
+        for (   final Entry<String, Map<String, ProjectInfo>> solConfEntry:
+                configurationManger.GetConfigurations().entrySet())
+        {
+            final String solutionConfigurationName = solConfEntry.getKey();
+            final Map<String, ProjectInfo> projectsInfos =
+                    solConfEntry.getValue();
+            final CSolution csol = _makeSolution(   solutionName,
+                                                    solutionDirectory,
+                                                    solutionConfigurationName,
+                                                    projectsInfos,
+                                                    projects);
+            result.put(solutionConfigurationName, csol);
+        }
+
+        return result;
     }
 
     // ---------------------------------
@@ -72,4 +93,36 @@ public final class ProjectLoader {
 
         return result;
     }
+
+    private static CSolution
+    _makeSolution ( final String solName,
+                    final Path solutionDirectory,
+                    final String configurationName,
+                    final Map<String, ProjectInfo> projectsInfos,
+                    final Map<ProjectId, Map<String, CProject>> projects)
+    {
+        final CSolution result = new CSolution( solutionDirectory,
+                                                new Name(solName),
+                                                configurationName);
+
+        for (   final Entry<String, ProjectInfo> projectInfoEntry:
+                projectsInfos.entrySet())
+        {
+            final ProjectId prjid = ProjectId.Get(projectInfoEntry.getKey());
+            //
+            final ProjectInfo _m_projInfo = projectInfoEntry.getValue();
+            final boolean isBuildable = _m_projInfo.IsBuildable();
+            final String projConfName = _m_projInfo.GetConfigurationName();
+            //
+            final Map<String, CProject> projectConfigurations =
+                    projects.get(prjid);
+            final CProject project = projectConfigurations.get(projConfName);
+            //
+            if (isBuildable)
+                result.AddProject(project);
+        }
+
+        return result;
+    }
+
 }
