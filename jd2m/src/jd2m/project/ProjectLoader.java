@@ -10,6 +10,7 @@ import jd2m.solution.PathResolver;
 import jd2m.solution.ProjectEntry;
 import jd2m.solution.ProjectEntryHolder;
 import jd2m.solution.SolutionLoadedData;
+import jd2m.solution.VariableEvaluator;
 import jd2m.util.ProjectId;
 
 public final class ProjectLoader {
@@ -30,7 +31,6 @@ public final class ProjectLoader {
         final Map<String, CSolution> result = new HashMap<>(5);
         final Map<ProjectId, Map<String, CProject>> projects =
                 _loadProjectsFromProjectEntries(solutionLoadedData);
-        System.out.println(projects);
         // TODO continue here
         throw new RuntimeException("Not complete");
 //        return result; artificial error, because this method is not complete
@@ -48,7 +48,8 @@ public final class ProjectLoader {
     _loadProjectsFromProjectEntries (
             final SolutionLoadedData solutionLoadedData)
     {
-        final ProjectEntryHolder holder = solutionLoadedData.h();
+        final ProjectEntryHolder    holder  = solutionLoadedData.h();
+        final VariableEvaluator     ve      = solutionLoadedData.e();
         //
         final Map<ProjectId, Map<String, CProject>> result = new HashMap<>(100);
 
@@ -57,8 +58,12 @@ public final class ProjectLoader {
             final Path projectXmlPath   = resolver.ProjectPath(entry);
             final ProjectId id          = entry.GetIdentity();
             XmlAnalyserArguments args   =
-                    new XmlAnalyserArguments(entry.GetName(), id,
-                            new File(projectXmlPath.toString()));
+                    new XmlAnalyserArguments(
+                            entry.GetName(),
+                            id,
+                            new File(projectXmlPath.toString()),
+                            ve
+                    );
             final Map<String, CProject> projectPerConfiguration =
                     XmlAnalyser.ParseProjectXML(projectXmlPath, args);
 

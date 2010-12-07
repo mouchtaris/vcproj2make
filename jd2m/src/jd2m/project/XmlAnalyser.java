@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -22,6 +21,7 @@ import jd2m.cbuild.CProject;
 import jd2m.cbuild.CProjectType;
 import jd2m.cbuild.CProperties;
 import jd2m.cbuild.builders.CProjectBuilder;
+import jd2m.solution.VariableEvaluator;
 import jd2m.util.Name;
 import jd2m.util.ProjectId;
 import org.w3c.dom.Document;
@@ -35,16 +35,19 @@ final class XmlAnalyser {
 
     private static class XmlTreeWalker {
         private final Map<String, CProjectBuilder> _builders = new HashMap<>(5);
-        private final Name      _projectName;
-        private final ProjectId _projectId;
-        private final File      _projectLocation;
-        XmlTreeWalker ( final Name      projectName,
-                        final ProjectId projectId,
-                        final File      projectLocation)
+        private final Name              _projectName;
+        private final ProjectId         _projectId;
+        private final File              _projectLocation;
+        private final VariableEvaluator _ve;
+        XmlTreeWalker ( final Name              projectName,
+                        final ProjectId         projectId,
+                        final File              projectLocation,
+                        final VariableEvaluator ve)
         {
             _projectName        = projectName;
             _projectId          = projectId;
             _projectLocation    = projectLocation;
+            _ve                 = ve;
         }
 
         XmlTreeWalker VisitDocument (final Document  doc) {
@@ -118,46 +121,65 @@ final class XmlAnalyser {
         }
 
         void VisitConfiguration (final Node configuration) {
+            _ve.Reset();
+            _ve.SetProjectName(_projectName.StringValue());
+            //
             final NamedNodeMap attrs = configuration.getAttributes();
             final String configurationName = attrs.getNamedItem("Name")
                     .getNodeValue();
-            final String outputDirectory = attrs
-                    .getNamedItem("OutputDirectory").getNodeValue();
-            final String intermediateDirectory = attrs
-                    .getNamedItem("IntermediateDirectory")
-                    .getNodeValue();
-            final String projectType = attrs
-                    .getNamedItem("ConfigurationType").getNodeValue();
-            final String propertySheets = attrs
-                    .getNamedItem("InheritedPropertySheets")
-                    .getNodeValue();
-            // TODO figure out codes for encodings (and use it in CProject)
-            final String charset = attrs
-                    .getNamedItem("CharacterSet").getNodeValue();
-
+            //
             CProjectBuilder _builder = _builders.get(configurationName);
             if (_builder == null) {
                 _builder = new CProjectBuilder();
                 _builders.put(configurationName, _builder);
             }
-
             final CProjectBuilder builder = _builder;
+            _ve.SetConfigurationName(configurationName);
             //
-            final File output = new File(outputDirectory);
+            final String outputDirectoryUnevaluated = attrs
+                    .getNamedItem("OutputDirectory").getNodeValue();
+            final String outputDirectory = _ve
+                    .EvaluateString(outputDirectoryUnevaluated);
+            final String intermediateDirectoryUnevaluated = attrs
+                    .getNamedItem("IntermediateDirectory")
+                    .getNodeValue();
+            final String intermediateDirectory = _ve
+                    .EvaluateString(intermediateDirectoryUnevaluated);
+            final String projectType = attrs
+                    .getNamedItem("ConfigurationType").getNodeValue();
+            final Node propertySheetsAttr = attrs
+                    .getNamedItem("InheritedPropertySheets");
+            // TODO figure out codes for encodings (and use it in CProject)
+            final String charset = attrs
+                    .getNamedItem("CharacterSet").getNodeValue();
+
+            //
+            final String outputDirectoryEvaluated = _ve
+                    .EvaluateString(outputDirectory);
+            _ve.SetOutDir(outputDirectoryEvaluated);
+            final File output = new File(outputDirectoryEvaluated);
             builder.SetOutput(output);
+            //
             final File intermediate = new File(intermediateDirectory);
             builder.SetIntermediate(intermediate);
+            //
             final CProjectType type = _u_vsProjTypeToCProjType(projectType);
             builder.SetType(type);
+            //
             LOG.log(Level.INFO, "Output = {0}\nIntermediate = {1}\nType = {2}",
                     new Object[]{output, intermediate, type});
 
-            _u_addPropertySheets(builder, propertySheets);
+            if (propertySheetsAttr != null) {
+                final String propertySheets = propertySheetsAttr.getNodeValue();
+                _u_addPropertySheets(builder, propertySheets);
+            }
+            
             //
             // the default propject properties
             final CProperties props = new CProperties();
             builder.AddProperty(props);
 
+            boolean visitedCompiler = false, visitedLinker = false;
             for (   Node child = configuration.getFirstChild();
                     child != null;
                     child = child.getNextSibling())
@@ -171,60 +193,24 @@ final class XmlAnalyser {
                             .getNodeValue();
                     switch (toolName) {
                         case "VCCLCompilerTool": {
+                            assert !visitedCompiler;
                             final String definitions = toolAttrs
                                     .getNamedItem("PreprocessorDefinitions")
                                     .getNodeValue();
                             _u_addDefinitions(props, definitions);
+                            visitedCompiler = true;
                             break;
                         }
-                        case "VCLinkerTool": {
-                            //
-                            final Node outputFilePathAttr = toolAttrs
-                                    .getNamedItem("OutputFile");
-                            final Node libDirectoriesAttr = toolAttrs
-                                    .getNamedItem("AdditionalLibraryDirectories");
-                            String _libDirectories = null;
-                            if (libDirectoriesAttr != null)
-                                _libDirectories = libDirectoriesAttr
-                                        .getNodeValue();
-                            final String libDirectories = _libDirectories;
-                            //
-                            String name, ext;
-                            if (outputFilePathAttr != null) {
-                                final String outputFilePath = outputFilePathAttr
-                                        .getNodeValue();
-                                final File outputFile = new File(outputFilePath);
-                                assert !outputFile.isAbsolute();
-                                final File outputDirectory0 = outputFile.getParentFile();
-                                if (!outputDirectory.equals(outputDirectory0))
-                                {
-                                    LOG.log(Level.WARNING, "Project's output directory {0} and linker's output directory {1} do not match. Resetting outputDirectory to linker's value",
-                                            new Object[]{outputDirectory, outputDirectory0});
-                                    builder.SetOutput(outputDirectory0);
-                                }
-                                //
-                                final String nameWithExt = outputFile.getName();
-                                final String[] nameTokens =
-                                        _u_SplitName(nameWithExt);
-                                name = nameTokens[0];
-                                ext  = nameTokens[1];
-                            }
-                            else {
-                                name = "$(ProjectName)";
-                                ext  = type.GetExtension();
-                            }
-                            builder.SetTarget(name);
-                            builder.SetExt(ext);
-                            LOG.log(Level.INFO, "name = {0}\nextension = {1}",
-                                    new Object[]{name, ext});
-                            //
-                            if (libDirectories != null)
-                                _u_addLibraryDirectories(props, libDirectories);
+                        case "VCLinkerTool":
+                        case "VCLibrarianTool":
+                            assert !visitedLinker;
+                            _u_extractLinkerInfo(toolAttrs, outputDirectory, builder, type, props);
+                            visitedLinker = true;
                             break;
-                        }
                     }
                 }
             }
+            assert visitedCompiler && visitedLinker;
         }
 
         void VisitReferences (final Node referencesNode) {
@@ -350,7 +336,7 @@ final class XmlAnalyser {
             return result;
         }
         private static final Pattern _u_SemicolonPattern = Pattern
-                .compile(";");
+                .compile(";+");
         private void _u_addPropertySheets ( final CProjectBuilder builder,
                                             final String sheetsLine)
         {
@@ -376,10 +362,82 @@ final class XmlAnalyser {
         private void _u_addLibraryDirectories ( final CProperties   props,
                                                 final String        dirpaths) {
             final String[] paths = _u_SemicolonPattern.split(dirpaths);
-            final List<String> paths_iterable = java.util.Arrays.asList(paths);
+            final List<String> paths_iterable = new LinkedList<>();
+            for (final String path: paths)
+                paths_iterable.add(_ve.EvaluateString(path));
             props.AddLibraryDirectoriesFromPaths(paths_iterable);
             LOG.log(Level.INFO, "library paths = {0}",
                     java.util.Arrays.toString(paths));
+        }
+        private final Pattern _u_SemicolonOrWhitespacePattern = Pattern
+                .compile("[; ]+");
+        private void _u_extractLinkerInfo ( final NamedNodeMap toolAttrs,
+                                            final String outputDirectory,
+                                            final CProjectBuilder builder,
+                                            final CProjectType type,
+                                            final CProperties props)
+        {
+            //
+            final Node outputFilePathAttr = toolAttrs
+                    .getNamedItem("OutputFile");
+            final Node libDirectoriesAttr = toolAttrs
+                    .getNamedItem("AdditionalLibraryDirectories");
+            final Node additionalLibsAttr = toolAttrs
+                    .getNamedItem("AdditionalDependencies");
+            //
+            String _libDirectories = null;
+            if (libDirectoriesAttr != null)
+                _libDirectories = libDirectoriesAttr
+                        .getNodeValue();
+            final String libDirectories = _libDirectories;
+            //
+            String unevaluatedName, ext;
+            File outputDirectory0;
+            //
+            if (outputFilePathAttr != null) {
+                final String outputFilePath = outputFilePathAttr
+                        .getNodeValue();
+                final String outputFilePathEvaluated = _ve
+                        .EvaluateString(outputFilePath);
+                final File outputFile = new File(outputFilePathEvaluated);
+                outputDirectory0 = outputFile.getParentFile();
+                //
+                final String nameWithExt = outputFile.getName();
+                final String[] nameTokens =
+                        _u_SplitName(nameWithExt);
+                unevaluatedName = nameTokens[0];
+                ext  = nameTokens[1];
+            }
+            else {
+                outputDirectory0 = new File(_ve.EvaluateString("$(OutDir)"));
+                unevaluatedName = "$(ProjectName)";
+                ext  = type.GetExtension();
+            }
+            //
+            if (!outputDirectory.equals(outputDirectory0.getPath())) {
+                LOG.log(Level.WARNING, "Project''s output directory {0} and linker''s output directory {1} do not match. Resetting outputDirectory to linker''s value",
+                        new Object[] {outputDirectory, outputDirectory0});
+                builder.SetOutput(outputDirectory0);
+            }
+            final String name = _ve.EvaluateString(unevaluatedName);
+            builder.SetTarget(name);
+            builder.SetExt(ext);
+            //
+            if (additionalLibsAttr != null) {
+                final String additionalLibs = additionalLibsAttr.getNodeValue();
+                final String[] tokens = _u_SemicolonOrWhitespacePattern
+                        .split(additionalLibs);
+                for (final String token: tokens)
+                    props.AddWindowsLibrary(token);
+                LOG.log(Level.INFO, "libraries = {0}",
+                        java.util.Arrays.toString(tokens));
+            }
+            //
+            LOG.log(Level.INFO, "name = {0}\nextension = {1}",
+                    new Object[]{name, ext});
+            //
+            if (libDirectories != null)
+                _u_addLibraryDirectories(props, libDirectories);
         }
     }
 
@@ -393,7 +451,7 @@ final class XmlAnalyser {
                                             final XmlAnalyserArguments args)
     {
         final Map<String, CProjectBuilder> builders =
-                new XmlTreeWalker(args.name, args.id, args.location)
+                new XmlTreeWalker(args.name, args.id, args.location, args.ve)
                 .VisitDocument(doc)._builders;
 
         final Map<String, CProject> result = new HashMap<>(5);

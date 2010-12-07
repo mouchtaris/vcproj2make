@@ -17,6 +17,8 @@ public final class SolutionLoader {
                 new ProjectEntryHolder();
         final PathResolver pathResolver =
                 new PathResolver(solutionRootDireactory, projectEntryHolder);
+        final VariableEvaluator variableEvaluator =
+                new VariableEvaluator(solutionRootDireactory.toString());
         final XmlAnalyserArguments args =
                 new XmlAnalyserArguments(   configurationManager,
                                             projectEntryHolder,
@@ -26,7 +28,8 @@ public final class SolutionLoader {
         final SolutionLoadedData result =
                 new SolutionLoadedData( configurationManager,
                                         projectEntryHolder,
-                                        pathResolver);
+                                        pathResolver,
+                                        variableEvaluator);
 
         return result;
     }

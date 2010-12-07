@@ -35,7 +35,7 @@ public final class CProperties {
     }
 
     public void AddLibraryDrectory (final File dir) {
-        assert dir.isAbsolute() || dir.getPath().length() == 0;
+        final String pathString = dir.getPath();
         _libdirs.add(dir);
     }
 
@@ -56,10 +56,31 @@ public final class CProperties {
     /**
      * <em>NOTICE</em>:
      * the library name must be the base name, without system specific
-     * prefices or extensions.
+     * prefices or extensions. Use {@link #AddWindowsLibrary} to strip
+     * windows specific naming elements.
      * @param lib
      */
     public void AddLibrary (final String lib) {
         _libs.add(lib);
+    }
+
+    /** Strips all extensions from the given string and then adds it as a
+     *  library dependency, by {@link #AddLibrary(String)}
+     * @param lib
+     */
+    public void AddWindowsLibrary (final String lib) {
+        AddLibrary(_u_stripWindowsSpecificLibraryNaming(lib));
+    }
+
+    // ---------------------------------
+    // Private
+    private static String _u_stripWindowsSpecificLibraryNaming (final String s){
+        // Strip all extensions
+        final int dotIndex = s.lastIndexOf('.');
+        assert dotIndex > 0;
+        assert s.length() > dotIndex + 3;
+        assert s.substring(dotIndex+1).equals("lib");
+        final String result = s.substring(0, dotIndex);
+        return result;
     }
 }
