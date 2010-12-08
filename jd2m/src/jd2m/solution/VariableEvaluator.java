@@ -62,6 +62,7 @@ public final class VariableEvaluator {
         m.appendTail(sb);
         final String result = sb.toString();
 
+        assert result != null;
         return result;
     }
 

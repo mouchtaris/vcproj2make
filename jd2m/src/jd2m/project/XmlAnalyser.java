@@ -30,6 +30,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import static jd2m.solution.PathResolver.IsWindowsPath;
+import static jd2m.solution.PathResolver.UnixifyPath;
+
 final class XmlAnalyser {
 
     public static final File API_DIRECTORY = new File("../Include");
@@ -45,6 +48,8 @@ final class XmlAnalyser {
                         final File              projectLocation,
                         final VariableEvaluator ve)
         {
+            assert !IsWindowsPath(projectLocation.getPath());
+
             _projectName        = projectName;
             _projectId          = projectId;
             _projectLocation    = projectLocation;
@@ -137,15 +142,19 @@ final class XmlAnalyser {
             final CProjectBuilder builder = _builder;
             _ve.SetConfigurationName(configurationName);
             //
-            final String outputDirectoryUnevaluated = attrs
+            final String _m_outputDirectoryUnevaluated = attrs
                     .getNamedItem("OutputDirectory").getNodeValue();
+            final String _m_outputDirectoryUnevaluatedUnix =
+                    UnixifyPath(_m_outputDirectoryUnevaluated);
             final String outputDirectory = _ve
-                    .EvaluateString(outputDirectoryUnevaluated);
-            final String intermediateDirectoryUnevaluated = attrs
+                    .EvaluateString(_m_outputDirectoryUnevaluatedUnix);
+            final String _m_intermediateDirectoryUnevaluated = attrs
                     .getNamedItem("IntermediateDirectory")
                     .getNodeValue();
+            final String _m_intermediateDirectoryUnevaluatedUnix =
+                    UnixifyPath(_m_intermediateDirectoryUnevaluated);
             final String intermediateDirectory = _ve
-                    .EvaluateString(intermediateDirectoryUnevaluated);
+                    .EvaluateString(_m_intermediateDirectoryUnevaluatedUnix);
             final String projectType = attrs
                     .getNamedItem("ConfigurationType").getNodeValue();
             final Node propertySheetsAttr = attrs
@@ -155,10 +164,8 @@ final class XmlAnalyser {
                     .getNamedItem("CharacterSet").getNodeValue();
 
             //
-            final String outputDirectoryEvaluated = _ve
-                    .EvaluateString(outputDirectory);
-            _ve.SetOutDir(outputDirectoryEvaluated);
-            final File output = new File(outputDirectoryEvaluated);
+            _ve.SetOutDir(outputDirectory);
+            final File output = new File(outputDirectory);
             builder.SetOutput(output);
             //
             final File intermediate = new File(intermediateDirectory);
@@ -315,8 +322,9 @@ final class XmlAnalyser {
             assert fileNode.getNodeType() == Node.ELEMENT_NODE;
             assert fileNode.getNodeName().equals("File");
 
-            final String filePath = fileNode.getAttributes()
+            final String _m_filePathWindows = fileNode.getAttributes()
                     .getNamedItem("RelativePath").getNodeValue();
+            final String filePath = UnixifyPath(_m_filePathWindows);
             final File potentialSourceFile = new File(filePath);
             if (_u_CppSourceFilesFilter.accept(potentialSourceFile))
                 _sources.add(potentialSourceFile);
@@ -378,10 +386,12 @@ final class XmlAnalyser {
         private void _u_addLibraryDirectories ( final CProperties   props,
                                                 final String        dirpaths) {
             final String[] paths = _u_SemicolonPattern.split(dirpaths);
-            final List<String> paths_iterable = new LinkedList<>();
-            for (final String path: paths)
-                paths_iterable.add(_ve.EvaluateString(path));
-            props.AddLibraryDirectoriesFromPaths(paths_iterable);
+            for (final String _m_unevaluatedWindowsPath: paths) {
+                final String _m_unevaluatedUnixPath =
+                        UnixifyPath(_m_unevaluatedWindowsPath);
+                final String path = _ve.EvaluateString(_m_unevaluatedUnixPath);
+                props.AddLibraryDrectory(path);
+            }
             LOG.log(Level.INFO, "library paths = {0}",
                     java.util.Arrays.toString(paths));
         }
@@ -401,26 +411,20 @@ final class XmlAnalyser {
             final Node additionalLibsAttr = toolAttrs
                     .getNamedItem("AdditionalDependencies");
             //
-            String _libDirectories = null;
-            if (libDirectoriesAttr != null)
-                _libDirectories = libDirectoriesAttr
-                        .getNodeValue();
-            final String libDirectories = _libDirectories;
-            //
             String unevaluatedName, ext;
             File outputDirectory0;
             //
             if (outputFilePathAttr != null) {
-                final String outputFilePath = outputFilePathAttr
-                        .getNodeValue();
+                final String outputFilePath = outputFilePathAttr.getNodeValue();
+                final String outputFilePathUnix = UnixifyPath(outputFilePath);
                 final String outputFilePathEvaluated = _ve
-                        .EvaluateString(outputFilePath);
+                        .EvaluateString(outputFilePathUnix);
                 final File outputFile = new File(outputFilePathEvaluated);
                 outputDirectory0 = outputFile.getParentFile();
+                assert outputDirectory0 != null;
                 //
                 final String nameWithExt = outputFile.getName();
-                final String[] nameTokens =
-                        _u_SplitName(nameWithExt);
+                final String[] nameTokens = _u_SplitName(nameWithExt);
                 unevaluatedName = nameTokens[0];
                 ext  = nameTokens[1];
             }
@@ -452,8 +456,10 @@ final class XmlAnalyser {
             LOG.log(Level.INFO, "name = {0}\nextension = {1}",
                     new Object[]{name, ext});
             //
-            if (libDirectories != null)
+            if (libDirectoriesAttr != null) {
+                final String libDirectories = libDirectoriesAttr.getNodeValue();
                 _u_addLibraryDirectories(props, libDirectories);
+            }
         }
     }
 

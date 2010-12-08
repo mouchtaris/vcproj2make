@@ -18,6 +18,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import static jd2m.solution.PathResolver.UnixifyPath;
+
 final class XmlAnalyser {
 
     private static class XmlTreeWalker {
@@ -45,34 +47,23 @@ final class XmlAnalyser {
             assert root.getNextSibling() == null;
             assert root.getPreviousSibling() == null;
             assert root.getNodeName().equals("VisualStudioSolution");
-            VisitChild(root.getFirstChild());
-        }
 
-        void VisitChild (final Node child) {
-            final String name = child.getNodeName();
-            final short type = child.getNodeType();
-            switch (type) {
-                case Node.TEXT_NODE:
-                    break; // ignore
-                case Node.ELEMENT_NODE:
-                    switch (name) {
+            for (   Node child = root.getFirstChild();
+                    child != null;
+                    child = child.getNextSibling())
+            {
+                if (child.getNodeType() == Node.ELEMENT_NODE) {
+                    final String nodeName = child.getNodeName();
+                    switch (nodeName) {
                         case "Project":
                             VisitProject(child);
                             break;
                         case "Global":
                             VisitGlobal(child);
                             break;
-                        default:
-                            throw new RuntimeException("Unknown Node " + child);
                     }
-                    break;
-                default:
-                    throw new RuntimeException("Unknown Node " + child);
+                }
             }
-
-            final Node sibling = child.getNextSibling();
-            if (sibling != null)
-                VisitChild(sibling);
         }
 
         private ProjectEntry _projectEntry;
@@ -92,15 +83,18 @@ final class XmlAnalyser {
             assert name.getNodeType()       == Node.ATTRIBUTE_NODE;
             assert parentref.getNodeType()  == Node.ATTRIBUTE_NODE;
 
+            final String projectXmlFilePathWindows = path.getNodeValue();
+            final String projectXmlFilePath =
+                    UnixifyPath(projectXmlFilePathWindows);
             // Only save a project entry if this is actually a project entry.
             // <Project> tags are also used for solution filters.
-            final Path projectXmlFilePath = _pathResolver
-                    .SolutionResolve(path.getNodeValue());
-            if (projectXmlFilePath.exists()) {
+            final Path projectXmlFileFullPath = _pathResolver
+                    .SolutionResolve(projectXmlFilePath);
+            if (projectXmlFileFullPath.exists()) {
                 _projectEntry = ProjectEntry.Create(
                         ProjectId.GetOrCreate(id.getNodeValue()),
                         name.getNodeValue(),
-                        path.getNodeValue(),
+                        projectXmlFilePath,
                         ProjectId.GetOrCreate(parentref.getNodeValue()));
 
                 for (   Node child = project.getFirstChild();
@@ -122,7 +116,7 @@ final class XmlAnalyser {
             }
             else
                 LOG.log(Level.INFO, "Ignoring node {0} because file {1} does not exist",
-                        new Object[]{project, projectXmlFilePath});
+                        new Object[]{project, projectXmlFileFullPath});
         }
 
         void VisitProjectDependencies (final Node node) {
@@ -170,10 +164,12 @@ final class XmlAnalyser {
                             getNamedItem("type").getNodeValue();
                     switch (type) {
                         case "SolutionConfigurationPlatforms":
+                            assert !visitedSolutions;
                             VisitSolutionConfigurationPlatforms(node);
                             visitedSolutions = true;
                             break;
                         case "ProjectConfigurationPlatforms":
+                            assert !visitedProjects;
                             VisitProjectConfigurationPlatforms(node);
                             visitedProjects = true;
                             break;
@@ -182,6 +178,7 @@ final class XmlAnalyser {
                     }
                 }
             }
+            assert visitedSolutions && visitedProjects;
         }
 
         void VisitSolutionConfigurationPlatforms (final Node solConfPlats) {

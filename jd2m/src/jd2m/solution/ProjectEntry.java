@@ -61,6 +61,7 @@ public final class ProjectEntry implements
                                         final String location,
                                         final ProjectId parentRefId)
     {
+        assert !PathResolver.IsWindowsPath(location);
         return new ProjectEntry(id, new Name(name), new File(location),
                                 parentRefId);
     }

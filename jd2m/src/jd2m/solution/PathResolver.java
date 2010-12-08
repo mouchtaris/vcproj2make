@@ -2,6 +2,7 @@ package jd2m.solution;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import jd2m.util.ProjectId;
 
 public class PathResolver {
@@ -23,12 +24,29 @@ public class PathResolver {
         return result;
     }
     public Path SolutionResolve (final String path) {
+        assert !IsWindowsPath(path) || IsFileName(path);
         final Path result = _solutionDir.resolve(path);
+        return result;
+    }
+    public Path SolutionResolve (final String path, final boolean isWindows) {
+        Path _m_result;
+        if (isWindows) {
+            final String unixPath = UnixifyPath(path);
+            _m_result = SolutionResolve(unixPath);
+        }
+        else
+            _m_result = SolutionResolve(path);
+        final Path result = _m_result;
+        return result;
+    }
+    public Path SolutionResolveWinPath (final String path) {
+        final Path result = SolutionResolve(path, true);
         return result;
     }
 
     public Path ProjectPath (final ProjectEntry entry) {
         final File location = entry.GetLocation();
+        assert !IsWindowsPath(location.getPath());
         assert !location.isAbsolute();
         final Path result = _solutionDir.resolve(location.getPath());
         assert new File(result.toAbsolutePath().toString()).isFile();
@@ -54,6 +72,28 @@ public class PathResolver {
     }
     public Path ProjectResolve (final ProjectEntry entry, final String path) {
         final Path result = ProjectPath(entry).resolve(path);
+        return result;
+    }
+
+    // --------------------------
+    // Utilities
+    public static boolean IsWindowsPath (final String pathname) {
+        final int slashIndex = pathname.indexOf('/');
+        final boolean result = slashIndex == -1;
+        return result;
+    }
+
+    public static boolean IsFileName (final String pathname) {
+        final int slashIndex        = pathname.indexOf('/');
+        final int backslashIndex    = pathname.indexOf('\\');
+        final boolean result        =   slashIndex      == -1    &&
+                                        backslashIndex  == -1;
+        return result;
+    }
+
+    public static String UnixifyPath (final String pathname) {
+        assert IsWindowsPath(pathname);
+        final String result = pathname.replaceAll("\\\\", "/");
         return result;
     }
 }
