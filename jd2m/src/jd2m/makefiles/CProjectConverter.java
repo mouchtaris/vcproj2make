@@ -18,6 +18,8 @@ public final class CProjectConverter {
 
     private static final String CPPFLAGS    = "CPPFLAGS";
     private static final String LDFLAGS     = "LDFLAGS";
+    private static final String CXXFLAGS    = "CXXFLAGS";
+    private static final String ARFLAGS     = "ARFLAGS";
 
     private static final String DefinitionPrefix                = "-D";
     private static final String InclusionPrefix                 = "-I";
@@ -27,6 +29,10 @@ public final class CProjectConverter {
 
     private static final String XLinkerRPathOption  = "--rpath";
 
+    private static final String PredefinedCXXFLAGS  = CXXFLAGS +
+                                                    " = -ansi -pedantic -Wall";
+    private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
+    
     private final PrintStream   out;
     private final CProject      project;
     private final CSolution     solution;
@@ -73,6 +79,7 @@ public final class CProjectConverter {
     {
         _writeCppFlags();
         _writeLdFlags();
+        _writeCxxAndArFlags();
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -132,7 +139,16 @@ public final class CProjectConverter {
         //
         _u_endOfVariable(out);
     }
+    
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
+    private void _writeCxxAndArFlags ()
+    {
+        out.println(PredefinedCXXFLAGS);
+        out.println(PredefinedARFLAGS);
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
