@@ -30,36 +30,39 @@ public final class ConfigurationManager {
      * SolutionConfigurationId -> { ProhectID -> {@link
      * ProjectInfo} }
      */
-    private final Map<String, Map<String, ProjectInfo>> _configurations =
+    private final Map<String, Map<ProjectId, ProjectInfo>> _configurations =
             new HashMap<>(20);
 
     public void RegisterConfiguration (final String confName) {
         final Object previous = _configurations.put(confName,
-                new HashMap<String, ProjectInfo>(100));
+                new HashMap<ProjectId, ProjectInfo>(100));
         assert previous == null;
     }
 
     public void RegisterProjectConfiguration (  final String solConfName,
-                                                final String projId,
+                                                final String projIdStr,
                                                 final String projConfName)
     {
-        assert ProjectId.Get(projId) != null;
-        final Map<String, ProjectInfo> solConf =
+        final Map<ProjectId, ProjectInfo> solConf =
                 _configurations.get(solConfName);
-        final Object previous =
-                solConf.put(projId, new ProjectInfo(projConfName));
+        final ProjectId projId = ProjectId.Get(projIdStr);
+        assert projId != null;
+        final Object previous = solConf
+                .put(projId, new ProjectInfo(projConfName));
         assert previous == null;
     }
 
     public boolean HasRegisteredProjectConfiguration (  final String solConf,
-                                                        final String projId)
+                                                        final String projIdStr)
     {
         boolean result = true;
-        final Map<String, ProjectInfo> solutionRegistrations =
+        final Map<ProjectId, ProjectInfo> solutionRegistrations =
                 _configurations.get(solConf);
         if (solutionRegistrations == null)
             result = false;
         else {
+            final ProjectId projId = ProjectId.Get(projIdStr);
+            assert projId != null;
             final ProjectInfo pi = solutionRegistrations.get(projId);
             if (pi == null)
                 result = false;
@@ -67,9 +70,11 @@ public final class ConfigurationManager {
         return result;
     }
 
-    public void MarkBuildable ( final String solConfName, final String projId) {
-        final Map<String, ProjectInfo> configurationInfo = _configurations.
+    public void MarkBuildable (final String solConfName, final String pjIdStr) {
+        final Map<ProjectId, ProjectInfo> configurationInfo = _configurations.
                 get(solConfName);
+        final ProjectId projId = ProjectId.Get(pjIdStr);
+        assert projId != null;
         final ProjectInfo projectInfo = configurationInfo.get(projId);
         projectInfo.MarkBuildable();
     }
@@ -78,7 +83,7 @@ public final class ConfigurationManager {
      *
      * @return the internal {@link #_configurations}
      */
-    public Map<String, Map<String, ProjectInfo>> GetConfigurations () {
+    public Map<String, Map<ProjectId, ProjectInfo>> GetConfigurations () {
         return Collections.unmodifiableMap(_configurations);
     }
 }

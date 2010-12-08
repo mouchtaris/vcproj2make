@@ -49,7 +49,10 @@ public class PathResolver {
         assert !IsWindowsPath(location.getPath());
         assert !location.isAbsolute();
         final Path result = _solutionDir.resolve(location.getPath());
-        assert new File(result.toAbsolutePath().toString()).isFile();
+        {
+            assert result.isAbsolute();
+            assert new File(result.toString()).isFile();
+        }
         return result;
     }
     public Path ProjectPath (final ProjectId projectId) {

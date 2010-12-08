@@ -40,11 +40,11 @@ public final class ProjectLoader {
         final String solutionName = solutionLoadedData.n();
         final PathResolver pathResolver = solutionLoadedData.r();
         final Path solutionDirectory = pathResolver.GetSolutionDirectory();
-        for (   final Entry<String, Map<String, ProjectInfo>> solConfEntry:
+        for (   final Entry<String, Map<ProjectId, ProjectInfo>> solConfEntry:
                 configurationManger.GetConfigurations().entrySet())
         {
             final String solutionConfigurationName = solConfEntry.getKey();
-            final Map<String, ProjectInfo> projectsInfos =
+            final Map<ProjectId, ProjectInfo> projectsInfos =
                     solConfEntry.getValue();
             final CSolution csol = _makeSolution(   solutionName,
                                                     solutionDirectory,
@@ -98,17 +98,17 @@ public final class ProjectLoader {
     _makeSolution ( final String solName,
                     final Path solutionDirectory,
                     final String configurationName,
-                    final Map<String, ProjectInfo> projectsInfos,
+                    final Map<ProjectId, ProjectInfo> projectsInfos,
                     final Map<ProjectId, Map<String, CProject>> projects)
     {
         final CSolution result = new CSolution( solutionDirectory,
                                                 new Name(solName),
                                                 configurationName);
 
-        for (   final Entry<String, ProjectInfo> projectInfoEntry:
+        for (   final Entry<ProjectId, ProjectInfo> projectInfoEntry:
                 projectsInfos.entrySet())
         {
-            final ProjectId prjid = ProjectId.Get(projectInfoEntry.getKey());
+            final ProjectId prjid = projectInfoEntry.getKey();
             //
             final ProjectInfo _m_projInfo = projectInfoEntry.getValue();
             final boolean isBuildable = _m_projInfo.IsBuildable();
