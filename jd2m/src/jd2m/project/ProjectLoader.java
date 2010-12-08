@@ -88,6 +88,15 @@ public final class ProjectLoader {
             final Map<String, CProject> projectPerConfiguration =
                     XmlAnalyser.ParseProjectXML(projectXmlPath, args);
 
+            // Add all dependencies from the project-entry into every
+            // configuration
+            for (   final Entry<String, CProject> projectEntry:
+                    projectPerConfiguration.entrySet())
+            { // foreach project-configuration => c-project entry
+                final CProject project = projectEntry.getValue();
+                for (final ProjectId dep: entry.GetDependencies())
+                    project.AddDependency(dep);
+            }
             result.put(id, projectPerConfiguration);
         }
 

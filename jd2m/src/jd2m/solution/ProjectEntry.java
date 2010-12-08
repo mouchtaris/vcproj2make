@@ -1,6 +1,7 @@
 package jd2m.solution;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import jd2m.util.Identifiable;
@@ -52,6 +53,10 @@ public final class ProjectEntry implements
     }
     public void AddDependency (final ProjectId depId) {
         _dependencies.add(depId);
+    }
+
+    public List<ProjectId> GetDependencies () {
+        return Collections.unmodifiableList(_dependencies);
     }
 
     // ---------------------------------

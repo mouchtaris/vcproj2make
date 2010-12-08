@@ -21,7 +21,7 @@ public final class CProject {
     private final File              _intermediate;
     private final File              _api;
     private final CProjectType      _type;
-    private final List<String>      _deps = new LinkedList<>();
+    private final List<ProjectId>   _deps = new LinkedList<>();
     private final List<File>        _sources = new LinkedList<>();
 
     public CProject (   final File          location,
@@ -52,10 +52,7 @@ public final class CProject {
         _props.addAll(props);
     }
 
-    public void AddDependency (final String depId) {
-        ProjectId result = ProjectId.Get(depId);
-        assert result != null;
-        assert result.toString().equals(depId);
+    public void AddDependency (final ProjectId depId) {
         _deps.add(depId);
     }
 

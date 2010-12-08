@@ -106,7 +106,13 @@ final class XmlAnalyser {
             }
         }
 
+        private boolean _visitedConfigurations = false;
+        private boolean _visitingConfigurations = false;
         void VisitConfigurations (final Node configurationsNode) {
+            assert !_visitedConfigurations;
+            assert !_visitingConfigurations;
+            _visitingConfigurations = true;
+            //
             for (   Node child = configurationsNode.getFirstChild();
                     child != null;
                     child = child.getNextSibling())
@@ -124,6 +130,9 @@ final class XmlAnalyser {
                 builder.SetId(_projectId);
                 builder.SetApiDirectory(API_DIRECTORY);
             }
+            //
+            _visitingConfigurations = false;
+            _visitedConfigurations = true;
         }
 
         void VisitConfiguration (final Node configuration) {
@@ -222,6 +231,7 @@ final class XmlAnalyser {
         }
 
         void VisitReferences (final Node referencesNode) {
+            assert _visitedConfigurations;
             assert referencesNode.getNodeType() == Node.ELEMENT_NODE;
             assert referencesNode.getNodeName().equals("References");
 
@@ -235,7 +245,7 @@ final class XmlAnalyser {
                     final Node projRefNode = child;
                     final NamedNodeMap attrs = projRefNode.getAttributes();
                     //
-                    final String referenceId = attrs
+                    final String referenceIdStr = attrs
                             .getNamedItem("ReferencedProjectIdentifier")
                             .getNodeValue();
                     final String referencePath = attrs // TODO store reference paths somewhere too
@@ -243,6 +253,8 @@ final class XmlAnalyser {
                             .getNodeValue();
                     //
                     // Add references for every project configuration
+                    final ProjectId referenceId = ProjectId
+                            .GetOrCreate(referenceIdStr);
                     for (   final Entry<String, CProjectBuilder> entry:
                             _builders.entrySet())
                         entry.getValue().AddDependency(referenceId);

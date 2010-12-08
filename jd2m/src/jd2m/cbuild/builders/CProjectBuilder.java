@@ -29,7 +29,7 @@ public final class CProjectBuilder {
         used = true;
         final CProject result = new CProject(_location, _name, _id, _target,
                 _targetExt, _output, _intermediate, _api, _type);
-        for (final String depId: _deps)
+        for (final ProjectId depId: _deps)
             result.AddDependency(depId);
         result.AddProperties(_props);
         for (final File src: _sources)
@@ -48,7 +48,7 @@ public final class CProjectBuilder {
     private File                    _intermediate;
     private File                    _api;
     private CProjectType            _type;
-    private final List<String>      _deps = new LinkedList<>();
+    private final List<ProjectId>   _deps = new LinkedList<>();
     private final List<File>        _sources = new LinkedList<>();
 
     public void AddProperty (final CProperties p)   { _props.add(p);    }
@@ -61,7 +61,7 @@ public final class CProjectBuilder {
     public void SetIntermediate (final File intm)   { _intermediate = intm; }
     public void SetApiDirectory (final File api )   { _api = api;       }
     public void SetType     (final CProjectType t)  { _type = t;        }
-    public void AddDependency(final String dep  )   { _deps.add(dep);   }
+    public void AddDependency(final ProjectId dep)  { _deps.add(dep);   }
     public void AddSource   (final File src     )   { _sources.add(src);}
 
     public File GetOutput   ()  { return _output; }
