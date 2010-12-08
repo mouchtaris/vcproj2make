@@ -7,6 +7,7 @@ import jd2m.util.ProjectId;
 import static jd2m.util.PathHelper.IsWindowsPath;
 import static jd2m.util.PathHelper.IsFileName;
 import static jd2m.util.PathHelper.UnixifyPath;
+import static jd2m.util.PathHelper.CreatePath;
 
 public class PathResolver {
 
@@ -73,11 +74,16 @@ public class PathResolver {
 //        return result;
 //    }
     public Path ProjectResolve (final ProjectId projectId, final String path) {
-        final Path result = ProjectPath(projectId).resolve(path);
+        final ProjectEntry entry = _projEntries.Get(projectId);
+        final Path result = ProjectResolve(entry, path);
         return result;
     }
     public Path ProjectResolve (final ProjectEntry entry, final String path) {
-        final Path result = ProjectPath(entry).resolve(path);
+        final Path projectPath = ProjectPath(entry);
+        final Path projectDirectory = projectPath.getParent();
+        final Path result = projectDirectory != null?
+                                    projectDirectory.resolve(path):
+                                    CreatePath(path);
         return result;
     }
 }

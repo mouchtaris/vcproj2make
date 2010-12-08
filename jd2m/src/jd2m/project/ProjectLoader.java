@@ -84,7 +84,8 @@ public final class ProjectLoader {
                             entry.GetName(),
                             id,
                             CreatePath(projectXmlPath.toString()),
-                            ve
+                            ve,
+                            resolver
                     );
             final Map<String, CProject> projectPerConfiguration =
                     XmlAnalyser.ParseProjectXML(projectXmlPath, args);

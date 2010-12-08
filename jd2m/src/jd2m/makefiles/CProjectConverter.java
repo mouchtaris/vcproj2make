@@ -90,11 +90,11 @@ public final class CProjectConverter {
         _u_writeVariable(       out,
                                 CPPFLAGS,
                                 DefinitionPrefix,
-                                ShellEscaperValueProcessor,
+                                ShellEscaperValuePreprocessor,
                                 project.GetDefinitions(), false);
         _u_writeVariableValues( out,
                                 InclusionPrefix,
-                                ShellEscaperValueProcessor,
+                                ShellEscaperValuePreprocessor,
                                 project.GetIncludeDirectories());
         _u_endOfVariable(out);
     }
@@ -107,7 +107,7 @@ public final class CProjectConverter {
         _u_writeVariable(   out,
                             LDFLAGS,
                             AdditionalLibraryDirectoryPrefix,
-                            ShellEscaperValueProcessor,
+                            TransparentValuePreprocessor,
                             project.GetLibraryDirectories(),
                             false);
         //
@@ -120,7 +120,7 @@ public final class CProjectConverter {
             // Add dependency output directory to library directories with -L
             _u_writeVariableValue(  out,
                                     AdditionalLibraryDirectoryPrefix,
-                                    ShellEscape(dependencyOutputString));
+                                    dependencyOutputString);
             // Add the generated library to the linking inputs with -l
             _u_writeVariableValue(  out, LibraryLinkingPrefix,
                                     ShellEscape(dependencyTarget));
@@ -134,7 +134,7 @@ public final class CProjectConverter {
         // Write addition-libraries related LDFLAGS
         _u_writeVariableValues(     out,
                                     LibraryLinkingPrefix,
-                                    ShellEscaperValueProcessor,
+                                    ShellEscaperValuePreprocessor,
                                     project.GetAdditionalLibraries());
         //
         _u_endOfVariable(out);
@@ -163,7 +163,7 @@ public final class CProjectConverter {
     }
     private static void _u_writeVariableValues (final PrintStream out,
                                                 final String valuePrefix,
-                                                final ValueProcessor vp,
+                                                final ValuePreprocessor vp,
                                                 final Iterable<?> values)
     {
         for (final Object value: values)
@@ -173,7 +173,7 @@ public final class CProjectConverter {
     private static void _u_writeVariable (  final PrintStream out,
                                             final String variableName,
                                             final String valuePrefix,
-                                            final ValueProcessor vp,
+                                            final ValuePreprocessor vp,
                                             final Iterable<?> values,
                                             final boolean finalWriting)
     {
@@ -189,14 +189,21 @@ public final class CProjectConverter {
 
     // -----
     
-    private interface ValueProcessor {
+    private interface ValuePreprocessor {
         String process (String value);
     }
-    private final static ValueProcessor ShellEscaperValueProcessor =
-            new ValueProcessor() {
+    private final static ValuePreprocessor ShellEscaperValuePreprocessor =
+            new ValuePreprocessor() {
                 @Override
-                public String process(final String value) {
+                public String process (final String value) {
                     return ShellEscape(value);
+                }
+            };
+    private final static ValuePreprocessor TransparentValuePreprocessor =
+            new ValuePreprocessor() {
+                @Override
+                public String process (final String value) {
+                    return value;
                 }
             };
 }

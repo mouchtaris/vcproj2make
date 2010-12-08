@@ -1,9 +1,10 @@
 package jd2m.project;
 
+import jd2m.util.Ref;
 import java.io.BufferedInputStream;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
@@ -16,12 +17,14 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jd2m.cbuild.CProject;
 import jd2m.cbuild.CProjectType;
 import jd2m.cbuild.CProperties;
 import jd2m.cbuild.builders.CProjectBuilder;
+import jd2m.solution.PathResolver;
 import jd2m.solution.VariableEvaluator;
 import jd2m.util.Name;
 import jd2m.util.ProjectId;
@@ -34,6 +37,8 @@ import static jd2m.util.PathHelper.IsWindowsPath;
 import static jd2m.util.PathHelper.UnixifyPath;
 import static jd2m.util.PathHelper.CreatePath;
 import static jd2m.util.PathHelper.GetFileSystem;
+import static java.nio.file.StandardOpenOption.READ;
+import static jd2m.util.Ref.CreateRef;
 
 final class XmlAnalyser {
 
@@ -45,10 +50,12 @@ final class XmlAnalyser {
         private final ProjectId         _projectId;
         private final Path              _projectLocation;
         private final VariableEvaluator _ve;
+        private final PathResolver      _pathResolver;
         XmlTreeWalker ( final Name              projectName,
                         final ProjectId         projectId,
                         final Path              projectLocation,
-                        final VariableEvaluator ve)
+                        final VariableEvaluator ve,
+                        final PathResolver      pathResolver)
         {
             assert !IsWindowsPath(projectLocation.toString());
 
@@ -56,6 +63,7 @@ final class XmlAnalyser {
             _projectId          = projectId;
             _projectLocation    = projectLocation;
             _ve                 = ve;
+            _pathResolver       = pathResolver;
         }
 
         XmlTreeWalker VisitDocument (final Document  doc) {
@@ -191,7 +199,8 @@ final class XmlAnalyser {
 
             if (propertySheetsAttr != null) {
                 final String propertySheets = propertySheetsAttr.getNodeValue();
-                _u_addPropertySheets(builder, propertySheets);
+                _u_addPropertySheets(   builder, propertySheets,
+                                        outputDirectory, type);
             }
             
             //
@@ -199,7 +208,8 @@ final class XmlAnalyser {
             final CProperties props = new CProperties();
             builder.AddProperty(props);
 
-            boolean visitedCompiler = false, visitedLinker = false;
+            final Ref<Boolean> visitedCompilerRef   = CreateRef(false);
+            final Ref<Boolean> visitedLinkerRef     = CreateRef(false);
             for (   Node child = configuration.getFirstChild();
                     child != null;
                     child = child.getNextSibling())
@@ -208,29 +218,16 @@ final class XmlAnalyser {
                     child.getNodeName().equals("Tool"))
                 {
                     final Node tool = child;
-                    final NamedNodeMap toolAttrs = tool.getAttributes();
-                    final String toolName = toolAttrs.getNamedItem("Name")
-                            .getNodeValue();
-                    switch (toolName) {
-                        case "VCCLCompilerTool": {
-                            assert !visitedCompiler;
-                            final String definitions = toolAttrs
-                                    .getNamedItem("PreprocessorDefinitions")
-                                    .getNodeValue();
-                            _u_addDefinitions(props, definitions);
-                            visitedCompiler = true;
-                            break;
-                        }
-                        case "VCLinkerTool":
-                        case "VCLibrarianTool":
-                            assert !visitedLinker;
-                            _u_extractLinkerInfo(toolAttrs, outputDirectory, builder, type, props);
-                            visitedLinker = true;
-                            break;
-                    }
+                    _u_extractInformationFromTools( tool,
+                                                    visitedCompilerRef,
+                                                    visitedLinkerRef,
+                                                    props,
+                                                    outputDirectory,
+                                                    builder,
+                                                    type);
                 }
             }
-            assert visitedCompiler && visitedLinker;
+            assert visitedCompilerRef.Deref() && visitedLinkerRef.Deref();
         }
 
         void VisitReferences (final Node referencesNode) {
@@ -319,7 +316,6 @@ final class XmlAnalyser {
             }
         }
 
-
         private static final PathMatcher _u_CppSourceFilesFilter =
                 GetFileSystem().getPathMatcher("glob:**.cpp");
 
@@ -367,10 +363,56 @@ final class XmlAnalyser {
         private static final Pattern _u_SemicolonPattern = Pattern
                 .compile(";+");
         private void _u_addPropertySheets ( final CProjectBuilder builder,
-                                            final String sheetsLine)
+                                            final String sheetsLine,
+                                            final String outputDirectory,
+                                            final CProjectType type)
         {
             final String[] tokens = _u_SemicolonPattern.split(sheetsLine, 0);
-            // TODO load sheets
+            for (final String token: tokens) {
+                final String sheetUnixRelativePath = UnixifyPath(token);
+                final Path sheetFullPath = _pathResolver
+                        .ProjectResolve(_projectId, sheetUnixRelativePath);
+                try {
+                    final Document doc = DocumentBuilder
+                            .parse(sheetFullPath.newInputStream(READ));
+                    for (   Node child = doc.getFirstChild();
+                            child != null;
+                            child = child.getNextSibling())
+                    {
+                        if (child.getNodeType() == Node.ELEMENT_NODE    &&
+                            child.getNodeName()
+                                    .equals("VisualStudioPropertySheet"))
+                        {
+                            final Node sheet = child;
+                            for (   Node propChild = sheet.getFirstChild();
+                                    propChild != null;
+                                    propChild = propChild.getNextSibling())
+                            {
+                                final short propChildType = propChild
+                                                            .getNodeType();
+                                final String propChildName = propChild
+                                                            .getNodeName();
+                                final String propChildValue = propChild
+                                                            .getNodeValue();
+                                if (propChildType == Node.ELEMENT_NODE  &&
+                                    propChildName.equals("Tool"))
+                                {
+                                    final CProperties props = new CProperties();
+                                    builder.AddProperty(props);
+                                    _u_extractInformationFromTools(
+                                            propChild, CreateRef(false),
+                                            CreateRef(false), props,
+                                            outputDirectory, builder, type);
+                                }
+                            }
+                        }
+                    }
+                } catch (SAXException ex) {
+                    throw new RuntimeException(ex);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
         private void _u_addDefinitions (final CProperties   props,
                                         final String        definitions) {
@@ -470,6 +512,39 @@ final class XmlAnalyser {
                 _u_addLibraryDirectories(props, libDirectories);
             }
         }
+        private void _u_extractInformationFromTools (
+                                        final Node          tool,
+                                        final Ref<Boolean>  visitedCompilerRef,
+                                        final Ref<Boolean>  visitedLinkerRef,
+                                        final CProperties   props,
+                                        final String        outputDirectory,
+                                        final CProjectBuilder builder,
+                                        final CProjectType  type)
+        {
+            final NamedNodeMap toolAttrs = tool.getAttributes();
+            final String toolName = toolAttrs.getNamedItem("Name")
+                    .getNodeValue();
+            switch (toolName) {
+                case "VCCLCompilerTool": {
+                    assert !visitedCompilerRef.Deref();
+                    final Node definitionsAttr = toolAttrs
+                            .getNamedItem("PreprocessorDefinitions");
+                    if (definitionsAttr != null) {
+                        final String definitions =  definitionsAttr
+                                                            .getNodeValue();
+                        _u_addDefinitions(props, definitions);
+                    }
+                    visitedCompilerRef.Assign(true);
+                    break;
+                }
+                case "VCLinkerTool":
+                case "VCLibrarianTool":
+                    assert !visitedLinkerRef.Deref();
+                    _u_extractLinkerInfo(toolAttrs, outputDirectory, builder, type, props);
+                    visitedLinkerRef.Assign(true);
+                    break;
+            }
+        }
     }
 
     /**
@@ -482,8 +557,9 @@ final class XmlAnalyser {
                                             final XmlAnalyserArguments args)
     {
         final Map<String, CProjectBuilder> builders =
-                new XmlTreeWalker(args.name, args.id, args.location, args.ve)
-                .VisitDocument(doc)._builders;
+                new XmlTreeWalker(  args.name, args.id, args.location, args.ve,
+                                    args.pathResolver)
+                        .VisitDocument(doc)._builders;
 
         final Map<String, CProject> result = new HashMap<>(5);
         for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
@@ -492,6 +568,14 @@ final class XmlAnalyser {
         return result;
     }
 
+    private final static DocumentBuilder DocumentBuilder;
+    static {
+        try {
+            DocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        } catch (ParserConfigurationException ex) {
+            throw new AssertionError(ex);
+        }
+    }
     /**
      * same as {@link #ParseProjectXML(Document,XmlAnalyserArguments)}
      * @param ins
@@ -503,12 +587,9 @@ final class XmlAnalyser {
     {
         Map<String, CProject> result = null;
         try {
-            final Document xmlDoc = DocumentBuilderFactory.newInstance().
-                    newDocumentBuilder().parse(ins);
+            final Document xmlDoc = DocumentBuilder.parse(ins);
             xmlDoc.normalize();
             result = ParseProjectXML(xmlDoc, args);
-        } catch (ParserConfigurationException ex) {
-            ex.printStackTrace();
         } catch (SAXException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {
