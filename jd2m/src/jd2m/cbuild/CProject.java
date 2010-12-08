@@ -10,6 +10,7 @@ import jd2m.util.PremadeIteratorWrapperIterable;
 import jd2m.util.ProjectId;
 
 import static jd2m.util.PathHelper.CreatePath;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * @author TURBO_X
@@ -29,6 +30,19 @@ public final class CProject {
     private final List<ProjectId>   _deps = new LinkedList<>();
     private final List<Path>        _sources = new LinkedList<>();
 
+    /**
+     *
+     * @param location the project file's location (full pathname)
+     * @param name the project's name
+     * @param id the project's id
+     * @param configuration the project's configuration name/description
+     * @param target the project's result/output/target file base-name (without extension)
+     * @param targetExt the project's result/output/target file extension
+     * @param output the project's result/output/target directory
+     * @param intermediate the project's intermediate directory
+     * @param apiDirectory the project's API-related files containing directory
+     * @param type the project's type ({@link CProjectType})
+     */
     public CProject (   final Path          location,
                         final Name          name,
                         final ProjectId     id,
@@ -99,6 +113,22 @@ public final class CProject {
         return _GetIterableOfSomethingFromProperties(LibraryDirectoriesGitter);
     }
 
+    public Iterable<ProjectId> GetDependencies () {
+        return unmodifiableList(_deps);
+    }
+
+    public Path GetOutput () {
+        return _output;
+    }
+
+    public String GetTarget () {
+        return _target;
+    }
+
+    public Iterable<String> GetAdditionalLibraries () {
+        return _GetIterableOfSomethingFromProperties(AdditionalLibrariesGitter);
+    }
+
     //////////////////////////////////////////////////////////////////////
     // ------------------------
     // Private
@@ -128,6 +158,14 @@ public final class CProject {
         @Override
         public Iterable<Path> git(final CProperties props) {
             return props.GetLibraryDirectories();
+        }
+    };
+    // ---
+    private static final PropertyIterableOfSomethingGetter<String>
+    AdditionalLibrariesGitter = new PropertyIterableOfSomethingGetter<>() {
+        @Override
+        public Iterable<String> git(final CProperties props) {
+            return props.GetAdditionalLibraries();
         }
     };
     // ---

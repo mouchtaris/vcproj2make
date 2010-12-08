@@ -90,6 +90,10 @@ public final class CProperties {
         return unmodifiableList(_libdirs);
     }
 
+    public Iterable<String> GetAdditionalLibraries () {
+        return unmodifiableList(_libs);
+    }
+
     // ---------------------------------
     // Private
     private static String _u_stripWindowsSpecificLibraryNaming (final String s){

@@ -30,7 +30,8 @@ public class CSolutionConverter {
                     makefilePath.newOutputStream(   CREATE,
                                                     WRITE,
                                                     TRUNCATE_EXISTING),
-                    cproject);
+                    cproject,
+                    csolution);
         }
     }
 }
