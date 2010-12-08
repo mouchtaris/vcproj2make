@@ -1,6 +1,6 @@
 package jd2m.cbuild.builders;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import jd2m.cbuild.CProject;
@@ -32,37 +32,37 @@ public final class CProjectBuilder {
         for (final ProjectId depId: _deps)
             result.AddDependency(depId);
         result.AddProperties(_props);
-        for (final File src: _sources)
+        for (final Path src: _sources)
             result.AddSource(src);
 
         return result;
     }
 
     private final List<CProperties> _props = new LinkedList<>();
-    private File                    _location;
+    private Path                    _location;
     private Name                    _name;
     private ProjectId               _id;
     private String                  _target;
     private String                  _targetExt;
-    private File                    _output;
-    private File                    _intermediate;
-    private File                    _api;
+    private Path                    _output;
+    private Path                    _intermediate;
+    private Path                    _api;
     private CProjectType            _type;
     private final List<ProjectId>   _deps = new LinkedList<>();
-    private final List<File>        _sources = new LinkedList<>();
+    private final List<Path>        _sources = new LinkedList<>();
 
     public void AddProperty (final CProperties p)   { _props.add(p);    }
-    public void SetLocation (final File l       )   { _location = l;    }
+    public void SetLocation (final Path l       )   { _location = l;    }
     public void SetName     (final Name n       )   { _name = n;        }
     public void SetId       (final ProjectId id )   { _id = id;         }
     public void SetTarget   (final String trg   )   { _target = trg;    }
     public void SetExt      (final String ext   )   { _targetExt = ext; }
-    public void SetOutput   (final File out     )   { _output = out;    }
-    public void SetIntermediate (final File intm)   { _intermediate = intm; }
-    public void SetApiDirectory (final File api )   { _api = api;       }
+    public void SetOutput   (final Path out     )   { _output = out;    }
+    public void SetIntermediate (final Path intm)   { _intermediate = intm; }
+    public void SetApiDirectory (final Path api )   { _api = api;       }
     public void SetType     (final CProjectType t)  { _type = t;        }
     public void AddDependency(final ProjectId dep)  { _deps.add(dep);   }
-    public void AddSource   (final File src     )   { _sources.add(src);}
+    public void AddSource   (final Path src     )   { _sources.add(src);}
 
-    public File GetOutput   ()  { return _output; }
+    public Path GetOutput   ()  { return _output; }
 }

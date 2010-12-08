@@ -2,8 +2,11 @@ package jd2m.solution;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import jd2m.util.ProjectId;
+
+import static jd2m.util.PathHelper.IsWindowsPath;
+import static jd2m.util.PathHelper.IsFileName;
+import static jd2m.util.PathHelper.UnixifyPath;
 
 public class PathResolver {
 
@@ -45,10 +48,10 @@ public class PathResolver {
     }
 
     public Path ProjectPath (final ProjectEntry entry) {
-        final File location = entry.GetLocation();
-        assert !IsWindowsPath(location.getPath());
+        final Path location = entry.GetLocation();
+        assert !IsWindowsPath(location.toString());
         assert !location.isAbsolute();
-        final Path result = _solutionDir.resolve(location.getPath());
+        final Path result = _solutionDir.resolve(location);
         {
             assert result.isAbsolute();
             assert new File(result.toString()).isFile();
@@ -75,28 +78,6 @@ public class PathResolver {
     }
     public Path ProjectResolve (final ProjectEntry entry, final String path) {
         final Path result = ProjectPath(entry).resolve(path);
-        return result;
-    }
-
-    // --------------------------
-    // Utilities
-    public static boolean IsWindowsPath (final String pathname) {
-        final int slashIndex = pathname.indexOf('/');
-        final boolean result = slashIndex == -1;
-        return result;
-    }
-
-    public static boolean IsFileName (final String pathname) {
-        final int slashIndex        = pathname.indexOf('/');
-        final int backslashIndex    = pathname.indexOf('\\');
-        final boolean result        =   slashIndex      == -1    &&
-                                        backslashIndex  == -1;
-        return result;
-    }
-
-    public static String UnixifyPath (final String pathname) {
-        assert IsWindowsPath(pathname);
-        final String result = pathname.replaceAll("\\\\", "/");
         return result;
     }
 }

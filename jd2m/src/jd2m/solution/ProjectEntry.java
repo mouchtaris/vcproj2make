@@ -1,6 +1,6 @@
 package jd2m.solution;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +9,9 @@ import jd2m.util.ProjectId;
 import jd2m.util.Locatable;
 import jd2m.util.Namable;
 import jd2m.util.Name;
+
+import static jd2m.util.PathHelper.IsWindowsPath;
+import static jd2m.util.PathHelper.CreatePath;
 
 public final class ProjectEntry implements
     Identifiable,
@@ -19,11 +22,11 @@ public final class ProjectEntry implements
     private final ProjectId         _identity;
     private final ProjectId         _parentRefId;
     private final Name              _name;
-    private final File              _location;
+    private final Path              _location;
     private final List<ProjectId>   _dependencies = new LinkedList<>();
     private ProjectEntry (  final ProjectId identity,
                             final Name      name,
-                            final File      location,
+                            final Path      location,
                             final ProjectId parentRefId)
     {
         _identity       = identity;
@@ -44,7 +47,7 @@ public final class ProjectEntry implements
         return _name;
     }
 
-    public File GetLocation () {
+    public Path GetLocation () {
         return _location;
     }
 
@@ -66,8 +69,8 @@ public final class ProjectEntry implements
                                         final String location,
                                         final ProjectId parentRefId)
     {
-        assert !PathResolver.IsWindowsPath(location);
-        return new ProjectEntry(id, new Name(name), new File(location),
+        assert !IsWindowsPath(location);
+        return new ProjectEntry(id, new Name(name), CreatePath(location),
                                 parentRefId);
     }
 

@@ -1,7 +1,6 @@
 package jd2m.solution;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -18,7 +17,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import static jd2m.solution.PathResolver.UnixifyPath;
+import static jd2m.util.PathHelper.UnixifyPath;
 
 final class XmlAnalyser {
 
@@ -328,12 +327,6 @@ final class XmlAnalyser {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-
-    static void ParseXML (  final File file,
-                            final XmlAnalyserArguments args)
-    {
-        ParseXML(file.toPath(), args);
     }
 
     static void ParseXML (  final String filepath,

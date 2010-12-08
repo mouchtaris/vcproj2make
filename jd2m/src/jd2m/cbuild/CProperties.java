@@ -1,56 +1,58 @@
 package jd2m.cbuild;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
+import static jd2m.util.PathHelper.IsFile;
+import static jd2m.util.PathHelper.CreatePath;
+
 public final class CProperties {
 
-    private final List<File> _includes  = new LinkedList<>();
+    private final List<Path> _includes  = new LinkedList<>();
     private final List<String> _defs    = new LinkedList<>();
-    private final List<File> _libdirs   = new LinkedList<>();
+    private final List<Path> _libdirs   = new LinkedList<>();
     private final List<String> _libs    = new LinkedList<>();
 
-    public void AddIncludeDirectory (final File dir) {
-        assert dir.isDirectory();
+    public void AddIncludeDirectory (final Path dir) {
+        assert !IsFile(dir.toString());
         assert !dir.isAbsolute();
         _includes.add(dir);
     }
     public void AddIncludeDirectory (final String dirpath) {
-        AddIncludeDirectory(new File(dirpath));
+        AddIncludeDirectory(CreatePath(dirpath));
     }
 
-    public void AddIncludeDirectories (final Iterable<? extends File> dirs) {
-        for (final File dir: dirs)
+    public void AddIncludeDirectories (final Iterable<? extends Path> dirs) {
+        for (final Path dir: dirs)
             AddIncludeDirectory(dir);
     }
 
     public void AddIncludeDirectoriesFromPaths (final Iterable<String> paths) {
         for (final String path: paths)
-            AddIncludeDirectory(new File(path));
+            AddIncludeDirectory(CreatePath(path));
     }
 
     public void AddDefinition (final String def) {
         _defs.add(def);
     }
 
-    public void AddLibraryDrectory (final File dir) {
-        final String pathString = dir.getPath();
+    public void AddLibraryDrectory (final Path dir) {
         _libdirs.add(dir);
     }
 
     public void AddLibraryDrectory (final String dirpath) {
-        AddLibraryDrectory(new File(dirpath));
+        AddLibraryDrectory(CreatePath(dirpath));
     }
 
-    public void AddLibraryDrectories (final Iterable<? extends File> dirs) {
-        for (final File dir: dirs)
+    public void AddLibraryDrectories (final Iterable<? extends Path> dirs) {
+        for (final Path dir: dirs)
             AddLibraryDrectory(dir);
     }
 
     public void AddLibraryDirectoriesFromPaths (final Iterable<String> paths) {
         for (final String path: paths)
-            AddLibraryDrectory(new File(path));
+            AddLibraryDrectory(CreatePath(path));
     }
 
     /**

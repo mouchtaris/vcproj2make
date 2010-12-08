@@ -1,37 +1,39 @@
 package jd2m.cbuild;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import jd2m.util.Name;
 import jd2m.util.ProjectId;
 
+import static jd2m.util.PathHelper.CreatePath;
+
 /**
  * @author TURBO_X
  */
 public final class CProject {
     private final List<CProperties> _props = new LinkedList<>();
-    private final File              _location;
+    private final Path              _location;
     private final Name              _name;
     private final ProjectId         _id;
     private final String            _target;
     private final String            _targetExt;
-    private final File              _output;
-    private final File              _intermediate;
-    private final File              _api;
+    private final Path              _output;
+    private final Path              _intermediate;
+    private final Path              _api;
     private final CProjectType      _type;
     private final List<ProjectId>   _deps = new LinkedList<>();
-    private final List<File>        _sources = new LinkedList<>();
+    private final List<Path>        _sources = new LinkedList<>();
 
-    public CProject (   final File          location,
+    public CProject (   final Path          location,
                         final Name          name,
                         final ProjectId     id,
                         final String        target,
                         final String        targetExt,
-                        final File          output,
-                        final File          intermediate,
-                        final File          apiDirectory,
+                        final Path          output,
+                        final Path          intermediate,
+                        final Path          apiDirectory,
                         final CProjectType  type
     ) {
         _location       = location;
@@ -56,12 +58,12 @@ public final class CProject {
         _deps.add(depId);
     }
 
-    public void AddSource (final File path) {
+    public void AddSource (final Path path) {
         assert !path.isAbsolute();
         _sources.add(path);
     }
     public void AddSource (final String path) {
-        AddSource(new File(path));
+        AddSource(CreatePath(path));
     }
 
     ////////////////////////////////////////////

@@ -1,6 +1,5 @@
 package jd2m.project;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +15,8 @@ import jd2m.solution.SolutionLoadedData;
 import jd2m.solution.VariableEvaluator;
 import jd2m.util.Name;
 import jd2m.util.ProjectId;
+
+import static jd2m.util.PathHelper.CreatePath;
 
 public final class ProjectLoader {
 
@@ -82,7 +83,7 @@ public final class ProjectLoader {
                     new XmlAnalyserArguments(
                             entry.GetName(),
                             id,
-                            new File(projectXmlPath.toString()),
+                            CreatePath(projectXmlPath.toString()),
                             ve
                     );
             final Map<String, CProject> projectPerConfiguration =

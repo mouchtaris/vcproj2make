@@ -1,11 +1,11 @@
 package jd2m.project;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
@@ -30,25 +30,27 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import static jd2m.solution.PathResolver.IsWindowsPath;
-import static jd2m.solution.PathResolver.UnixifyPath;
+import static jd2m.util.PathHelper.IsWindowsPath;
+import static jd2m.util.PathHelper.UnixifyPath;
+import static jd2m.util.PathHelper.CreatePath;
+import static jd2m.util.PathHelper.GetFileSystem;
 
 final class XmlAnalyser {
 
-    public static final File API_DIRECTORY = new File("../Include");
+    public static final Path API_DIRECTORY = CreatePath("../Include");
 
     private static class XmlTreeWalker {
         private final Map<String, CProjectBuilder> _builders = new HashMap<>(5);
         private final Name              _projectName;
         private final ProjectId         _projectId;
-        private final File              _projectLocation;
+        private final Path              _projectLocation;
         private final VariableEvaluator _ve;
         XmlTreeWalker ( final Name              projectName,
                         final ProjectId         projectId,
-                        final File              projectLocation,
+                        final Path              projectLocation,
                         final VariableEvaluator ve)
         {
-            assert !IsWindowsPath(projectLocation.getPath());
+            assert !IsWindowsPath(projectLocation.toString());
 
             _projectName        = projectName;
             _projectId          = projectId;
@@ -174,10 +176,10 @@ final class XmlAnalyser {
 
             //
             _ve.SetOutDir(outputDirectory);
-            final File output = new File(outputDirectory);
+            final Path output = CreatePath(outputDirectory);
             builder.SetOutput(output);
             //
-            final File intermediate = new File(intermediateDirectory);
+            final Path intermediate = CreatePath(intermediateDirectory);
             builder.SetIntermediate(intermediate);
             //
             final CProjectType type = _u_vsProjTypeToCProjType(projectType);
@@ -264,7 +266,7 @@ final class XmlAnalyser {
             }
         }
 
-        private final List<File> _sources = new LinkedList<>();
+        private final List<Path> _sources = new LinkedList<>();
         void VisitFiles (final Node files) {
             assert files.getNodeType() == Node.ELEMENT_NODE;
             assert files.getNodeName().equals("Files");
@@ -286,7 +288,7 @@ final class XmlAnalyser {
                 }
             }
 
-            for (final File source: _sources)
+            for (final Path source: _sources)
                 for (   final Entry<String, CProjectBuilder> entry:
                         _builders.entrySet())
                     entry.getValue().AddSource(source);
@@ -317,19 +319,9 @@ final class XmlAnalyser {
         }
 
 
-        private static final FileFilter _u_CppSourceFilesFilter = new FileFilter() {
-            @Override
-            public boolean accept (final File pathname) {
-                final String path = pathname.getPath();
-                final int dotIndex = path.lastIndexOf('.');
-                boolean resulte = false;
-                if (dotIndex > 0) {
-                    final String ext = path.substring(dotIndex+1);
-                    resulte = ext.equals("cpp");
-                }
-                return resulte;
-            }
-        };
+        private static final PathMatcher _u_CppSourceFilesFilter =
+                GetFileSystem().getPathMatcher("glob:**.cpp");
+
         void VisitFile (final Node fileNode) {
             assert fileNode.getNodeType() == Node.ELEMENT_NODE;
             assert fileNode.getNodeName().equals("File");
@@ -337,8 +329,8 @@ final class XmlAnalyser {
             final String _m_filePathWindows = fileNode.getAttributes()
                     .getNamedItem("RelativePath").getNodeValue();
             final String filePath = UnixifyPath(_m_filePathWindows);
-            final File potentialSourceFile = new File(filePath);
-            if (_u_CppSourceFilesFilter.accept(potentialSourceFile))
+            final Path potentialSourceFile = CreatePath(filePath);
+            if (_u_CppSourceFilesFilter.matches(potentialSourceFile))
                 _sources.add(potentialSourceFile);
 
             for (   Node child = fileNode.getFirstChild();
@@ -402,7 +394,8 @@ final class XmlAnalyser {
                 final String _m_unevaluatedUnixPath =
                         UnixifyPath(_m_unevaluatedWindowsPath);
                 final String path = _ve.EvaluateString(_m_unevaluatedUnixPath);
-                props.AddLibraryDrectory(path);
+                if (!path.isEmpty())
+                    props.AddLibraryDrectory(path);
             }
             LOG.log(Level.INFO, "library paths = {0}",
                     java.util.Arrays.toString(paths));
@@ -424,31 +417,34 @@ final class XmlAnalyser {
                     .getNamedItem("AdditionalDependencies");
             //
             String unevaluatedName, ext;
-            File outputDirectory0;
+            String outputDirectory0str;
             //
             if (outputFilePathAttr != null) {
                 final String outputFilePath = outputFilePathAttr.getNodeValue();
                 final String outputFilePathUnix = UnixifyPath(outputFilePath);
                 final String outputFilePathEvaluated = _ve
                         .EvaluateString(outputFilePathUnix);
-                final File outputFile = new File(outputFilePathEvaluated);
-                outputDirectory0 = outputFile.getParentFile();
+                final Path outputFile = CreatePath(outputFilePathEvaluated);
+                final Path outputDirectory0 = outputFile.getParent();
                 assert outputDirectory0 != null;
+                outputDirectory0str = outputDirectory0.toString();
                 //
-                final String nameWithExt = outputFile.getName();
-                final String[] nameTokens = _u_SplitName(nameWithExt);
+                final Path nameWithExtPath = outputFile.getName();
+                final String[] nameTokens = _u_SplitName(
+                        nameWithExtPath.toString());
                 unevaluatedName = nameTokens[0];
                 ext  = nameTokens[1];
             }
             else {
-                outputDirectory0 = new File(_ve.EvaluateString("$(OutDir)"));
+                outputDirectory0str = _ve.EvaluateString("$(OutDir)");
                 unevaluatedName = "$(ProjectName)";
                 ext  = type.GetExtension();
             }
             //
-            if (!outputDirectory.equals(outputDirectory0.getPath())) {
+            if (!outputDirectory.equals(outputDirectory0str)) {
                 LOG.log(Level.WARNING, "Project''s output directory {0} and linker''s output directory {1} do not match. Resetting outputDirectory to linker''s value",
-                        new Object[] {outputDirectory, outputDirectory0});
+                        new Object[] {outputDirectory, outputDirectory0str});
+                final Path outputDirectory0 = CreatePath(outputDirectory0str);
                 builder.SetOutput(outputDirectory0);
             }
             final String name = _ve.EvaluateString(unevaluatedName);
@@ -538,21 +534,6 @@ final class XmlAnalyser {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
-        return result;
-    }
-
-    /**
-     * same as {@link #ParseProjectXML(Path,XmlAnalyserArguments)}
-     * @param file
-     * @param args
-     * @return
-     */
-    static Map<String, CProject> ParseProjectXML (final File file,
-                                            final XmlAnalyserArguments args)
-    {
-        Map<String, CProject> result = null;
-        result = ParseProjectXML(file.toPath(), args);
 
         return result;
     }
