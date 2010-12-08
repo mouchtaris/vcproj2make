@@ -17,6 +17,7 @@ public final class CProjectBuilder {
         if (_location       == null     ||
             _name           == null     ||
             _id             == null     ||
+            _configuration  == null     ||
             _target         == null     ||
             _targetExt      == null     ||
             _output         == null     ||
@@ -27,8 +28,9 @@ public final class CProjectBuilder {
             throw new RuntimeException("Builder not complete");
 
         used = true;
-        final CProject result = new CProject(_location, _name, _id, _target,
-                _targetExt, _output, _intermediate, _api, _type);
+        final CProject result = new CProject(_location, _name, _id,
+                _configuration, _target, _targetExt, _output, _intermediate,
+                _api, _type);
         for (final ProjectId depId: _deps)
             result.AddDependency(depId);
         result.AddProperties(_props);
@@ -42,6 +44,7 @@ public final class CProjectBuilder {
     private Path                    _location;
     private Name                    _name;
     private ProjectId               _id;
+    private String                  _configuration;
     private String                  _target;
     private String                  _targetExt;
     private Path                    _output;
@@ -55,6 +58,7 @@ public final class CProjectBuilder {
     public void SetLocation (final Path l       )   { _location = l;    }
     public void SetName     (final Name n       )   { _name = n;        }
     public void SetId       (final ProjectId id )   { _id = id;         }
+    public void SetConfiguration (final String c)   { _configuration =c;}
     public void SetTarget   (final String trg   )   { _target = trg;    }
     public void SetExt      (final String ext   )   { _targetExt = ext; }
     public void SetOutput   (final Path out     )   { _output = out;    }

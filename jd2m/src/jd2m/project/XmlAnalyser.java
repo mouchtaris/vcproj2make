@@ -151,6 +151,7 @@ final class XmlAnalyser {
                 _builders.put(configurationName, _builder);
             }
             final CProjectBuilder builder = _builder;
+            _builder.SetConfiguration(configurationName);
             _ve.SetConfigurationName(configurationName);
             //
             final String _m_outputDirectoryUnevaluated = attrs

@@ -1,10 +1,12 @@
 package jd2m.cbuild;
 
+import jd2m.util.IterableConcatenationIterator;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import jd2m.util.Name;
+import jd2m.util.PremadeIteratorWrapperIterable;
 import jd2m.util.ProjectId;
 
 import static jd2m.util.PathHelper.CreatePath;
@@ -17,6 +19,7 @@ public final class CProject {
     private final Path              _location;
     private final Name              _name;
     private final ProjectId         _id;
+    private final String            _configuration;
     private final String            _target;
     private final String            _targetExt;
     private final Path              _output;
@@ -29,6 +32,7 @@ public final class CProject {
     public CProject (   final Path          location,
                         final Name          name,
                         final ProjectId     id,
+                        final String        configuration,
                         final String        target,
                         final String        targetExt,
                         final Path          output,
@@ -39,6 +43,7 @@ public final class CProject {
         _location       = location;
         _name           = name;
         _id             = id;
+        _configuration  = configuration;
         _target         = target;
         _targetExt      = targetExt;
         _output         = output;
@@ -72,5 +77,71 @@ public final class CProject {
 
     public ProjectId GetId () {
         return _id;
+    }
+
+    public Path GetLocation () {
+        return _location;
+    }
+
+    public String GetConfiguration () {
+        return _configuration;
+    }
+
+    public Iterable<String> GetDefinitions () {
+        return _GetIterableOfSomethingFromProperties(DefinitionsGitter);
+    }
+
+    public Iterable<Path> GetIncludeDirectories () {
+        return _GetIterableOfSomethingFromProperties(IncludeDirectoriesGitter);
+    }
+
+    public Iterable<Path> GetLibraryDirectories () {
+        return _GetIterableOfSomethingFromProperties(LibraryDirectoriesGitter);
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // ------------------------
+    // Private
+
+    private interface PropertyIterableOfSomethingGetter<T> {
+        Iterable<T> git (CProperties props);
+    }
+    // ---
+    private static final PropertyIterableOfSomethingGetter<String>
+    DefinitionsGitter = new PropertyIterableOfSomethingGetter<>() {
+        @Override
+        public Iterable<String> git(final CProperties props) {
+            return props.GetDefinitions();
+        }
+    };
+    // ---
+    private static final PropertyIterableOfSomethingGetter<Path>
+    IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
+        @Override
+        public Iterable<Path> git(final CProperties props) {
+            return props.GetIncludeDirectories();
+        }
+    };
+    // ---
+    private static final PropertyIterableOfSomethingGetter<Path>
+    LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
+        @Override
+        public Iterable<Path> git(final CProperties props) {
+            return props.GetLibraryDirectories();
+        }
+    };
+    // ---
+    private <T> Iterable<T> _GetIterableOfSomethingFromProperties (
+                            final PropertyIterableOfSomethingGetter<T> gitter)
+    {
+        final IterableConcatenationIterator<T> iterator =
+                new IterableConcatenationIterator<>();
+        final PremadeIteratorWrapperIterable<T> result =
+                new PremadeIteratorWrapperIterable<>(iterator);
+
+        for (final CProperties prop: _props)
+            iterator.add(gitter.git(prop));
+
+        return result;
     }
 }

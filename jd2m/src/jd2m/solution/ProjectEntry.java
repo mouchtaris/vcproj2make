@@ -12,6 +12,7 @@ import jd2m.util.Name;
 
 import static jd2m.util.PathHelper.IsWindowsPath;
 import static jd2m.util.PathHelper.CreatePath;
+import static java.util.Collections.unmodifiableList;
 
 public final class ProjectEntry implements
     Identifiable,
@@ -59,7 +60,7 @@ public final class ProjectEntry implements
     }
 
     public List<ProjectId> GetDependencies () {
-        return Collections.unmodifiableList(_dependencies);
+        return unmodifiableList(_dependencies);
     }
 
     // ---------------------------------

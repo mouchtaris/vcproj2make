@@ -1,9 +1,10 @@
 package jd2m.solution;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import jd2m.util.ProjectId;
+
+import static java.util.Collections.unmodifiableMap;
 
 public final class ConfigurationManager {
     public final class ProjectInfo {
@@ -84,6 +85,6 @@ public final class ConfigurationManager {
      * @return the internal {@link #_configurations}
      */
     public Map<String, Map<ProjectId, ProjectInfo>> GetConfigurations () {
-        return Collections.unmodifiableMap(_configurations);
+        return unmodifiableMap(_configurations);
     }
 }

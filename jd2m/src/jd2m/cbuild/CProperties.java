@@ -6,6 +6,7 @@ import java.util.List;
 
 import static jd2m.util.PathHelper.IsFile;
 import static jd2m.util.PathHelper.CreatePath;
+import static java.util.Collections.unmodifiableList;
 
 public final class CProperties {
 
@@ -72,6 +73,21 @@ public final class CProperties {
      */
     public void AddWindowsLibrary (final String lib) {
         AddLibrary(_u_stripWindowsSpecificLibraryNaming(lib));
+    }
+
+    // -----------------------------------------------------------------
+    // Getters
+
+    public Iterable<String> GetDefinitions () {
+        return unmodifiableList(_defs);
+    }
+
+    public Iterable<Path> GetIncludeDirectories () {
+        return unmodifiableList(_includes);
+    }
+
+    public Iterable<Path> GetLibraryDirectories () {
+        return unmodifiableList(_libdirs);
     }
 
     // ---------------------------------
