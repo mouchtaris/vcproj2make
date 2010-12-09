@@ -16,7 +16,11 @@ import static java.util.Collections.unmodifiableList;
  * @author TURBO_X
  */
 public final class CProject {
-    private final List<CProperties> _props = new LinkedList<>();
+    static List<CProperties> CreatePropertiesList () {
+        return new LinkedList<>();
+    }
+
+    private final List<CProperties> _props = CreatePropertiesList();
     private final Path              _location;
     private final Name              _name;
     private final ProjectId         _id;
@@ -29,6 +33,16 @@ public final class CProject {
     private final CProjectType      _type;
     private final List<ProjectId>   _deps = new LinkedList<>();
     private final List<Path>        _sources = new LinkedList<>();
+
+    /**
+     * Package-protected so that {@link CPropertiesTransformationApplicator}
+     * can access the properties list and replace properties with the
+     * modified ones.
+     * @return {@link #_props}
+     */
+    List<CProperties> GetProps () {
+        return _props;
+    }
 
     /**
      *

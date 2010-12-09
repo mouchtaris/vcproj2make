@@ -12,6 +12,7 @@ import jd2m.project.ProjectLoader;
 import jd2m.solution.SolutionLoader;
 
 import static jd2m.makefiles.CSolutionConverter.GenerateMakefelesFromCSolution;
+import static jd2m.cbuild.CPropertiesTransformationApplicator.ApplyToSolution;
 
 public class Main {
     public static void main (final String[] args) throws IOException {
@@ -30,9 +31,16 @@ public class Main {
                                                     solutionRoot)
                 );
 
+        final WxLibrariesCPropertiesTrasformation trans =
+                new WxLibrariesCPropertiesTrasformation();
+
         for (final Entry<String, CSolution> solutionentry: solutions.entrySet())
-            GenerateMakefelesFromCSolution( solutionentry.getValue(),
-                                            "Blibliblo");
+        {
+            final CSolution csolution = solutionentry.getValue();
+            ApplyToSolution(trans, csolution);
+            
+            GenerateMakefelesFromCSolution( csolution, "Blibliblo");
+        }
     }
 
     private static void SetupLoggers() {
