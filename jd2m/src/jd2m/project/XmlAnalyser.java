@@ -430,16 +430,35 @@ final class XmlAnalyser {
             final String name = nameWithExt.substring(0, dotIndex);
             return new String[] {name, ext};
         }
-        private void _u_addLibraryDirectories ( final CProperties   props,
-                                                final String        dirpaths) {
-            final String[] paths = _u_SemicolonPattern.split(dirpaths);
-            for (final String _m_unevaluatedWindowsPath: paths) {
+        private String[] _u_splitUnixifyAndEvaluate (final String dirspaths) {
+            final String[] paths = _u_SemicolonPattern.split(dirspaths);
+            final int paths_length = paths.length;
+            for (int i = 0; i < paths_length; ++i) {
+                final String _m_unevaluatedWindowsPath = paths[i];
                 final String _m_unevaluatedUnixPath =
                         UnixifyPath(_m_unevaluatedWindowsPath);
                 final String path = _ve.EvaluateString(_m_unevaluatedUnixPath);
+                paths[i] = path;
+            }
+            return paths;
+        }
+        private void _u_addIncludeDirectories ( final CProperties   props,
+                                                final String        dirspaths)
+        {
+            final String[] paths = _u_splitUnixifyAndEvaluate(dirspaths);
+            for (final String path: paths)
+                if (!path.isEmpty())
+                    props.AddIncludeDirectory(path);
+            LOG.log(Level.INFO, "include paths = {0}",
+                    java.util.Arrays.toString(paths));
+        }
+        private void _u_addLibraryDirectories ( final CProperties   props,
+                                                final String        dirpaths)
+        {
+            final String[] paths = _u_splitUnixifyAndEvaluate(dirpaths);
+            for (final String path: paths)
                 if (!path.isEmpty())
                     props.AddLibraryDrectory(path);
-            }
             LOG.log(Level.INFO, "library paths = {0}",
                     java.util.Arrays.toString(paths));
         }
@@ -529,10 +548,17 @@ final class XmlAnalyser {
                     assert !visitedCompilerRef.Deref();
                     final Node definitionsAttr = toolAttrs
                             .getNamedItem("PreprocessorDefinitions");
+                    final Node includeDirectoriesAttr = toolAttrs
+                            .getNamedItem("AdditionalIncludeDirectories");
                     if (definitionsAttr != null) {
                         final String definitions =  definitionsAttr
                                                             .getNodeValue();
                         _u_addDefinitions(props, definitions);
+                    }
+                    if (includeDirectoriesAttr != null) {
+                        final String includeDirs = includeDirectoriesAttr
+                                                            .getNodeValue();
+                        _u_addIncludeDirectories(props, includeDirs);
                     }
                     visitedCompilerRef.Assign(true);
                     break;

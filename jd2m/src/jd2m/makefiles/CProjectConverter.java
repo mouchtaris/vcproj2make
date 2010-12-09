@@ -19,6 +19,7 @@ import static jd2m.util.PathHelper.StripExtension;
 import static jd2m.util.PathHelper.GetExtension;
 import static jd2m.util.PathHelper.CPP_EXTENSION;
 import static jd2m.util.PathHelper.ToMonotonousPath;
+import static jd2m.util.PathHelper.CreatePath;
 import static jd2m.util.StringBuilder.GetStringBuilder;
 import static jd2m.util.StringBuilder.ResetStringBuilder;;
 import static jd2m.util.StringBuilder.ReleaseStringBuilder;
@@ -99,7 +100,7 @@ public final class CProjectConverter {
         solution                = _solution;
         makefileName            = _makefileName;
         producables             = new HashMap<>(numberOfSources);
-        producablesPaths       = new HashSet<>(numberOfSources);
+        producablesPaths        = new HashSet<>(numberOfSources);
         depsCommands            = new HashMap<>(numberOfDependencies);
 
         _u_populateProducables( _project.GetSources(),
@@ -162,7 +163,7 @@ public final class CProjectConverter {
                                 project.GetDefinitions(), false);
         _u_writeVariableValues( out,
                                 InclusionPrefix,
-                                ShellEscaperValuePreprocessor,
+                                TransparentValuePreprocessor,
                                 _EMPTY_STRING,
                                 project.GetIncludeDirectories());
         _u_endOfVariable(out);
@@ -241,7 +242,7 @@ public final class CProjectConverter {
     private void _writeSourcesVariable ()
     {
         _u_writeVariable(   out, SOURCES, _EMPTY_STRING,
-                            ShellEscaperValuePreprocessor, _EMPTY_STRING,
+                            TransparentValuePreprocessor, _EMPTY_STRING,
                             project.GetSources(), true);
     }
 
@@ -251,7 +252,7 @@ public final class CProjectConverter {
     private void _writeObjectsVariable ()
     {
         _u_writeVariable(   out, OBJECTS, _EMPTY_STRING,
-                            ShellEscaperValuePreprocessor, OBJECT_EXTENSION,
+                            TransparentValuePreprocessor, OBJECT_EXTENSION,
                             producables.values(), true);
     }
 
@@ -261,7 +262,7 @@ public final class CProjectConverter {
     private void _writeDependsVariable ()
     {
         _u_writeVariable(   out, DEPENDS, _EMPTY_STRING,
-                            ShellEscaperValuePreprocessor, DEPEND_EXTENSION,
+                            TransparentValuePreprocessor, DEPEND_EXTENSION,
                             producables.values(), true);
     }
 
@@ -275,6 +276,8 @@ public final class CProjectConverter {
         _writeDirsTarget();
         _writeDepsTarget();
         _writeEachDepTarget();
+        _writeEachObjectTarget();
+        _writeEachDirTarget();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -290,18 +293,8 @@ public final class CProjectConverter {
 
     private void _writeDirsTarget ()
     {
-        _u_writeTargetHeader(out, DirsTargetName, ShellEscaperValuePreprocessor,
+        _u_writeTargetHeader(out, DirsTargetName, TransparentValuePreprocessor,
                         producablesPaths);
-
-        final StringBuilder sb = GetStringBuilder();
-        for (final Path path: producablesPaths) {
-            ResetStringBuilder();
-            sb.append("mkdir -p -v ").append(ShellEscape(path.toString()));
-            final String command = sb.toString();
-            //
-            _u_writeTargetCommand(out, command);
-        }
-        ReleaseStringBuilder();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -327,6 +320,55 @@ public final class CProjectConverter {
                             TransparentValuePreprocessor,
                             null,
                             dep.getValue());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeEachObjectTarget ()
+    {
+        final StringBuilder sb = GetStringBuilder();
+        
+        for (final Entry<Path, Path> producable: producables.entrySet()) {
+            final Path sourcePath = producable.getKey();
+            final Path producablePath = producable.getValue();
+            final Path objectPath = CreatePath( producablePath.toString() +
+                                                OBJECT_EXTENSION);
+            //
+            final String objectPathString = objectPath.toString();
+            _u_writeTargetHeader(   out,
+                                    objectPathString,
+                                    TransparentValuePreprocessor,
+                                    new SingleValueIterable<>(sourcePath));
+            //
+            ResetStringBuilder();
+            sb.append("$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MD -o")
+                    .append(objectPath).append(" ")
+                    .append(sourcePath);
+            final String command = sb.toString();
+            _u_writeTargetCommand(out, command);
+        }
+
+        ReleaseStringBuilder();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeEachDirTarget ()
+    {
+        final StringBuilder sb = GetStringBuilder();
+        for (final Path path: producablesPaths) {
+            ResetStringBuilder();
+            final String pathString = path.toString();
+            sb.append("mkdir -p -v ").append(pathString);
+            final String command = sb.toString();
+            //
+            _u_writeTarget( out, pathString,
+                            TransparentValuePreprocessor, null,
+                            new SingleValueIterable<>(command));
+        }
+        ReleaseStringBuilder();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -403,8 +445,14 @@ public final class CProjectConverter {
                 _u_writeTargetCommand(out, command);
     }
 
-    // -----
+    // -----ToMonotonousPath
     // non-makefile-writing related utilities
+    private static Path _u_producablePathProcess (final Path path) {
+        final String level0 = ToMonotonousPath(path.toString());
+        final String level1 = level0.replaceAll("\\|", "___");
+        final Path result = CreatePath(level1);
+        return result;
+    }
     private static void _u_populateProducables (
                                             final Iterable<Path> sources,
                                             final Path intermediate,
@@ -412,12 +460,14 @@ public final class CProjectConverter {
                                             final Set<Path> producablesPaths)
     {
         for (final Path source: sources) {
-            final String srcTrans = ToMonotonousPath(source.toString());
+            final String srcTrans = _u_producablePathProcess(source).toString();
             assert GetExtension(srcTrans).equals(CPP_EXTENSION);
             final String basenameString = StripExtension(srcTrans);
             final Path producablePath = intermediate.resolve(basenameString);
-            producables.put(source, producablePath);
-            producablesPaths.add(producablePath.getParent());
+            final Path producablePathProcessed = _u_producablePathProcess(
+                    producablePath);
+            producables.put(source, producablePathProcessed);
+            producablesPaths.add(producablePathProcessed.getParent());
         }
     }
 

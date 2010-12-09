@@ -40,7 +40,9 @@ public final class VariableEvaluator {
         final String result = _values.get(variable);
         assert  result != null                  ||
                 variable.equals("ACE_ROOT")     ||
-                variable.equals("DELTAIDEDEPS");
+                variable.equals("DELTAIDEDEPS") ||
+                variable.equals("DELTA")        ||
+                variable.equals("TAO_ROOT");
         return result;
     }
     

@@ -33,26 +33,56 @@ public final class PathHelper {
     public static boolean IsFile (  final String pathname,
                                     final boolean withExtension)
     {
-        assert !IsWindowsPath(pathname) || IsFileName(pathname);
-        final boolean test0 = pathname.charAt(pathname.length()-1) != '/';
-        boolean test1 = true;
-        if (withExtension) {
-            final int dotIndex = pathname.lastIndexOf('.');
-            test1 = dotIndex > 0;
+        // The IsFile() check works only on Unix paths. Assert that.
+        assert !IsWindowsPath(pathname) || IsUnisexPath(pathname);
+        final int slashIndex = pathname.lastIndexOf('/');
+        String pathToTest;
+        if (slashIndex >= 0)
+            pathToTest = pathname.substring(slashIndex + 1);
+        else
+            pathToTest = pathname;
+        //
+        boolean dbg0, dbg1;
+        boolean result =    (dbg0 = !pathToTest.isEmpty())          &&
+                            (dbg1 = !IsUnisexDirectory(pathToTest));
+        if (result) { // so far
+            boolean hasExtension = true;
+            if (withExtension) {
+                final int dotIndex = pathToTest.lastIndexOf('.');
+                hasExtension = dotIndex > 0;
+                assert dotIndex > slashIndex || !hasExtension;
+            }
+            result = result && hasExtension;
         }
-        final boolean result = test0 && test1;
+        
         return result;
     }
     public static boolean IsFile (final String pathname) {
         final boolean result = IsFile(pathname, true);
         return result;
     }
-    
+
     public static boolean IsFileName (final String pathname) {
         final int slashIndex        = pathname.indexOf('/');
         final int backslashIndex    = pathname.indexOf('\\');
-        final boolean result        =   slashIndex      == -1    &&
-                                        backslashIndex  == -1;
+        final boolean result        =   slashIndex      == -1   &&
+                                        backslashIndex  == -1   &&
+                                        !IsUnisexDirectory(pathname);
+
+        return result;
+    }
+
+    public static boolean IsUnisexPath (final String pathname) {
+        boolean dbg0, dbg1;
+        final boolean result =  (dbg0 = IsUnisexDirectory(pathname))    ||
+                                (dbg1 = IsFileName(pathname));
+        return result;
+    }
+
+    public static boolean IsUnisexDirectory (final String pathname) {
+        boolean dbg0, dbg1;
+        final boolean result =  (dbg0 = pathname.equals("."))   ||
+                                (dbg1 = pathname.equals(".."));
         return result;
     }
 
