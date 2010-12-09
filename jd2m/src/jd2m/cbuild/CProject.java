@@ -161,6 +161,10 @@ public final class CProject {
         return _name;
     }
 
+    public CProjectType GetType () {
+        return _type;
+    }
+
     //////////////////////////////////////////////////////////////////////
     // ------------------------
     // Private

@@ -24,6 +24,7 @@ import static jd2m.util.StringBuilder.GetStringBuilder;
 import static jd2m.util.StringBuilder.ResetStringBuilder;;
 import static jd2m.util.StringBuilder.ReleaseStringBuilder;
 import static jd2m.makefiles.CSolutionConverter.MakeActualMakefileNameForProject;
+import static jd2m.makefiles.MakefileUtilities.GetFullTargetPathForUnixProject;
 
 /**
  * Converts a {@link jd2m.cbuild.CProject} to a makefile.
@@ -51,6 +52,7 @@ public final class CProjectConverter {
     private static final String SOURCES = "SOURCES";
     private static final String OBJECTS = "OBJECTS";
     private static final String DEPENDS = "DEPENDS";
+    private static final String TARGET  = "TARGET";
 
     private static final String DOT = ".";
     private static final String OBJECT_EXTENSION = DOT +
@@ -76,6 +78,9 @@ public final class CProjectConverter {
             AllTargetName + ": " + DepsTargetName + " " + DirsTargetName +
                     " " + ObjectsTargetName + " " + TargetTargetName + "\n" +
             ObjectsTargetName + ": $(" + OBJECTS + ")";
+
+    private static final String PredefinedTargetTargetHeader =
+            TargetTargetName + ": $(" + TARGET + ")";
 
     private final PrintWriter       out;
     private final CProject          project;
@@ -234,6 +239,7 @@ public final class CProjectConverter {
         _writeSourcesVariable();
         _writeObjectsVariable();
         _writeDependsVariable();
+        _writeTargetVariable();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -268,16 +274,36 @@ public final class CProjectConverter {
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeTargetVariable ()
+    {
+        out.printf("%s = %s%n", TARGET, GetFullTargetPathForUnixProject(project));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     private void _writeTargets ()
     {
         _writeAllAndObjectsTarget();
+        _writeTargetTarget();
+        _writePhonyTarget();
+        _writeCleanTarget();
         _writeDirsTarget();
         _writeDepsTarget();
+        _writeEachTargetTarget();
         _writeEachDepTarget();
         _writeEachObjectTarget();
         _writeEachDirTarget();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeTargetTarget ()
+    {
+        out.println(PredefinedTargetTargetHeader);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -291,6 +317,27 @@ public final class CProjectConverter {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    private void _writePhonyTarget ()
+    {
+        _u_writeTarget( out, PHONY, TransparentValuePreprocessor,
+                        java.util.Arrays.asList(AllPhonyTargets), null);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeCleanTarget ()
+    {
+        // TODO write a more sophisticated clean target
+        _u_writeTarget( out, CleanTargetName, TransparentValuePreprocessor,
+                        null, new SingleValueIterable<>("rm -r -f -v $("
+                                + OBJECTS + ") $(" + DEPENDS + ") $("
+                                + TARGET  + ")"));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     private void _writeDirsTarget ()
     {
         _u_writeTargetHeader(out, DirsTargetName, TransparentValuePreprocessor,
@@ -299,7 +346,48 @@ public final class CProjectConverter {
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    
+
+    private static final String TARGET_VAR  = " $(" + TARGET + ")";
+    private static final String OBJECTS_VAR = " $(" + OBJECTS + ")";
+    private static final String LDFLAGS_VAR = " $(" + LDFLAGS + ")";
+    private static final String ARFLAGS_VAR = " $(" + ARFLAGS + ")";
+    private void _writeEachTargetTarget ()
+    {
+        _u_writeTargetName(out, TARGET_VAR);
+
+        for (final ProjectId depId: project.GetDependencies()) {
+            final CProject depProj = solution.GetProject(depId);
+            final Path projResult = GetFullTargetPathForUnixProject(depProj);
+            _u_writeTargetDependency(out, projResult.toString());
+        }
+        _u_writeTargetDependency(out, OBJECTS_VAR);
+        out.println();
+        
+        final StringBuilder sb = GetStringBuilder();
+        switch (project.GetType()) {
+            case DynamicLibrary:
+                sb.append("$(CXX) -shared").append(OBJECTS_VAR)
+                        .append(LDFLAGS_VAR)
+                        .append(" -o").append(TARGET_VAR);
+                break;
+            case StaticLibrary:
+                sb.append("$(AR)").append(ARFLAGS_VAR)
+                        .append(TARGET_VAR).append(OBJECTS_VAR);
+                break;
+            case Executable:
+                sb.append("$(CXX)").append(OBJECTS_VAR)
+                        .append(TARGET_VAR).append(LDFLAGS_VAR);
+                break;
+        }
+
+        final String command = sb.toString();
+        ReleaseStringBuilder();
+        _u_writeTargetCommand(out, command);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     private void _writeDepsTarget ()
     {
         _u_writeTarget( out,
@@ -342,7 +430,7 @@ public final class CProjectConverter {
                                     new SingleValueIterable<>(sourcePath));
             //
             ResetStringBuilder();
-            sb.append("$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MD -o")
+            sb.append("$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MD -c -o")
                     .append(objectPath).append(" ")
                     .append(sourcePath);
             final String command = sb.toString();
@@ -415,16 +503,28 @@ public final class CProjectConverter {
 
     // ----
 
+    private static void _u_writeTargetName (
+                                        final PrintWriter out,
+                                        final String targetName)
+    {
+        out.printf("%s: ", targetName);
+    }
+    private static void _u_writeTargetDependency (
+                                        final PrintWriter out,
+                                        final String dependency)
+    {
+        out.printf("%s ", dependency);
+    }
     private static void _u_writeTargetHeader (
                                         final PrintWriter out,
                                         final String targetName,
                                         final ValuePreprocessor vp,
                                         final Iterable<?> dependencies)
     {
-        out.printf("%s: ", targetName);
+        _u_writeTargetName(out, targetName);
         if (dependencies != null)
             for (final Object dep: dependencies)
-                out.printf("%s ", vp.process(dep.toString()));
+                _u_writeTargetDependency(out, vp.process(dep.toString()));
         out.println();
     }
     private static void _u_writeTargetCommand (
