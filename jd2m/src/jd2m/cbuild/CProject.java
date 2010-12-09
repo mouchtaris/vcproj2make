@@ -140,7 +140,7 @@ public final class CProject {
     private static final PropertyIterableOfSomethingGetter<String>
     DefinitionsGitter = new PropertyIterableOfSomethingGetter<>() {
         @Override
-        public Iterable<String> git(final CProperties props) {
+        public Iterable<String> git (final CProperties props) {
             return props.GetDefinitions();
         }
     };
@@ -148,7 +148,7 @@ public final class CProject {
     private static final PropertyIterableOfSomethingGetter<Path>
     IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
         @Override
-        public Iterable<Path> git(final CProperties props) {
+        public Iterable<Path> git (final CProperties props) {
             return props.GetIncludeDirectories();
         }
     };
@@ -156,7 +156,7 @@ public final class CProject {
     private static final PropertyIterableOfSomethingGetter<Path>
     LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
         @Override
-        public Iterable<Path> git(final CProperties props) {
+        public Iterable<Path> git (final CProperties props) {
             return props.GetLibraryDirectories();
         }
     };
@@ -164,7 +164,7 @@ public final class CProject {
     private static final PropertyIterableOfSomethingGetter<String>
     AdditionalLibrariesGitter = new PropertyIterableOfSomethingGetter<>() {
         @Override
-        public Iterable<String> git(final CProperties props) {
+        public Iterable<String> git (final CProperties props) {
             return props.GetAdditionalLibraries();
         }
     };
