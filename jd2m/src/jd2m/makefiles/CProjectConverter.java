@@ -20,7 +20,8 @@ import static jd2m.util.PathHelper.GetExtension;
 import static jd2m.util.PathHelper.CPP_EXTENSION;
 import static jd2m.util.PathHelper.ToMonotonousPath;
 import static jd2m.util.StringBuilder.GetStringBuilder;
-import static jd2m.util.StringBuilder.ResetStringBuilder;
+import static jd2m.util.StringBuilder.ResetStringBuilder;;
+import static jd2m.util.StringBuilder.ReleaseStringBuilder;
 import static jd2m.makefiles.CSolutionConverter.MakeActualMakefileNameForProject;
 
 /**
@@ -70,15 +71,17 @@ public final class CProjectConverter {
     
     private static final String PHONY               = ".PHONY";
 
-    private static final String PredefinedAllTarget =
-                                                "all: deps dirs objects target";
+    private static final String PredefinedAllAndObjectsTarget =
+            AllTargetName + ": " + DepsTargetName + " " + DirsTargetName +
+                    " " + ObjectsTargetName + " " + TargetTargetName + "\n" +
+            ObjectsTargetName + ": $(" + OBJECTS + ")";
 
     private final PrintWriter       out;
     private final CProject          project;
     private final CSolution         solution;
     private final String            makefileName;
     private final Map<Path, Path>   producables;
-    private final Set<Path>         productablesPaths;
+    private final Set<Path>         producablesPaths;
     /** { DepName (unique) => [Commands...] , ... } */
     private final Map<String,
             Iterable<String>>       depsCommands;
@@ -96,12 +99,12 @@ public final class CProjectConverter {
         solution                = _solution;
         makefileName            = _makefileName;
         producables             = new HashMap<>(numberOfSources);
-        productablesPaths       = new HashSet<>(numberOfSources);
+        producablesPaths       = new HashSet<>(numberOfSources);
         depsCommands            = new HashMap<>(numberOfDependencies);
 
         _u_populateProducables( _project.GetSources(),
                                 _project.GetIntermediate(), producables,
-                                productablesPaths);
+                                producablesPaths);
         _u_populateDeps(_project.GetDependencies(), _solution, depsCommands,
                         numberOfDependencies, _makefileName);
     }
@@ -268,7 +271,8 @@ public final class CProjectConverter {
 
     private void _writeTargets ()
     {
-        _writeAllTarget();
+        _writeAllAndObjectsTarget();
+        _writeDirsTarget();
         _writeDepsTarget();
         _writeEachDepTarget();
     }
@@ -276,14 +280,33 @@ public final class CProjectConverter {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private void _writeAllTarget ()
+    private void _writeAllAndObjectsTarget ()
     {
-        out.println(PredefinedAllTarget);
+        out.println(PredefinedAllAndObjectsTarget);
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    private void _writeDirsTarget ()
+    {
+        _u_writeTargetHeader(out, DirsTargetName, ShellEscaperValuePreprocessor,
+                        producablesPaths);
+
+        final StringBuilder sb = GetStringBuilder();
+        for (final Path path: producablesPaths) {
+            ResetStringBuilder();
+            sb.append("mkdir -p -v ").append(ShellEscape(path.toString()));
+            final String command = sb.toString();
+            //
+            _u_writeTargetCommand(out, command);
+        }
+        ReleaseStringBuilder();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    
     private void _writeDepsTarget ()
     {
         _u_writeTarget( out,
@@ -350,20 +373,34 @@ public final class CProjectConverter {
 
     // ----
 
-    private static void _u_writeTarget (final PrintWriter out,
+    private static void _u_writeTargetHeader (
+                                        final PrintWriter out,
                                         final String targetName,
                                         final ValuePreprocessor vp,
-                                        final Iterable<?> dependencies,
-                                        final Iterable<?> commands)
+                                        final Iterable<?> dependencies)
     {
         out.printf("%s: ", targetName);
         if (dependencies != null)
             for (final Object dep: dependencies)
                 out.printf("%s ", vp.process(dep.toString()));
         out.println();
+    }
+    private static void _u_writeTargetCommand (
+                                        final PrintWriter out,
+                                        final Object command)
+    {
+        out.printf("\t%s%n", command);
+    }
+    private static void _u_writeTarget (final PrintWriter out,
+                                        final String targetName,
+                                        final ValuePreprocessor vp,
+                                        final Iterable<?> dependencies,
+                                        final Iterable<?> commands)
+    {
+        _u_writeTargetHeader(out, targetName, vp, dependencies);
         if (commands != null)
             for (final Object command: commands)
-                out.printf("\t%s%n", command);
+                _u_writeTargetCommand(out, command);
     }
 
     // -----
@@ -390,10 +427,7 @@ public final class CProjectConverter {
                             final Map<String, Iterable<String>> depsCommands,
                             final int numberOfDependencies,
                             final String makefileName)
-    {
-        final StringBuilder sb = GetStringBuilder();
-        ResetStringBuilder();
-        
+    {   
         for (final ProjectId depId: deps) {
             final CProject depProject = csolution.GetProject(depId);
             final String depName = depProject.GetName().StringValue();
@@ -402,12 +436,14 @@ public final class CProjectConverter {
             final Path projectDirectory = projectLocation.getParent();
             assert projectDirectory != null;
             //
+            final StringBuilder sb = GetStringBuilder();
             sb.append("cd ")
                     .append(ShellEscape(projectDirectory.toString()))
                     .append(" && make -f ")
                     .append(ShellEscape(MakeActualMakefileNameForProject(
                                     depProject, makefileName)));
             final String command = sb.toString();
+            ReleaseStringBuilder();
             //
             final Object previous = depsCommands
                     .put(depName, new SingleValueIterable<String>(command));
