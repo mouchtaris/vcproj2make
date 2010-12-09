@@ -1,20 +1,27 @@
 package jd2m.makefiles;
 
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Map;
 import java.nio.file.Path;
 import jd2m.util.ProjectId;
 import jd2m.cbuild.CSolution;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import jd2m.cbuild.CProject;
+import jd2m.util.SingleValueIterable;
 
 import static jd2m.makefiles.MakefileUtilities.ShellEscape;
 import static jd2m.util.PathHelper.StripExtension;
 import static jd2m.util.PathHelper.GetExtension;
 import static jd2m.util.PathHelper.CPP_EXTENSION;
 import static jd2m.util.PathHelper.ToMonotonousPath;
+import static jd2m.util.StringBuilder.GetStringBuilder;
+import static jd2m.util.StringBuilder.ResetStringBuilder;
+import static jd2m.makefiles.CSolutionConverter.MakeActualMakefileNameForProject;
 
 /**
  * Converts a {@link jd2m.cbuild.CProject} to a makefile.
@@ -50,37 +57,70 @@ public final class CProjectConverter {
                                         jd2m.util.PathHelper.DEPEND_EXTENSION;
 
     private static final String _EMPTY_STRING = "";
+
+    private static final String AllTargetName       = "all";
+    private static final String ObjectsTargetName   = "objects";
+    private static final String DirsTargetName      = "dirs";
+    private static final String TargetTargetName    = "target";
+    private static final String DepsTargetName      = "deps";
+    private static final String CleanTargetName     = "clean";
+    private static final String[] AllPhonyTargets = new String[] {
+        AllTargetName, ObjectsTargetName, DirsTargetName,
+        TargetTargetName, DepsTargetName, CleanTargetName};
     
-    private final PrintStream       out;
+    private static final String PHONY               = ".PHONY";
+
+    private static final String PredefinedAllTarget =
+                                                "all: deps dirs objects target";
+
+    private final PrintWriter       out;
     private final CProject          project;
     private final CSolution         solution;
+    private final String            makefileName;
     private final Map<Path, Path>   producables;
-    private CProjectConverter ( final PrintStream   _out,
+    private final Set<Path>         productablesPaths;
+    /** { DepName (unique) => [Commands...] , ... } */
+    private final Map<String,
+            Iterable<String>>       depsCommands;
+
+    private CProjectConverter ( final PrintWriter   _out,
                                 final CProject      _project,
-                                final CSolution     _solution)
+                                final CSolution     _solution,
+                                final String        _makefileName)
     {
+        final int numberOfSources       = _project.GetNumberOfSources();
+        final int numberOfDependencies  = _project.GetNumberOfDependencies();
+
         out                     = _out;
         project                 = _project;
         solution                = _solution;
-        producables             = new HashMap<>(_project.GetNumberOfSources());
+        makefileName            = _makefileName;
+        producables             = new HashMap<>(numberOfSources);
+        productablesPaths       = new HashSet<>(numberOfSources);
+        depsCommands            = new HashMap<>(numberOfDependencies);
 
         _u_populateProducables( _project.GetSources(),
-                                _project.GetIntermediate(), producables);
+                                _project.GetIntermediate(), producables,
+                                productablesPaths);
+        _u_populateDeps(_project.GetDependencies(), _solution, depsCommands,
+                        numberOfDependencies, _makefileName);
     }
 
     public static void GenerateMakefileFromCProject (
                                                     final OutputStream outs,
                                                     final CProject project,
-                                                    final CSolution solution)
+                                                    final CSolution solution,
+                                                    final String makefileName)
     {
-        final PrintStream out = new PrintStream(new BufferedOutputStream(outs));
+        final PrintWriter out = new PrintWriter(new BufferedOutputStream(outs));
 
         final CProjectConverter converter =
-                new CProjectConverter(out, project, solution);
+                new CProjectConverter(out, project, solution, makefileName);
 
         converter._writeHeader();
         converter._writeFlags();
         converter._writeVariables();
+        converter._writeTargets();
 
         out.flush();
     }
@@ -226,16 +266,60 @@ public final class CProjectConverter {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    private void _writeTargets ()
+    {
+        _writeAllTarget();
+        _writeDepsTarget();
+        _writeEachDepTarget();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeAllTarget ()
+    {
+        out.println(PredefinedAllTarget);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeDepsTarget ()
+    {
+        _u_writeTarget( out,
+                        DepsTargetName,
+                        TransparentValuePreprocessor,
+                        depsCommands.keySet(),
+                        null);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeEachDepTarget ()
+    {
+        for (final Entry<String, Iterable<String>> dep: depsCommands.entrySet())
+            _u_writeTarget( out,
+                            dep.getKey(),
+                            TransparentValuePreprocessor,
+                            null,
+                            dep.getValue());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     // -------------------------------------
     // Utilities
-    private static void _u_writeVariableValue ( final PrintStream out,
+    private static void _u_writeVariableValue ( final PrintWriter out,
                                                 final String valuePrefix,
                                                 final String value,
                                                 final String valueSuffix)
     {
         out.printf("\t%s%s%s \\%n", valuePrefix, value, valueSuffix);
     }
-    private static void _u_writeVariableValues (final PrintStream out,
+    private static void _u_writeVariableValues (final PrintWriter out,
                                                 final String valuePrefix,
                                                 final ValuePreprocessor vp,
                                                 final String valueSuffix,
@@ -246,7 +330,7 @@ public final class CProjectConverter {
                                     vp.process(value.toString()),
                                     valueSuffix);
     }
-    private static void _u_writeVariable (  final PrintStream out,
+    private static void _u_writeVariable (  final PrintWriter out,
                                             final String variableName,
                                             final String valuePrefix,
                                             final ValuePreprocessor vp,
@@ -260,8 +344,26 @@ public final class CProjectConverter {
             out.println();
     }
 
-    private static void _u_endOfVariable (final PrintStream out) {
+    private static void _u_endOfVariable (final PrintWriter out) {
         out.println();
+    }
+
+    // ----
+
+    private static void _u_writeTarget (final PrintWriter out,
+                                        final String targetName,
+                                        final ValuePreprocessor vp,
+                                        final Iterable<?> dependencies,
+                                        final Iterable<?> commands)
+    {
+        out.printf("%s: ", targetName);
+        if (dependencies != null)
+            for (final Object dep: dependencies)
+                out.printf("%s ", vp.process(dep.toString()));
+        out.println();
+        if (commands != null)
+            for (final Object command: commands)
+                out.printf("\t%s%n", command);
     }
 
     // -----
@@ -269,7 +371,8 @@ public final class CProjectConverter {
     private static void _u_populateProducables (
                                             final Iterable<Path> sources,
                                             final Path intermediate,
-                                            final Map<Path, Path> producables)
+                                            final Map<Path, Path> producables,
+                                            final Set<Path> producablesPaths)
     {
         for (final Path source: sources) {
             final String srcTrans = ToMonotonousPath(source.toString());
@@ -277,9 +380,41 @@ public final class CProjectConverter {
             final String basenameString = StripExtension(srcTrans);
             final Path producablePath = intermediate.resolve(basenameString);
             producables.put(source, producablePath);
+            producablesPaths.add(producablePath.getParent());
         }
     }
 
+    private static void _u_populateDeps (
+                            final Iterable<ProjectId> deps,
+                            final CSolution csolution,
+                            final Map<String, Iterable<String>> depsCommands,
+                            final int numberOfDependencies,
+                            final String makefileName)
+    {
+        final StringBuilder sb = GetStringBuilder();
+        ResetStringBuilder();
+        
+        for (final ProjectId depId: deps) {
+            final CProject depProject = csolution.GetProject(depId);
+            final String depName = depProject.GetName().StringValue();
+            //
+            final Path projectLocation = depProject.GetLocation();
+            final Path projectDirectory = projectLocation.getParent();
+            assert projectDirectory != null;
+            //
+            sb.append("cd ")
+                    .append(ShellEscape(projectDirectory.toString()))
+                    .append(" && make -f ")
+                    .append(ShellEscape(MakeActualMakefileNameForProject(
+                                    depProject, makefileName)));
+            final String command = sb.toString();
+            //
+            final Object previous = depsCommands
+                    .put(depName, new SingleValueIterable<String>(command));
+            assert previous == null;
+        }
+        assert depsCommands.size() == numberOfDependencies;
+    }
     // -----
     
     private interface ValuePreprocessor {

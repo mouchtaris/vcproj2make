@@ -16,22 +16,41 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
  */
 public class CSolutionConverter {
 
+    public static String MakeActualMakefileNameForProject (
+                                                    final CProject cproject,
+                                                    final String makefileName)
+    {
+        final String result =makefileName + cproject.GetConfiguration() + ".mk";
+        return result;
+    }
+
+    public static Path MakeMakefilePathForProject  (final CProject cproject,
+                                                    final String makefileName)
+    {
+        final Path makefileDirectory = cproject.GetLocation().getParent();
+        assert makefileDirectory != null;
+        final String actualMakefileName = MakeActualMakefileNameForProject(
+                                            cproject, makefileName);
+        final Path makefilePath = makefileDirectory.resolve(actualMakefileName);
+        return makefilePath;
+    }
+
     public static void GenerateMakefelesFromCSolution (
                                                 final CSolution csolution,
                                                 final String    makefileName)
         throws IOException
     {
         for (final CProject cproject: csolution) {
-            final Path makefileDirectory = cproject.GetLocation().getParent();
-            assert makefileDirectory != null;
-            final Path makefilePath = makefileDirectory.resolve(
-                    makefileName + cproject.GetConfiguration() + ".mk");
+            final Path makefilePath = MakeMakefilePathForProject(
+                                                                cproject,
+                                                                makefileName);
             GenerateMakefileFromCProject(
                     makefilePath.newOutputStream(   CREATE,
                                                     WRITE,
                                                     TRUNCATE_EXISTING),
                     cproject,
-                    csolution);
+                    csolution,
+                    makefileName);
         }
     }
 }

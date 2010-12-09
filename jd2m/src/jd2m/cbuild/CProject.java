@@ -130,6 +130,9 @@ public final class CProject {
     public Iterable<ProjectId> GetDependencies () {
         return unmodifiableList(_deps);
     }
+    public int GetNumberOfDependencies () {
+        return _deps.size();
+    }
 
     public Path GetOutput () {
         return _output;
@@ -152,6 +155,10 @@ public final class CProject {
 
     public Path GetIntermediate () {
         return _intermediate;
+    }
+
+    public Name GetName () {
+        return _name;
     }
 
     //////////////////////////////////////////////////////////////////////
