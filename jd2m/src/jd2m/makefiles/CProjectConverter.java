@@ -130,6 +130,7 @@ public final class CProjectConverter {
         converter._writeFlags();
         converter._writeVariables();
         converter._writeTargets();
+        converter._writeFooter();
 
         out.flush();
     }
@@ -420,8 +421,11 @@ public final class CProjectConverter {
         for (final Entry<Path, Path> producable: producables.entrySet()) {
             final Path sourcePath = producable.getKey();
             final Path producablePath = producable.getValue();
-            final Path objectPath = CreatePath( producablePath.toString() +
+            final String producablePathString = producablePath.toString();
+            final Path objectPath = CreatePath( producablePathString +
                                                 OBJECT_EXTENSION);
+            final Path dependsPath = CreatePath(producablePathString +
+                                                DEPEND_EXTENSION);
             //
             final String objectPathString = objectPath.toString();
             _u_writeTargetHeader(   out,
@@ -431,8 +435,8 @@ public final class CProjectConverter {
             //
             ResetStringBuilder();
             sb.append("$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MD -c -o")
-                    .append(objectPath).append(" ")
-                    .append(sourcePath);
+                    .append(objectPath).append(" -MF ").append(dependsPath)
+                    .append(" ").append(sourcePath);
             final String command = sb.toString();
             _u_writeTargetCommand(out, command);
         }
@@ -457,6 +461,16 @@ public final class CProjectConverter {
                             new SingleValueIterable<>(command));
         }
         ReleaseStringBuilder();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private final static String DEPENDS_VAR = "$(" + DEPENDS + ")";
+    private void _writeFooter ()
+    {
+        out.println("-include " + DEPENDS_VAR);
     }
 
     ////////////////////////////////////////////////////////////////////////////
