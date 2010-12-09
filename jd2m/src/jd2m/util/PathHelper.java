@@ -5,6 +5,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class PathHelper {
+
+    public static final String CPP_EXTENSION    = "cpp";
+    public static final String OBJECT_EXTENSION = "o";
+    public static final String DEPEND_EXTENSION = "d";
+
     private PathHelper () {
     }
 
@@ -57,4 +62,26 @@ public final class PathHelper {
         return result;
     }
 
+    public static String StripExtension (final String pathname) {
+        final int dotIndex = pathname.lastIndexOf('.');
+        assert dotIndex > 0;
+        assert pathname.length() > dotIndex + 1;
+        final String result = pathname.substring(0, dotIndex);
+        return result;
+    }
+
+    public static String GetExtension (final String pathname) {
+        final int dotIndex = pathname.lastIndexOf('.');
+        assert dotIndex > 0;
+        assert pathname.length() > dotIndex + 1;
+        final String result = pathname.substring(dotIndex + 1);
+        return result;
+    }
+
+    public static String ToMonotonousPath (final String pathname) {
+        final String level0 = pathname.replaceAll("\\.\\./", "__/");
+        final String level1 = level0.replaceAll("\\./", "_/");
+        final String result = level1;
+        return result;
+    }
 }

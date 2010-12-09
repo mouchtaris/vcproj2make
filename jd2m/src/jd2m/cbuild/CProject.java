@@ -129,6 +129,17 @@ public final class CProject {
         return _GetIterableOfSomethingFromProperties(AdditionalLibrariesGitter);
     }
 
+    public Iterable<Path> GetSources () {
+        return unmodifiableList(_sources);
+    }
+    public int GetNumberOfSources () {
+        return _sources.size();
+    }
+
+    public Path GetIntermediate () {
+        return _intermediate;
+    }
+
     //////////////////////////////////////////////////////////////////////
     // ------------------------
     // Private

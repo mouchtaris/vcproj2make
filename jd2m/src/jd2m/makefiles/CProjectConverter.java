@@ -1,14 +1,20 @@
 package jd2m.makefiles;
 
+import java.util.Map;
 import java.nio.file.Path;
 import jd2m.util.ProjectId;
 import jd2m.cbuild.CSolution;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 import jd2m.cbuild.CProject;
 
 import static jd2m.makefiles.MakefileUtilities.ShellEscape;
+import static jd2m.util.PathHelper.StripExtension;
+import static jd2m.util.PathHelper.GetExtension;
+import static jd2m.util.PathHelper.CPP_EXTENSION;
+import static jd2m.util.PathHelper.ToMonotonousPath;
 
 /**
  * Converts a {@link jd2m.cbuild.CProject} to a makefile.
@@ -32,17 +38,34 @@ public final class CProjectConverter {
     private static final String PredefinedCXXFLAGS  = CXXFLAGS +
                                                     " = -ansi -pedantic -Wall";
     private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
+
+    private static final String SOURCES = "SOURCES";
+    private static final String OBJECTS = "OBJECTS";
+    private static final String DEPENDS = "DEPENDS";
+
+    private static final String DOT = ".";
+    private static final String OBJECT_EXTENSION = DOT +
+                                        jd2m.util.PathHelper.OBJECT_EXTENSION;
+    private static final String DEPEND_EXTENSION = DOT +
+                                        jd2m.util.PathHelper.DEPEND_EXTENSION;
+
+    private static final String _EMPTY_STRING = "";
     
-    private final PrintStream   out;
-    private final CProject      project;
-    private final CSolution     solution;
+    private final PrintStream       out;
+    private final CProject          project;
+    private final CSolution         solution;
+    private final Map<Path, Path>   producables;
     private CProjectConverter ( final PrintStream   _out,
                                 final CProject      _project,
                                 final CSolution     _solution)
     {
-        out        = _out;
-        project    = _project;
-        solution   = _solution;
+        out                     = _out;
+        project                 = _project;
+        solution                = _solution;
+        producables             = new HashMap<>(_project.GetNumberOfSources());
+
+        _u_populateProducables( _project.GetSources(),
+                                _project.GetIntermediate(), producables);
     }
 
     public static void GenerateMakefileFromCProject (
@@ -57,6 +80,7 @@ public final class CProjectConverter {
 
         converter._writeHeader();
         converter._writeFlags();
+        converter._writeVariables();
 
         out.flush();
     }
@@ -91,10 +115,12 @@ public final class CProjectConverter {
                                 CPPFLAGS,
                                 DefinitionPrefix,
                                 ShellEscaperValuePreprocessor,
+                                _EMPTY_STRING,
                                 project.GetDefinitions(), false);
         _u_writeVariableValues( out,
                                 InclusionPrefix,
                                 ShellEscaperValuePreprocessor,
+                                _EMPTY_STRING,
                                 project.GetIncludeDirectories());
         _u_endOfVariable(out);
     }
@@ -108,6 +134,7 @@ public final class CProjectConverter {
                             LDFLAGS,
                             AdditionalLibraryDirectoryPrefix,
                             TransparentValuePreprocessor,
+                            _EMPTY_STRING,
                             project.GetLibraryDirectories(),
                             false);
         //
@@ -120,21 +147,26 @@ public final class CProjectConverter {
             // Add dependency output directory to library directories with -L
             _u_writeVariableValue(  out,
                                     AdditionalLibraryDirectoryPrefix,
-                                    dependencyOutputString);
+                                    dependencyOutputString,
+                                    _EMPTY_STRING);
             // Add the generated library to the linking inputs with -l
             _u_writeVariableValue(  out, LibraryLinkingPrefix,
-                                    ShellEscape(dependencyTarget));
+                                    ShellEscape(dependencyTarget),
+                                    _EMPTY_STRING);
             // Write --rpath related flags
             _u_writeVariableValue(  out, XLinkerExtraOptionPrefix,
-                                    ShellEscape(XLinkerRPathOption));
+                                    ShellEscape(XLinkerRPathOption),
+                                    _EMPTY_STRING);
             _u_writeVariableValue(  out, XLinkerExtraOptionPrefix,
-                                    ShellEscape(dependencyOutputString));
+                                    ShellEscape(dependencyOutputString),
+                                    _EMPTY_STRING);
         }
         //
         // Write addition-libraries related LDFLAGS
         _u_writeVariableValues(     out,
                                     LibraryLinkingPrefix,
                                     ShellEscaperValuePreprocessor,
+                                    _EMPTY_STRING,
                                     project.GetAdditionalLibraries());
         //
         _u_endOfVariable(out);
@@ -153,38 +185,99 @@ public final class CProjectConverter {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    private void _writeVariables ()
+    {
+        _writeSourcesVariable();
+        _writeObjectsVariable();
+        _writeDependsVariable();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeSourcesVariable ()
+    {
+        _u_writeVariable(   out, SOURCES, _EMPTY_STRING,
+                            ShellEscaperValuePreprocessor, _EMPTY_STRING,
+                            project.GetSources(), true);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeObjectsVariable ()
+    {
+        _u_writeVariable(   out, OBJECTS, _EMPTY_STRING,
+                            ShellEscaperValuePreprocessor, OBJECT_EXTENSION,
+                            producables.values(), true);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeDependsVariable ()
+    {
+        _u_writeVariable(   out, DEPENDS, _EMPTY_STRING,
+                            ShellEscaperValuePreprocessor, DEPEND_EXTENSION,
+                            producables.values(), true);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     // -------------------------------------
     // Utilities
     private static void _u_writeVariableValue ( final PrintStream out,
                                                 final String valuePrefix,
-                                                final String value)
+                                                final String value,
+                                                final String valueSuffix)
     {
-        out.printf("\t%s%s \\%n", valuePrefix, value);
+        out.printf("\t%s%s%s \\%n", valuePrefix, value, valueSuffix);
     }
     private static void _u_writeVariableValues (final PrintStream out,
                                                 final String valuePrefix,
                                                 final ValuePreprocessor vp,
+                                                final String valueSuffix,
                                                 final Iterable<?> values)
     {
         for (final Object value: values)
             _u_writeVariableValue(  out, valuePrefix,
-                                    vp.process(value.toString()));
+                                    vp.process(value.toString()),
+                                    valueSuffix);
     }
     private static void _u_writeVariable (  final PrintStream out,
                                             final String variableName,
                                             final String valuePrefix,
                                             final ValuePreprocessor vp,
+                                            final String valueSuffix,
                                             final Iterable<?> values,
                                             final boolean finalWriting)
     {
         out.printf("%s = \\%n", variableName);
-        _u_writeVariableValues(out, valuePrefix, vp, values);
+        _u_writeVariableValues(out, valuePrefix, vp, valueSuffix, values);
         if (finalWriting)
             out.println();
     }
 
     private static void _u_endOfVariable (final PrintStream out) {
         out.println();
+    }
+
+    // -----
+    // non-makefile-writing related utilities
+    private static void _u_populateProducables (
+                                            final Iterable<Path> sources,
+                                            final Path intermediate,
+                                            final Map<Path, Path> producables)
+    {
+        for (final Path source: sources) {
+            final String srcTrans = ToMonotonousPath(source.toString());
+            assert GetExtension(srcTrans).equals(CPP_EXTENSION);
+            final String basenameString = StripExtension(srcTrans);
+            final Path producablePath = intermediate.resolve(basenameString);
+            producables.put(source, producablePath);
+        }
     }
 
     // -----
