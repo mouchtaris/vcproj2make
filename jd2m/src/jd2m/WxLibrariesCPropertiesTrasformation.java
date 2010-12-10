@@ -1,17 +1,10 @@
 package jd2m;
 
 
-import java.util.Set;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Comparator;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.Map;
-import jd2m.cbuild.AbstractCPropertiesMapper;
-import jd2m.cbuild.CProperties;
+import jd2m.cbuild.SimpleMappingAndOrderingCPropertiesTransformation;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -19,8 +12,8 @@ import static java.util.Collections.unmodifiableMap;
  *
  * @author muhtaris
  */
-public class WxLibrariesCPropertiesTrasformation extends 
-                                                    AbstractCPropertiesMapper
+public final class WxLibrariesCPropertiesTrasformation extends
+                            SimpleMappingAndOrderingCPropertiesTransformation
 {
 
     public static final Map<String, String>     WinToLinuxNames;
@@ -53,80 +46,13 @@ public class WxLibrariesCPropertiesTrasformation extends
         // TODO complete linux wx lib ordering
         OrderingMapping = unmodifiableMap(orderingMapping);
     }
-    private static final Set<String> WindowsReplacableLibraries =
-                                                    WinToLinuxNames.keySet();
-    private final static Comparator<String> LinuxLibsOrderingComparator =
-            new Comparator<>() {
-                @Override
-                public int compare (final String lib0, final String lib1) {
-                    final Integer ordering0 = OrderingMapping.get(lib0);
-                    if (ordering0 == null)
-                        throw new RuntimeException("Lib " + lib0 +
-                                " not found in orderings");
-                    final Integer ordering1 = OrderingMapping.get(lib1);
-                    if (ordering1 == null)
-                        throw new RuntimeException("Lib " + lib1 +
-                                " not found in orderings");
+    
 
-                    final int result = ordering0.compareTo(ordering1);
-                    return result;
-                }
-            };
+    public WxLibrariesCPropertiesTrasformation () {
+        for (final Entry<String, String> libMapping: WinToLinuxNames.entrySet())
+            SetLibraryMapping(libMapping.getKey(), libMapping.getValue());
 
-
-    public static boolean IsAReplacableWindowLibrary (final String lib) {
-        final boolean result = WindowsReplacableLibraries.contains(lib);
-        return result;
+        for (final Entry<String, Integer> libOrdering: OrderingMapping.entrySet())
+            SetLibraryOrderingValue(libOrdering.getKey(), libOrdering.getValue());
     }
-
-    public static String TranslateWinLib (final String lib) {
-        if (lib == null)
-            throw new RuntimeException("null argument"); // TODO correct error handling
-
-        final String result = WinToLinuxNames.get(lib);
-        if (result == null)
-            throw new RuntimeException("mapping for " + lib +
-                    " does not exist");  // TODO correct error handling
-
-        return result;
-    }
-
-    @Override
-    public boolean IsApplicableTo (final CProperties props) {
-        boolean thereIsReplacableLibrary = false;
-        
-        final Iterator<String> libsIter =   props.GetAdditionalLibraries()
-                                                .iterator();
-        while (!thereIsReplacableLibrary && libsIter.hasNext())
-            thereIsReplacableLibrary = IsAReplacableWindowLibrary(
-                                                            libsIter.next());
-
-        return thereIsReplacableLibrary;
-    }
-
-    @Override
-    public CProperties ApplyTo (final CProperties props) {
-        final CProperties result = new CProperties();
-        //
-        CopyDefinitions(props, result);
-        CopyIncludeDirectories(props, result);
-        CopyLibraryDirectories(props, result);
-        {
-            final List<String> normalLibs = new LinkedList<>();
-            final SortedSet<String> replacedLibs = new TreeSet<>(
-                                                LinuxLibsOrderingComparator);
-            for (final String lib: props.GetAdditionalLibraries())
-                if (IsAReplacableWindowLibrary(lib))
-                    replacedLibs.add(TranslateWinLib(lib));
-                else
-                    normalLibs.add(lib);
-
-            for (final String lib: normalLibs)
-                result.AddLibrary(lib);
-            for (final String lib: replacedLibs)
-                result.AddLibrary(lib);
-        }
-        return result;
-    }
-
 }
