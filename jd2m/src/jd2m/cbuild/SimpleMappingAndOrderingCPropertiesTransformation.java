@@ -2,6 +2,7 @@ package jd2m.cbuild;
 
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +33,31 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     private final Map<String, Integer>  _defsValues         = new HashMap<>(50);
     private final Map<Path, Integer>    _libdirsValues      = new HashMap<>(50);
     private final Map<Path, Integer>    _incldirsValues     = new HashMap<>(50);
+    //
+    private final Deque<String>     _additionalLibs         =new LinkedList<>();
+    private final Deque<String>     _additionalDefs         =new LinkedList<>();
+    private final Deque<Path>       _additionalLibdirs      =new LinkedList<>();
+    private final Deque<Path>       _additionalIncldirs     =new LinkedList<>();
+
+    // -----
+
+    public void AddLibrary (final String lib) {
+        _additionalLibs.add(lib);
+    }
+
+    public void AddDefinition (final String def) {
+        _additionalDefs.add(def);
+    }
+
+    public void AddLibraryDirectory (final Path path) {
+        _additionalLibdirs.add(path);
+    }
+
+    public void AddIncludeDirectory (final Path path) {
+        _additionalIncldirs.add(path);
+    }
+
+    // -----
 
     public void SetLibraryMapping (final String from, final String to) {
         _u_addMappingIfNotExistent(_libMappings, from, to);
@@ -198,6 +224,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         // Update libraries
         _u_transform(   _libMappings, _libsValues,
                         props.GetAdditionalLibraries(),
+                        _additionalLibs,
                         LibraryMappabilityChecker,
                         LibraryOrderabilityChecker,
                         new LibraryResultStorer(result));
@@ -205,6 +232,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         // Update definitions
         _u_transform(   _defMappings, _defsValues,
                         props.GetDefinitions(),
+                        _additionalDefs,
                         DefinitionMappabilityChecker,
                         DefinitionOrderabilityChecker,
                         new DefinitionResultStorer(result));
@@ -212,6 +240,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         // Update libraries directories
         _u_transform(   _libdirMappings, _libdirsValues,
                         props.GetLibraryDirectories(),
+                        _additionalLibdirs,
                         LibraryDirectoryMappabilityChecker,
                         LibraryDirectoryOrderabilityChecker,
                         new LibraryDirectoryResultStorer(result));
@@ -219,6 +248,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         // Update include directories
         _u_transform(   _incldirMappings, _incldirsValues,
                         props.GetIncludeDirectories(),
+                        _additionalIncldirs,
                         IncludeDirectoryMappabilityChecker,
                         IncludeDirectoryOrderabilityChecker,
                         new IncludeDirectoryResultStorer(result));
@@ -417,6 +447,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     private static <K,V> void _u_transform (final Map<V,V> mappings,
                                             final Map<V,Integer> orderings,
                                             final Iterable<? extends V> items,
+                                            final Iterable<? extends V> extras,
                                             final MappabilityChecker<V> mc,
                                             final OrderabilityChecker<V> oc,
                                             final CPropertiesResultStorer<V> rs)
@@ -440,6 +471,8 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         }
 
         for (final V val: unordered)
+            rs.Store(val);
+        for (final V val: extras)
             rs.Store(val);
         for (final V val: ordered)
             rs.Store(val);

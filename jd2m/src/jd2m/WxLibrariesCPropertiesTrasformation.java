@@ -54,5 +54,12 @@ public final class WxLibrariesCPropertiesTrasformation extends
 
         for (final Entry<String, Integer> libOrdering: OrderingMapping.entrySet())
             SetLibraryOrderingValue(libOrdering.getKey(), libOrdering.getValue());
+
+        SetDefinitionMapping("WIN32", null);
+        SetDefinitionMapping("_WINDOWS", null);
+        SetDefinitionMapping("_WIN32_", null);
+        //
+        AddDefinition("_LINUX_");
+        AddDefinition("_UNIX_");
     }
 }
