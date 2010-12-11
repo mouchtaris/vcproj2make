@@ -45,7 +45,7 @@ public class Main {
 
     private static void SetupLoggers() {
         final Logger jd2mLogger = Logger.getLogger("jd2m");
-        jd2mLogger.setLevel(Level.SEVERE);
+        jd2mLogger.setLevel(Level.ALL);
     }
 
     private Main () {

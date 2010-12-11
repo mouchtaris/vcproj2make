@@ -46,8 +46,9 @@ public final class ConfigurationManager {
     {
         final Map<ProjectId, ProjectInfo> solConf =
                 _configurations.get(solConfName);
-        final ProjectId projId = ProjectId.Get(projIdStr);
-        assert projId != null;
+        final ProjectId projId = ProjectId.GetIfExists(projIdStr);
+        if (projId == null)
+            throw new RuntimeException("Project " + projIdStr + " not registered"); // TODO proper error handling
         final Object previous = solConf
                 .put(projId, new ProjectInfo(projConfName));
         assert previous == null;
@@ -62,11 +63,14 @@ public final class ConfigurationManager {
         if (solutionRegistrations == null)
             result = false;
         else {
-            final ProjectId projId = ProjectId.Get(projIdStr);
-            assert projId != null;
-            final ProjectInfo pi = solutionRegistrations.get(projId);
-            if (pi == null)
-                result = false;
+                final ProjectId projId = ProjectId.GetIfExists(projIdStr);
+                if (projId != null) {
+                    final ProjectInfo pi = solutionRegistrations.get(projId);
+                    if (pi == null)
+                        result = false;
+                }
+                else
+                    result = false;
         }
         return result;
     }
