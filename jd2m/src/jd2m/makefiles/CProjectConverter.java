@@ -111,6 +111,7 @@ public final class CProjectConverter {
         _u_populateProducables( _project.GetSources(),
                                 _project.GetIntermediate(), producables,
                                 producablesPaths);
+        producablesPaths.add(_project.GetOutput());
         _u_populateDeps(_project.GetDependencies(), _solution, depsCommands,
                         numberOfDependencies, _makefileName);
     }
