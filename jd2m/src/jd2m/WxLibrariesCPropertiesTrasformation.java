@@ -63,5 +63,6 @@ public final class WxLibrariesCPropertiesTrasformation extends
         AddDefinition("_UNIX_");
         //
         SetLibraryMapping("winmm", null);
+        SetLibraryMapping("ws2_32", null);
     }
 }
