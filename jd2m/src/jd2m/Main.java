@@ -19,7 +19,7 @@ public class Main {
         SetupLoggers();
         
         System.out.println("hi')");
-        final Path solutionFilePath = Paths.get("./../deltaide2make/Solution.xml");
+        final Path solutionFilePath = Paths.get("./Solution.xml");
         final Path solutionRoot     = Paths.get(
 //                "C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\thesis_new\\deltaide\\IDE"
 //                "/home/muhtaris/deltux/svn_deltaide/IDE"
@@ -45,7 +45,7 @@ public class Main {
 
     private static void SetupLoggers() {
         final Logger jd2mLogger = Logger.getLogger("jd2m");
-        jd2mLogger.setLevel(Level.ALL);
+        jd2mLogger.setLevel(Level.WARNING);
     }
 
     private Main () {
