@@ -1,26 +1,32 @@
 function p (...) { std::print(..., "\n"); }
 d = std::delegate;
 
-z = [
-	@data: 6
+proto = [
+	method m1 {},
+	method m2 {}
 ];
 
-a = [
-	@meth {
-		@set 	nil
-		@get	method {
-					::p("getting prop meth from an a, self.data: ", self.data);
-					return self.data;
-				}
-	}
-];
+function makeObjectAccessChecker (obj) {
+	local indices = [];
+	foreach (local key: local el, obj)
+		indices[key] = el;
+	return [
+		.indices: indices,
+		method checkedFieldAccess (obj, field) {
+			if (std::isoverloadableoperator(field))
+				return nil;
+			if (indices[field] != nil)
+				return std::tabget(obj, field);
+			std::error("WHAT FIELD IS THIS?!!?! " + field);
+			return nil;
+		}
+	].checkedFieldAccess;
+}
+proto."." = makeObjectAccessChecker(proto);
 
-b = [
-	{.data: 5}
-];
+a = [];
+d(a, proto);
 
-::d(a, z);
-::d(b, a);
-
-::p(b.meth);
-
+a.m1();
+a.m2();
+a.BoO();

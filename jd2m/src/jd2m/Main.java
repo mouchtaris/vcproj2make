@@ -15,15 +15,25 @@ import static jd2m.makefiles.CSolutionConverter.GenerateMakefelesFromCSolution;
 import static jd2m.cbuild.CPropertiesTransformationApplicator.ApplyToSolution;
 
 public class Main {
-    public static void main (final String[] args) throws IOException {
+
+    public static void main (final String[] args) throws Throwable {
+        System.out.printf("%s%n",
+                java.nio.file.spi.FileSystemProvider.installedProviders());
+    }
+
+    public static void MakeMakefiles (final String[] args) throws IOException {
         SetupLoggers();
         
         System.out.println("hi')");
-        final Path solutionFilePath = Paths.get("./../deltaide2make/Solution.xml");
+        final Path solutionFilePath = Paths.get(
+//                "./../deltaide2make/Solution.xml"
+                args[0]
+        );
         final Path solutionRoot     = Paths.get(
 //                "C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\thesis_new\\deltaide\\IDE"
 //                "/home/muhtaris/deltux/svn_deltaide/IDE"
-                "/tmp/deltaide/IDE/"
+//                "/tmp/deltaide/IDE/"
+                args[1]
         );
         Map<String, CSolution> solutions =
                 ProjectLoader.LoadProjects(

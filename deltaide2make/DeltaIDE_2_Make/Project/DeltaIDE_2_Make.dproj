@@ -1,76 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project name="DeltaIDE_2_Make.dproj" version="alpha">
     <ProjectProperties>
-        <working_directory>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../../</working_directory>
-        <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-        <symbolic>22 serialization::archive 8 0 0 1 0 80 22 serialization::archive 8 0 0 45 DeltaIDE_2_Make/Project/DeltaIDE_2_Make.dproj</symbolic>
-        <startup>22 serialization::archive 8 0 0 1 0 57 22 serialization::archive 8 0 0 22 ..\Source\main_win.dsc</startup>
-        <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-        <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-        <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-        <hostd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </hostd>
-        <host>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </host>
-        <deployment>22 serialization::archive 8 0 0 1 0 52 22 serialization::archive 8 0 0 17 Delta Application</deployment>
-        <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-        <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-        <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
-        <argsd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </argsd>
-        <args>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </args>
+        <working_directory>../..</working_directory>
+        <text>1</text>
+        <symbolic>DeltaIDE_2_Make/Project/DeltaIDE_2_Make.dproj</symbolic>
+        <startup>..\Source\main_win.dsc</startup>
+        <output_path>../Lib</output_path>
+        <libs></libs>
+        <icode>1</icode>
+        <hostd></hostd>
+        <host></host>
+        <deployment>0</deployment>
+        <debug>1</debug>
+        <collapsed>0</collapsed>
+        <bytecode_path></bytecode_path>
+        <argsd></argsd>
+        <args></args>
     </ProjectProperties>
     <Child type="Script" name="..\Source\main.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../../</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 66 22 serialization::archive 8 0 0 31 DeltaIDE_2_Make/Source/main.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>../..</working_directory>
+            <text>1</text>
+            <symbolic>DeltaIDE_2_Make/Source/main.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="..\Source\main_win.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../../</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 70 22 serialization::archive 8 0 0 35 DeltaIDE_2_Make/Source/main_win.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 46 22 serialization::archive 8 0 0 11 application</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>../..</working_directory>
+            <text>1</text>
+            <symbolic>DeltaIDE_2_Make/Source/main_win.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>0</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="..\Source\main_linux.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../../</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 72 22 serialization::archive 8 0 0 37 DeltaIDE_2_Make/Source/main_linux.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>../..</working_directory>
+            <text>1</text>
+            <symbolic>DeltaIDE_2_Make/Source/main_linux.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="..\Source\SolutionXMLCache.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../../</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 78 22 serialization::archive 8 0 0 43 DeltaIDE_2_Make/Source/SolutionXMLCache.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>../..</working_directory>
+            <text>1</text>
+            <symbolic>DeltaIDE_2_Make/Source/SolutionXMLCache.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
 </Project>

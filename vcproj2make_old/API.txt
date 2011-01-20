@@ -77,6 +77,7 @@ function isdeltalist    (val)
 function isdeltafunction(val)
 function isdeltamethod  (val)
 function isdeltaidentifier(val)
+function typeof         (val)
 function toboolean      (val)
 function tobool         (val)
 function tostring       (val)
@@ -120,6 +121,10 @@ function dobj_nullify                   (dobj, key)
 function dobj_hasOnlyNumericKeys        (dobj)
 function dobj_copy_delegates            (from, to)
 function dobj_clear                     (dobj)
+function dobj_makeCheckedFieldAccesser  (dobj)                           => a callble field accesser, which checks if the accessed field exists
+function dobj_objset                    (dobj)
+function dobj_keyset                    (dobj)
+                                                                            ORIGINALLY (and not added later) (locally, unoverloadedly) in the given object
 //
 function dval_copy                      (dval)                           // deep copy, changing ownership of methods and setting delegators too
 function dval_copy_into                 (dst, src)

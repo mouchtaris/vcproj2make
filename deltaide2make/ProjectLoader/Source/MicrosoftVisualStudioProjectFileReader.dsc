@@ -125,14 +125,14 @@ function p_getToolFromConfiguration (configuration, toolName) {
 function Trim (projectXML) {
 	local x = projectXML;
 	// Layer 0
-	x.Globals                = nil;
-	x.Platforms              = nil;
-	x.ToolFiles              = nil;
+	u.dobj_nullify(x,"Globals"               );
+	u.dobj_nullify(x,"Platforms"             );
+	u.dobj_nullify(x,"ToolFiles"             );
 	local y = x."$Attributes";
-	y.Keyword                = nil;
-	y.ProjectType            = nil;
-	y.TargetFrameworkVersion = nil;
-	y.Version                = nil;
+	u.dobj_nullify(y,"Keyword"               );
+	u.dobj_nullify(y,"ProjectType"           );
+	u.dobj_nullify(y,"TargetFrameworkVersion");
+	u.dobj_nullify(y,"Version"               );
 	return x;
 }
 

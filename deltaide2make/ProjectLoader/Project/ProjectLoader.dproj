@@ -1,48 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project name="ProjectLoader.dproj" version="alpha">
     <ProjectProperties>
-        <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
-        <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-        <symbolic>22 serialization::archive 8 0 0 1 0 76 22 serialization::archive 8 0 0 41 ProjectLoader/Project/ProjectLoader.dproj</symbolic>
-        <startup>22 serialization::archive 8 0 0 1 0 62 22 serialization::archive 8 0 0 27 ..\Source\ProjectLoader.dsc</startup>
-        <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-        <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-        <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-        <hostd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </hostd>
-        <host>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </host>
-        <deployment>22 serialization::archive 8 0 0 1 0 52 22 serialization::archive 8 0 0 17 Delta Application</deployment>
-        <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-        <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-        <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
-        <argsd>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </argsd>
-        <args>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </args>
+        <working_directory>./</working_directory>
+        <text>1</text>
+        <symbolic>ProjectLoader/Project/ProjectLoader.dproj</symbolic>
+        <startup>..\Source\ProjectLoader.dsc</startup>
+        <output_path>../Lib</output_path>
+        <libs></libs>
+        <icode>1</icode>
+        <hostd></hostd>
+        <host></host>
+        <deployment>0</deployment>
+        <debug>1</debug>
+        <collapsed>0</collapsed>
+        <bytecode_path></bytecode_path>
+        <argsd></argsd>
+        <args></args>
     </ProjectProperties>
     <Child type="Script" name="..\Source\ProjectLoader.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 73 22 serialization::archive 8 0 0 38 ProjectLoader/Source/ProjectLoader.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>./</working_directory>
+            <text>1</text>
+            <symbolic>ProjectLoader/Source/ProjectLoader.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
     <Child type="Script" name="..\Source\MicrosoftVisualStudioProjectFileReader.dsc">
         <ScriptProperties>
-            <working_directory>22 serialization::archive 8 0 0 1 0 36 22 serialization::archive 8 0 0 2 ./</working_directory>
-            <text>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</text>
-            <symbolic>22 serialization::archive 8 0 0 1 0 98 22 serialization::archive 8 0 0 63 ProjectLoader/Source/MicrosoftVisualStudioProjectFileReader.dsc</symbolic>
-            <output_path>22 serialization::archive 8 0 0 1 0 40 22 serialization::archive 8 0 0 6 ../Lib</output_path>
-            <libs>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </libs>
-            <icode>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</icode>
-            <deployment>22 serialization::archive 8 0 0 1 0 41 22 serialization::archive 8 0 0 7 library</deployment>
-            <debug>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 1</debug>
-            <collapsed>22 serialization::archive 8 0 0 1 0 29 22 serialization::archive 8 0</collapsed>
-            <bytecode_path>22 serialization::archive 8 0 0 1 0 34 22 serialization::archive 8 0 0 0 </bytecode_path>
+            <working_directory>./</working_directory>
+            <text>1</text>
+            <symbolic>ProjectLoader/Source/MicrosoftVisualStudioProjectFileReader.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
 </Project>

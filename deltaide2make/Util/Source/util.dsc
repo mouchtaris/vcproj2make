@@ -99,8 +99,11 @@ function False {
 	return false;
 }
 
-function typeof(arg) {
-	return std::typeof(arg);
+function typeof (val) {
+	local typeof = std::typeof(val);
+	if (typeof == "ExternId")
+		typeof += "_" + std::externidtype(val);
+	return typeof;
 }
 
 function inspect(arg) {
@@ -124,6 +127,7 @@ function isdeltalist  (val) {
 			type == "std::list"                                           and
 		true;
 }
+function isdeltavector   (val) { return std::typeof(val) == "ExternId" and std::externidtype(val) == "std::vector"; }
 function isdeltafunction (val) { return std::typeof(val) == "ProgramFunc"; }
 function isdeltamethod   (val) { return std::typeof(val) == "MethodFunc" ; }
 function isdeltaidentifier(val) { return std::strisident(val)            ; }
@@ -210,8 +214,8 @@ const nl = "
 ";
 const pref = " ****** ";
 function foreacharg (args, f) {
-	local args_start = args.start;
-	local args_total = args.total;
+	local args_start = (::isdeltaobject(args) or ::isdeltatable(args)? args.start : (::isdeltavector(args)? 0 : std::error("what kind of arguments is this?" + args)));
+	local args_total = (::isdeltaobject(args) or ::isdeltatable(args)? args.total : (::isdeltavector(args)? args.total(): std::error("what kind of arguments is this?" + args)));
 	local args_end   = args_start + args_total;
 	local cont       = true;
 	for (local i = args_start; cont and i < args_end; ++i)
@@ -613,6 +617,19 @@ function dobj_clear (dobj) {
 	std::tabclear(dobj);
 }
 
+function dobj_objset (dobj) {
+	local result = [];
+	foreach (local el, dobj)
+		result[el] = el;
+	return result;
+}
+
+function dobj_keyset (dobj) {
+	local keys = ::dobj_keys(dobj);
+	local result = ::dobj_objset(keys);
+	return result;
+}
+
 //
 function dobj_equal (one, two) {
 	if (not ::isdeltaobject(one) or not ::isdeltaobject(two))
@@ -630,6 +647,24 @@ function dobj_equal (one, two) {
 	}
 	return result;
 }
+//
+function dobj_makeCheckedFieldAccesser (dobj) {
+	local originalKeys = ::dobj_keyset(dobj);
+	return [
+		.originalKeys		: originalKeys,
+		method checkedObjectAccess (obj, key) {
+			local result;
+			if (std::isoverloadableoperator(key))
+				result = std::tabget(obj, key);
+			else
+				if (not std::isnil(self.originalKeys[key]))
+					result = std::tabget(obj, key);
+				else
+					::error().AddError("Invalid access of field " + key);
+			return result;
+		}
+	].checkedObjectAccess;
+}
 
 //
 // methods
@@ -642,25 +677,51 @@ function constantf(val) {
 	return [ method @operator () { return @val; }, @val: val ];
 }
 function argspopback(args, popnum) {
-	::assert_tbl(args);
-	::assert_num(args.start);
-	::assert_num(args.total);
-	::assert_lt( popnum , ::dobj_length(args) - 2 );
-	args.total -= popnum;
+	if (::isdeltaobject(args) or ::isdeltatable(args)) {
+		::assert_num(args.start);
+		::assert_num(args.total);
+		::assert_lt( popnum , ::dobj_length(args) - 2 );
+		args.total -= popnum;
+	}
+	else if (::isdeltavector(args))
+		for (local i = 0; i < popnum; ++i)
+			std::vector_pop_back(args);
+	else
+		std::error("What kind of arguments is this??? " + args);
 	return args;
 }
 function argspopfront(args, popnum) {
-	::argspopback(args, popnum).start += popnum;
+	if (::isdeltatable(args) or ::isdeltaobject(args))
+		::argspopback(args, popnum).start += popnum;
+	else if (::isdeltavector(args))
+		for (local i = 0; i < popnum; ++i)
+			std::vector_pop_front(args);
+	else
+		std::error("what kind of arguments is this??? " + args);
 	return args;
 }
 function foreachofargs (f ...) {
 	return ::foreacharg(::argspopfront(arguments, 1), f);
 }
 function firstarg (args) {
-	return args[args.start];
+	local result;
+	if (::isdeltatable(args) or ::isdeltaobject(args))
+		result = args[args.start];
+	else if (::isdeltavector(args))
+		result = std::vector_front(args);
+	else
+		std::error("What kind of argument is this??? " + args);
+	return result;
 }
 function lastarg (args) {
-	return args[args.start + args.total - 1];
+	local result;
+	if (::isdeltatable(args) or ::isdeltaobject(args))
+		result = args[args.start + args.total - 1];
+	else if (::isdeltavector(args))
+		result = std::vector_back(args);
+	else
+		std::error("what arguments is this??? " + args);
+	return result;
 }
 function argumentSelector (f ...) {
 	return [
@@ -813,7 +874,7 @@ p__list = [
 	method getlist (list) {
 		assert( ::isdeltalist(list) );
 		local result = list."    "."$__magic_mushroom__list";
-		::assert_eq( ::typeof(result) , "ExternId" );
+		::assert_eq( ::typeof(result) , "ExternId_std::list" );
 		return result;
 	}
 ];
@@ -1045,76 +1106,124 @@ function Iterable_fromDObj (dobj) {
 	::del(iterable, iterable_prototype);
 	return iterable;
 }
-function Iterable_fromArguments (args) {
-	assert( ::isdeltatable(args) );
-	const Iterator__stateField__currentIndex = #ArgumentsIterator_currentIndex;
-	const Iterator__stateField__arguments    = #ArgumentsIterator_arguments;
-	if (std::isundefined(static Iterator_stateFields))
-		Iterator_stateFields = [Iterator__stateField__currentIndex, Iterator__stateField__arguments];
-	// iterator private
-	function getindex (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__currentIndex); }
-	function getargs  (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__arguments   ); }
-	function invariants(iterator){
-		local index = getindex(iterator);
-		local args  = getargs(iterator);
-		return index >= args.start and index <= args.start + args.total;
-	}
-	function initialiseIndex (iterator) {
-		::dobj_checked_set(iterator, Iterator_stateFields, Iterator__stateField__currentIndex,
-			getargs(iterator).start);
-	}
+function Iterable_fromVector (args) {
+	assert( ::isdeltavector(args) );
 	if (std::isundefined(static iterator_prototype))
-		iterator_prototype = [
-			method end {
-				assert( invariants(self) );
-				local args = getargs(self);
-				local index = getindex(self);
-				return index == args.start + args.total;
-			},
-			method key {
-				assert( invariants(self) );
-				assert( not self.end() );
-				return getargs(self).start + getindex(self);
-			},
-			method value {
-				assert( invariants(self) );
-				assert( not self.end() );
-				local args = getargs(self);
-				local index = getindex(self);
-				return args[ index ];
-			},
-			method next {
-				assert( invariants(self) );
-				assert( not self.end() );
-				::dobj_checked_set(self, Iterator_stateFields, Iterator__stateField__currentIndex, 
-						getindex(self) + 1);
-			},
-			method rewind {
-				assert( invariants(self) );
-				initialiseIndex(self);
-			}
+		iterator_prototype = [ // state fields [ #ite: vector_iter, #vec: vector ]
+			method end
+				{ return std::vectoriter_checkend(::dobj_get(self, #ite), ::dobj_get(self, #vec)); },
+			method key
+				{ return std::vectoriter_getindex(::dobj_get(self, #ite)); },
+			method value
+				{ return std::vectoriter_getval(::dobj_get(self, #ite)); },
+			method next
+				{ std::vectoriter_fwd(::dobj_get(self, #ite)); },
+			method rewind
+				{ std::vectoriter_setbegin(::dobj_get(self, #ite), ::dobj_get(self, #vec)); }
 		];
-	const Iterable__stateField__arguments = #ArgumentsIterable_arguments;
-	if (std::isundefined(static Iterable_stateFields))
-		Iterable_stateFields = [Iterable__stateField__arguments];
 	if (std::isundefined(static iterable_prototype))
-		iterable_prototype = [
+		iterable_prototype = [ // state fields [ #vec: vector ]
 			method iterator {
-				local ite = [
-					{ ::pfield(Iterator__stateField__arguments):
-							::dobj_checked_get(self, Iterable_stateFields, Iterable__stateField__arguments) }
+				local vec = ::dobj_get(self, #vec);
+				local veciter = std::vectoriter_new();
+				local iterator = [
+					{ ::pfield(#vec): vec     },
+					{ ::pfield(#ite): veciter }
 				];
-				initialiseIndex(ite);
-				assert( invariants(ite) );
-				::del(ite, iterator_prototype);
-				return ite;
+				::del(iterator, iterator_prototype);
+				iterator.rewind();
+				return iterator;
 			}
 		];
-	local iterable = [
-			{ ::pfield(Iterable__stateField__arguments): args }
-	];
+	local iterable = [ { ::pfield(#vec): args } ];
 	::del(iterable, iterable_prototype);
 	return iterable;
+}
+function Iterable_fromArguments (args) {
+	function fromTableArguments (args) {
+		assert( ::isdeltatable(args) );
+		const Iterator__stateField__currentIndex = #ArgumentsIterator_currentIndex;
+		const Iterator__stateField__arguments    = #ArgumentsIterator_arguments;
+		if (std::isundefined(static Iterator_stateFields))
+			Iterator_stateFields = [Iterator__stateField__currentIndex, Iterator__stateField__arguments];
+		// iterator private
+		function getindex (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__currentIndex); }
+		function getargs  (iterator) { return ::dobj_checked_get(iterator, Iterator_stateFields, Iterator__stateField__arguments   ); }
+		function invariants(iterator){
+			local index = getindex(iterator);
+			local args  = getargs(iterator);
+			return index >= args.start and index <= args.start + args.total;
+		}
+		function initialiseIndex (iterator) {
+			::dobj_checked_set(iterator, Iterator_stateFields, Iterator__stateField__currentIndex,
+				getargs(iterator).start);
+		}
+		if (std::isundefined(static iterator_prototype))
+			iterator_prototype = [
+				method end {
+					assert( invariants(self) );
+					local args = getargs(self);
+					local index = getindex(self);
+					return index == args.start + args.total;
+				},
+				method key {
+					assert( invariants(self) );
+					assert( not self.end() );
+					return getargs(self).start + getindex(self);
+				},
+				method value {
+					assert( invariants(self) );
+					assert( not self.end() );
+					local args = getargs(self);
+					local index = getindex(self);
+					return args[ index ];
+				},
+				method next {
+					assert( invariants(self) );
+					assert( not self.end() );
+					::dobj_checked_set(self, Iterator_stateFields, Iterator__stateField__currentIndex, 
+							getindex(self) + 1);
+				},
+				method rewind {
+					assert( invariants(self) );
+					initialiseIndex(self);
+				}
+			];
+		const Iterable__stateField__arguments = #ArgumentsIterable_arguments;
+		if (std::isundefined(static Iterable_stateFields))
+			Iterable_stateFields = [Iterable__stateField__arguments];
+		if (std::isundefined(static iterable_prototype))
+			iterable_prototype = [
+				method iterator {
+					local ite = [
+						{ ::pfield(Iterator__stateField__arguments):
+								::dobj_checked_get(self, Iterable_stateFields, Iterable__stateField__arguments) }
+					];
+					initialiseIndex(ite);
+					assert( invariants(ite) );
+					::del(ite, iterator_prototype);
+					return ite;
+				}
+			];
+		local iterable = [
+				{ ::pfield(Iterable__stateField__arguments): args }
+		];
+		::del(iterable, iterable_prototype);
+		return iterable;
+	}
+
+	function fromVectorArgs (args) {
+		return Iterable_fromVector(args);
+	}
+
+	if (std::isundefined(static from_dispatcher))
+		from_dispatcher = [
+			{ "Table"					: fromTableArguments	},
+			{ "ExternId_std::vector"	: fromVectorArgs		}
+		];
+	else
+		from_dispatcher = from_dispatcher;
+	from_dispatcher[::typeof(args)](args);
 }
 
 
@@ -3407,6 +3516,9 @@ function XML {
 				return result;
 			}
 		);
+		//
+		// Add an access checker
+		prototype."." = ::dobj_makeCheckedFieldAccesser(prototype);
 		//
 		// static methods
 		class.createFromXMLRoot = (function createFromXMLRoot (rootXML) {

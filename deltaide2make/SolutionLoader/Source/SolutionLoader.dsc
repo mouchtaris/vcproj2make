@@ -230,7 +230,7 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 				assert( u.isdeltanumber(childindex) );
 				assert( u.dobj_equal(child_projects[childindex], child_project) );
 				assert( u.XML().isanXMLObject(child_project) );
-				if (local projsect = child_project[ProjectSection_ElementName]) {
+				if (local projsect = child_project.getChild(ProjectSection_ElementName)) {
 					// if it has a ProjectSection, then...
 					// ... foreach ProjectSection
 					xmlforeachchild(child_project, ProjectSection_ElementName, [
@@ -243,12 +243,16 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 							assert( child_projectSection.getAttribute("type") );
 							local parent = @parent;
 							assert( isanXMLObject(parent) );
-							local type = child_projectSection.getAtribute("type");
+							local type = child_projectSection.getAttribute("type");
 							if ( u.dobj_contains(uninteresting_project_section_types, type) ) {
 								// delete a "WebsiteProperties" or "SolutionItems" ProjectSection
-								local proj = @proj;
-								@log("Trimming <ProjectSection> of type \"", child_projectSection.type, "\" "
-										"for project ", proj.name, ", ", proj.id, ", ", proj.path);
+								local proj       = @proj;
+								local proj_attrs = proj.attrgetter();
+								local proj_name  = proj_attrs.name;
+								local proj_id    = proj_attrs.id;
+								local proj_path  = proj_attrs.path;
+								@log("Trimming <ProjectSection> of type \"", type, "\" "
+										"for project ", proj_name, ", ", proj_id, ", ", proj_path);
 								parent.KillChild(ProjectSection_ElementName, childindex);
 							}
 							return true;
@@ -417,13 +421,15 @@ function SolutionLoader_LoadSolution (solutionXML, solutionBaseDirectory, soluti
 							xmlforeachchild(projectElement, ProjectSection_ElementName, [
 								method @operator () (parent, childindex, projectSectionElement, ismany) {
 									// It has to be a project dependencies node
-									u.assert_eq( projectSectionElement.type , ProjectDependencies_TypeAttributeValue );
+									u.assert_eq( projectSectionElement.getAttribute("type") , ProjectDependencies_TypeAttributeValue );
 									// foreach pair
 									xmlforeachchild(projectSectionElement, Pair_ElementName, [
 										method @operator () (parent, childindex, pairElement, ismany) {
-											u.assert_eq( pairElement.left , pairElement.right );
+											local pairElement_left  = pairElement.getAttribute("left" );
+											local pairElement_right = pairElement.getAttribute("right");
+											u.assert_eq( pairElement_left , pairElement_right );
 											// add dependency
-											@addDependency(pairElement.right);
+											@addDependency(pairElement_right);
 											return true; // keep iterating
 										},
 										@addDependency: @addDependency

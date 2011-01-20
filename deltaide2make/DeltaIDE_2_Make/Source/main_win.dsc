@@ -8,9 +8,9 @@ envp = [
 	// Use only standard delta features, without any custom extensions
 	// (custom library functions, etc). Valid values are only the ones
 	// listed here as comments
-	//@strict_delta	      : false,
+	@strict_delta	      : false,
 	//@strict_delta	      : "win32_debug",
-	@strict_delta	      : "win32_release",
+	//@strict_delta	      : "win32_release",
 	//@strict_delta       : "linux_debug",
 	//@strict_delta	      : "linux_release",
 	// Copy libraries from predefined paths, so as to have the latest versions
