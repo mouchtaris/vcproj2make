@@ -46,7 +46,8 @@ public final class CProjectConverter {
     private static final String XLinkerRPathOption  = "--rpath";
 
     private static final String PredefinedCXXFLAGS  = CXXFLAGS +
-                                                    " = -ansi -pedantic -Wall";
+                                                    " = -ansi -pedantic -Wall" +
+													" -m32";
     private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
 
     private static final String SOURCES = "SOURCES";
@@ -193,8 +194,14 @@ public final class CProjectConverter {
         for (final ProjectId projId: project.GetDependencies()) {
             final CProject  dependency      = solution.GetProject(projId);
             final Path      dependencyOutput= dependency.GetOutput();
+            final Path      dependencyDir   = dependency.GetLocation()
+                                                .getParent();
+            assert dependencyDir != null;
+            final Path      dependencyAbsoluteOutput = dependencyDir
+                                                    .resolve(dependencyOutput);
             final String    dependencyTarget= dependency.GetTarget();
-            final String    dependencyOutputString =dependencyOutput.toString();
+            final String    dependencyOutputString = dependencyAbsoluteOutput
+                                                        .toString();
             // Add dependency output directory to library directories with -L
             _u_writeVariableValue(  out,
                                     AdditionalLibraryDirectoryPrefix,
@@ -351,6 +358,7 @@ public final class CProjectConverter {
 
     private static final String TARGET_VAR  = " $(" + TARGET + ")";
     private static final String OBJECTS_VAR = " $(" + OBJECTS + ")";
+    private static final String CXXFLAGS_VAR= " $(" + CXXFLAGS+ ")";
     private static final String LDFLAGS_VAR = " $(" + LDFLAGS + ")";
     private static final String ARFLAGS_VAR = " $(" + ARFLAGS + ")";
     private void _writeEachTargetTarget ()
@@ -360,7 +368,10 @@ public final class CProjectConverter {
         for (final ProjectId depId: project.GetDependencies()) {
             final CProject depProj = solution.GetProject(depId);
             final Path projResult = GetFullTargetPathForUnixProject(depProj);
-            _u_writeTargetDependency(out, projResult.toString());
+            final Path projDir = depProj.GetLocation().getParent();
+            assert projDir != null;
+            final Path projResultAbsolute = projDir.resolve(projResult);
+            _u_writeTargetDependency(out, projResultAbsolute.toString());
         }
         _u_writeTargetDependency(out, OBJECTS_VAR);
         out.println();
@@ -368,8 +379,8 @@ public final class CProjectConverter {
         final StringBuilder sb = GetStringBuilder();
         switch (project.GetType()) {
             case DynamicLibrary:
-                sb.append("$(CXX) -shared").append(OBJECTS_VAR)
-                        .append(LDFLAGS_VAR)
+                sb.append("$(CXX)").append(CXXFLAGS_VAR).append(" -shared")
+                        .append(OBJECTS_VAR).append(LDFLAGS_VAR)
                         .append(" -o").append(TARGET_VAR);
                 break;
             case StaticLibrary:
@@ -377,7 +388,7 @@ public final class CProjectConverter {
                         .append(TARGET_VAR).append(OBJECTS_VAR);
                 break;
             case Executable:
-                sb.append("$(CXX)").append(OBJECTS_VAR)
+                sb.append("$(CXX)").append(CXXFLAGS_VAR).append(OBJECTS_VAR)
                         .append(TARGET_VAR).append(LDFLAGS_VAR);
                 break;
         }
