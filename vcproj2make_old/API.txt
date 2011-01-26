@@ -62,6 +62,8 @@ function successifier                   (f)                             => f(); 
 function foreachofargs                  (f ...)                         // calls f for each argument given, continuing to iterate over the arguments as long as f returns true
 function firstarg                       (arguments)
 function lastarg                        (arguments)
+function numberofargs                   (arguments)
+function argsclone                      (arguments)
 function argumentSelector               (f, ...)                        // calls f with arguments selected from the actual arguments
                                                                         // by the (numerical) indices passed as variable arguments to this function
 //
@@ -156,6 +158,7 @@ function list_concatenate               (...)                       // concatena
 function list_concatenate_from_lists    (lists, listAccessor)       // concatenates the lists accessed in elements of "lists" by "listAccessor"
 //
 function iterable_clone_to_list         (iterable)
+function iterable_clone_to_std_vector	(iterable)
 function iterable_map_to_list           (iterable, mapf)            // returns a list with all the contents
 function iterable_map_to_std_list       (iterable, mapf)
 //
@@ -771,6 +774,8 @@ function SolutionData_make(
 //               name should die (starting from 0).
 //         - KillAllChildren(childNodeName)
 //               like KillChild() but kills the whole branch of such children.
+//         - iterator()
+//               it's delta-iterable (yeah)
 //     <^> Static
 //         - createFromXMLRoot(rootXML)
 //     <^> Proxies

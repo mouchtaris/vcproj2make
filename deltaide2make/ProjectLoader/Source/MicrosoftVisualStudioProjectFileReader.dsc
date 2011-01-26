@@ -267,7 +267,7 @@ function GetProjectOutputForConfiguration (projectXML, projectConfiguration, pro
 	assert( u.isdeltaobject(configuration) );
 	local tool = ::p_getToolFromConfiguration(configuration, LinkerToolName);
 	assert( tool or projectType == ::ProjectTypes.StaticLibrary);
-	if (not (tool and local outputFile = tool[OutputFile_Name]))
+	if (not (tool and local outputFile = tool.getAttribute(OutputFile_Name)))
 		outputFile = DefaultOutputFile;
 	assert( u.strlength(outputFile) > 0 );
 	return outputFile;
@@ -275,13 +275,17 @@ function GetProjectOutputForConfiguration (projectXML, projectConfiguration, pro
 
 function p__getListAttributeValueFromToolParent (parentXml, toolName, attributeName, valueTransformation) {
 	local tool = ::p_getToolFromConfiguration(parentXml, toolName);
-	local valueString= tool.getAttribute(attributeName);
 	local result;
-	if (u.isdeltanil(valueString))
+	if (u.isdeltanil(tool))
 		result = u.list_new();
 	else {
-		local values = u.strsplit(valueString, ";", 0);
-		result = u.iterable_map_to_list(values, valueTransformation);
+		local valueString= tool.getAttribute(attributeName);
+		if (u.isdeltanil(valueString))
+			result = u.list_new();
+		else {
+			local values = u.strsplit(valueString, ";", 0);
+			result = u.iterable_map_to_list(values, valueTransformation);
+		}
 	}
 	return result;
 }

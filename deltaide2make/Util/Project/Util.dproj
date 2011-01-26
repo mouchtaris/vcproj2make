@@ -31,4 +31,18 @@
             <bytecode_path></bytecode_path>
         </ScriptProperties>
     </Child>
+    <Child type="Script" name="..\Source\DeltaFuncMethAspectual.dsc">
+        <ScriptProperties>
+            <working_directory>./</working_directory>
+            <text>1</text>
+            <symbolic>Util/Source/DeltaFuncMethAspectual.dsc</symbolic>
+            <output_path>../Lib</output_path>
+            <libs></libs>
+            <icode>1</icode>
+            <deployment>1</deployment>
+            <debug>1</debug>
+            <collapsed>0</collapsed>
+            <bytecode_path></bytecode_path>
+        </ScriptProperties>
+    </Child>
 </Project>

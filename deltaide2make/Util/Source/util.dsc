@@ -672,6 +672,14 @@ function methodinstalled (recipient, methodine) {
 	return std::tabmethodonme(recipient, methodine);
 }
 //
+// Delta iterables (first time)
+function iterable_clone_to_std_vector (diter) {
+	local result = std::vector_new(0);
+	foreach (local e, diter)
+		std::vector_push_back(result, e);
+	return result;
+}
+//
 // Functional games
 function constantf(val) {
 	return [ method @operator () { return @val; }, @val: val ];
@@ -721,6 +729,29 @@ function lastarg (args) {
 		result = std::vector_back(args);
 	else
 		std::error("what arguments is this??? " + args);
+	return result;
+}
+function numberofargs (args) {
+	local result;
+	if (::isdeltatable(args) or ::isdeltaobject(args))
+		if (not ::isdeltanil(local total = args.total))
+			result = total;
+		else
+			result = ::dobj_length(args);
+	else if (::isdeltavector(args))
+		result = args.total();
+	else
+		result = nil;
+	return result;
+}
+function argsclone (args) {
+	local result;
+	if (::isdeltatable(args) or ::isdeltaobject(args))
+		result = ::dobj_copy(args);
+	else if (::isdeltavector(args))
+		result = ::iterable_clone_to_std_vector(args);
+	else
+		result = nil;
 	return result;
 }
 function argumentSelector (f ...) {
@@ -775,17 +806,17 @@ function fncomposition (...) {
 		::argspopback(this, 1);
 		return result;
 	}
-	if (arguments.total < 2)
+	if (::numberofargs(arguments) < 2)
 		::error().AddError("At least two functions have to be given to fncomposition()");
 	else
 	// optimised implementation: don't do fcomposition(fcomposition(...))
 	local result = [
 		method @operator () (...) {
-			local functions = ::dobj_copy(@functions);
+			local functions = ::argsclone(@functions);
 			local result;
 			for (
 					result = lastargument_postdecrement(functions)(...);
-					functions.total;
+					::numberofargs(functions);
 					result = lastargument_postdecrement(functions)(result)
 			);
 			return result;
@@ -1223,7 +1254,8 @@ function Iterable_fromArguments (args) {
 		];
 	else
 		from_dispatcher = from_dispatcher;
-	from_dispatcher[::typeof(args)](args);
+
+	return from_dispatcher[::typeof(args)](args);
 }
 
 
@@ -2892,6 +2924,9 @@ function CProjectProperties {
 		//
 		Class = ::Class().createInstance(stateInitialiser, prototype, mixInRequirements, stateFields, className);
 		//
+		// Class methods
+		Class.isa = ::methodinstalled(Class, method isa_classy (obj) { return ::Class_isa(obj, self); });
+		//
 		// // // // //
 		//
 		LeanClass = [
@@ -2908,13 +2943,22 @@ function CProjectProperties {
 			}
 		];
 		//
+		// Class methods
+		LeanClass.isa = [ .className: className, method isa_lean (obj) { return ::LeanClassIsa(obj, @className); } ].isa_lean;
+		//
+		//
+		//
+		function isa (obj) {
+		}
+
+		//
 		assert( std::isundefined(static_variables_defined) );
 		static_variables_defined = true;
 	}
 	return ::ternary(::beClassy(), Class, LeanClass);
 }
 function CProjectProperties_isa (obj) {
-	return ::Class_isa(obj, ::CProjectProperties());
+	return ::CProjectProperties().isa(obj);
 }
 
 // CProject
@@ -3528,6 +3572,47 @@ function XML {
 		});
 		class.isanXMLObject = (function isaXMLObject (obj) {
 			return ::Class_isa(obj, class);
+		});
+		//
+		// make delta iterable
+		prototype."iterator" = ::methodinstalled(prototype, method iterator {
+			return [
+				method setbegin (container) { 
+					assert( isaXMLObject(container) and heuristicallyIsXMLObject(container) );
+					@container = container;
+					@childrenNames = local childrenNames = container.ChildrenNames();
+					@ite = local ite = std::tableiter_new();
+					std::tableiter_setbegin(ite, childrenNames);
+				},
+				method checkend (container) {
+					local result;
+					if (::dobj_equal(container, @container))
+						result = std::tableiter_checkend(@ite, container);
+					else
+						::error().AddError("False container checked");
+					return result;
+				},
+				method getval {
+					local index = self.getindex();
+					local result;
+					if (::isdeltastring(index))
+						result = @container.getChild(index);
+					else
+						result = nil;
+					return result;
+				},
+				method getindex {
+					local result;
+					if (std::tableiter_checkend(local ite = @ite, @container))
+						::error().AddError("Dereferencing ended iterator");
+					else
+						result = std::tableiter_getval(ite);
+					return result;
+				},
+				method fwd {
+					std::tableiter_fwd(@ite);
+				}
+			];
 		});
 		//
 		// // // / /

@@ -1,32 +1,36 @@
-function p (...) { std::print(..., "\n"); }
-d = std::delegate;
-
-proto = [
-	method m1 {},
-	method m2 {}
+p = [
+	method @operator () (...) {
+		std::print(..., "\n");
+		return "true";
+	},
+	{ "." : function (t, i) {
+		local func = std::tabget(t, "()");
+		if (i == "()")
+			return func;
+		func(i);
+		return "true";
+	}}
 ];
 
-function makeObjectAccessChecker (obj) {
-	local indices = [];
-	foreach (local key: local el, obj)
-		indices[key] = el;
-	return [
-		.indices: indices,
-		method checkedFieldAccess (obj, field) {
-			if (std::isoverloadableoperator(field))
-				return nil;
-			if (indices[field] != nil)
-				return std::tabget(obj, field);
-			std::error("WHAT FIELD IS THIS?!!?! " + field);
-			return nil;
-		}
-	].checkedFieldAccess;
-}
-proto."." = makeObjectAccessChecker(proto);
+d = std::delegate;
 
-a = [];
-d(a, proto);
+p("hi?");
 
-a.m1();
-a.m2();
-a.BoO();
+/*
+foreach (local k: local e,
+[	method iterator {
+		return [
+			@begin: true,
+			method setbegin (c) { @begin = p("setbegin"); },
+			method checkend (c) {
+				p("checkend");
+				return not @begin;
+			},
+			method getval { return p.getval; },
+			method getindex { return p.getindex; },
+			method fwd { @begin = false; }
+		];
+	}
+])
+	p("key  = ", k, " element = ", e);
+	*/
