@@ -5,6 +5,7 @@ std::vmrun(main);
 envp = [
 	// Platform sed executable (either full path or executable name, if it's in the path)
 	@SED			      : "\\gnu\\bin\\sed",
+							//	"NONEXISTENT/SED/PATH.exe",
 	// Use only standard delta features, without any custom extensions
 	// (custom library functions, etc). Valid values are only the ones
 	// listed here as comments
@@ -17,17 +18,18 @@ envp = [
 	@update_libs	      : 	true,
 							//	false,
 	// unixify sources
-	@unixify		      : false,
+	@unixify		      : 	false,
 	// lean classes
-	@lean_classes	      : false,
+	@lean_classes	      : 	false,
+							//	true,
 	// Try to load Solution Data from cache
-	@SolutionDataCached   : false,
+	@SolutionDataCached   : 	false,
 	// If Solution Data are not loaded from the cache, generate the
 	// solution data cache.
 	@SolutionDataCache    : //	true,
 								false,
 	// re-create the solution XML file from the .sln file
-	@RegenerateSolutionXML:  	not @self.SolutionDataCached,
+	@RegenerateSolutionXML: 	not @self.SolutionDataCached,
 							//	false,
 	// An HTML Report: generate it or not? (takes time)
 	@report			      : //	@self.SolutionDataCached,
@@ -36,9 +38,11 @@ envp = [
 	// (should contain DeltaExtraLibraries/, etc...)
 	@DeltaBuildRoot	      : 	"../../../../thesis_new/deltaide/Tools",
 							//	"../../../../thesis_new/SkriptBarbarian",
+							//	"NONEXISTENT/DELTA/BUILD/ROOT",
 	// The base directory against which the solution directory will be interpreted
 	// (if it is a relative path). This one better be an absolute path.
-	@solution_base_dir    : "/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make",
+	@solution_base_dir    : 	"/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/deltaide2make",
+							//	"/NONEXISTENT/SOLUTION/BASE/DIR",
 	// dummy nothing
 	{false:false},{false:nil}
 ];
@@ -47,9 +51,11 @@ args = [
 	@progname:		"deltaide2make",
 	@solution_name:	"IDE",
 	@solution_path:
-					"../../../../thesis_new/deltaide/IDE/IDE.sln"
-				//	"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+				//	"../../../../thesis_new/deltaide/IDE/IDE.sln"
+					"../vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
 				//	"/Users/TURBO_X/Documents/uni/UOC/CSD/metaterrestrial/saviwork/vcproj2make/vcproj2make_old/vcproj2make_testprojects/vcproj2make_testprojects.sln"
+				//	std::error("TODO replace this value with a string value of the complete (absolute) filepath to the solution file IDE.sln")
+				//	"NONEXISTENT/SOLUTION/PATH.sln"
 ];
 
 main.main(std::tablength(args), args, envp);

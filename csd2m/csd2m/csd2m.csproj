@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utility\Configuration.cs" />
     <Compile Include="Utility\ProjectId.cs" />
     <Compile Include="Utility\ProjectIdExtensions.cs" />
     <Compile Include="Utility\ProjectName.cs" />
