@@ -17,8 +17,7 @@ import static jd2m.cbuild.CPropertiesTransformationApplicator.ApplyToSolution;
 public class Main {
 
     public static void main (final String[] args) throws Throwable {
-        System.out.printf("%s%n",
-                java.nio.file.spi.FileSystemProvider.installedProviders());
+        MakeMakefiles(args);
     }
 
     public static void MakeMakefiles (final String[] args) throws IOException {
@@ -49,15 +48,26 @@ public class Main {
             final CSolution csolution = solutionentry.getValue();
             ApplyToSolution(trans, csolution);
             
-            GenerateMakefelesFromCSolution( csolution, "Blibliblo");
+            GenerateMakefelesFromCSolution(csolution, "Blibliblo");
         }
+
+        new WindowsSourcesConvertTask(solutionRoot).DoConversion();
     }
 
     private static void SetupLoggers() {
         final Logger jd2mLogger = Logger.getLogger("jd2m");
-        jd2mLogger.setLevel(Level.ALL);
+        jd2mLogger.setLevel(Level.SEVERE);
     }
 
     private Main () {
+    }
+
+    private static final String HELP = ""
+            + "command solutionFilePath solutionRoot";
+
+    public static class help {
+        public static void main (final String[] args) {
+            System.out.println(HELP);
+        }
     }
 }
