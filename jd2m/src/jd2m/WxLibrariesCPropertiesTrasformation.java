@@ -12,7 +12,7 @@ import static java.util.Collections.unmodifiableMap;
  *
  * @author muhtaris
  */
-public final class WxLibrariesCPropertiesTrasformation extends
+final class WxLibrariesCPropertiesTrasformation extends
                             SimpleMappingAndOrderingCPropertiesTransformation
 {
 

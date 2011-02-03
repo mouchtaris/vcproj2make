@@ -6,7 +6,7 @@ import java.util.Collection;
 import jd2m.source.ByteFiltererSourceConverter;
 import jd2m.source.SourceConverter;
 
-public class WindowsSourcesConvertTask {
+class WindowsSourcesConvertTask {
 
     public final Collection<String> FilesToModify =
             java.util.Collections.unmodifiableCollection(java.util.Arrays.asList(new String[]{

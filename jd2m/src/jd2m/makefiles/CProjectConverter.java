@@ -47,7 +47,8 @@ public final class CProjectConverter {
 
     private static final String PredefinedCXXFLAGS  = CXXFLAGS +
                                                     " = -ansi -pedantic -Wall" +
-													" -m32";
+													" -m32 "
+                                                    + "-fdiagnostics-show-option";
     private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
 
     private static final String SOURCES = "SOURCES";

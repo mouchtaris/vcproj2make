@@ -52,11 +52,12 @@ public class Main {
         }
 
         new WindowsSourcesConvertTask(solutionRoot).DoConversion();
+        new EvilFilesRemoverTask(solutionRoot).DoKilling();
     }
 
     private static void SetupLoggers() {
         final Logger jd2mLogger = Logger.getLogger("jd2m");
-        jd2mLogger.setLevel(Level.SEVERE);
+        jd2mLogger.setLevel(Level.WARNING);
     }
 
     private Main () {
