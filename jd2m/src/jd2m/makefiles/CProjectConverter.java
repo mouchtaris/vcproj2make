@@ -1,5 +1,7 @@
 package jd2m.makefiles;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Map;
@@ -70,9 +72,11 @@ public final class CProjectConverter {
     private static final String TargetTargetName    = "target";
     private static final String DepsTargetName      = "deps";
     private static final String CleanTargetName     = "clean";
+    private static final String RcleanTargetName    = "rclean";
     private static final String[] AllPhonyTargets = new String[] {
         AllTargetName, ObjectsTargetName, DirsTargetName,
-        TargetTargetName, DepsTargetName, CleanTargetName};
+        TargetTargetName, DepsTargetName, CleanTargetName,
+        RcleanTargetName };
     
     private static final String PHONY               = ".PHONY";
 
@@ -93,6 +97,9 @@ public final class CProjectConverter {
     /** { DepName (unique) => [Commands...] , ... } */
     private final Map<String,
             Iterable<String>>       depsCommands;
+    /** { DepName (unique) => [Commands...] , ... } */
+    private final Map<String,
+            Iterable<String>>       depsCleanCommands;
 
     private CProjectConverter ( final PrintWriter   _out,
                                 final CProject      _project,
@@ -109,13 +116,14 @@ public final class CProjectConverter {
         producables             = new HashMap<>(numberOfSources);
         producablesPaths        = new HashSet<>(numberOfSources);
         depsCommands            = new HashMap<>(numberOfDependencies);
+        depsCleanCommands       = new HashMap<>(numberOfDependencies);
 
         _u_populateProducables( _project.GetSources(),
                                 _project.GetIntermediate(), producables,
                                 producablesPaths);
         producablesPaths.add(_project.GetOutput());
         _u_populateDeps(_project.GetDependencies(), _solution, depsCommands,
-                        numberOfDependencies, _makefileName);
+                        depsCleanCommands, numberOfDependencies, _makefileName);
     }
 
     public static void GenerateMakefileFromCProject (
@@ -300,6 +308,7 @@ public final class CProjectConverter {
         _writeTargetTarget();
         _writePhonyTarget();
         _writeCleanTarget();
+        _writeRcleanTarget();
         _writeDirsTarget();
         _writeDepsTarget();
         _writeEachTargetTarget();
@@ -338,11 +347,24 @@ public final class CProjectConverter {
 
     private void _writeCleanTarget ()
     {
-        // TODO write a more sophisticated clean target
         _u_writeTarget( out, CleanTargetName, TransparentValuePreprocessor,
                         null, new SingleValueIterable<>("rm -r -f -v $("
                                 + OBJECTS + ") $(" + DEPENDS + ") $("
                                 + TARGET  + ")"));
+    }
+
+        ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private void _writeRcleanTarget ()
+    {
+        final Collection<? super Object> allCommands = new LinkedList<>();
+        for (final Iterable<?> commands: depsCleanCommands.values())
+            for (final Object command: commands)
+                allCommands.add(command);
+
+        _u_writeTarget( out, RcleanTargetName, TransparentValuePreprocessor,
+                        new SingleValueIterable<>(CleanTargetName), allCommands);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -602,6 +624,7 @@ public final class CProjectConverter {
                             final Iterable<ProjectId> deps,
                             final CSolution csolution,
                             final Map<String, Iterable<String>> depsCommands,
+                            final Map<String, Iterable<String>> depsCleanCommands,
                             final int numberOfDependencies,
                             final String makefileName)
     {   
@@ -622,11 +645,17 @@ public final class CProjectConverter {
             final String command = sb.toString();
             ReleaseStringBuilder();
             //
-            final Object previous = depsCommands
-                    .put(depName, new SingleValueIterable<String>(command));
-            assert previous == null;
+            {   final Object previous = depsCommands
+                        .put(depName, new SingleValueIterable<String>(command));
+                assert previous == null;
+            } { final Object previous = depsCleanCommands
+                        .put(depName, new SingleValueIterable<String>(command
+                                + " rclean"));
+                assert previous == null;
+            }
         }
         assert depsCommands.size() == numberOfDependencies;
+        assert depsCleanCommands.size() == numberOfDependencies;
     }
     // -----
     
