@@ -17,7 +17,7 @@ import static java.util.Collections.unmodifiableList;
  */
 public final class CProject {
     static List<CProperties> CreatePropertiesList () {
-        return new LinkedList<>();
+        return new LinkedList<CProperties>();
     }
 
     private final List<CProperties> _props = CreatePropertiesList();
@@ -31,8 +31,8 @@ public final class CProject {
     private final Path              _intermediate;
     private final Path              _api;
     private final CProjectType      _type;
-    private final List<ProjectId>   _deps = new LinkedList<>();
-    private final List<Path>        _sources = new LinkedList<>();
+    private final List<ProjectId>   _deps = new LinkedList<ProjectId>();
+    private final List<Path>        _sources = new LinkedList<Path>();
 
     /**
      * Package-protected so that {@link CPropertiesTransformationApplicator}
@@ -174,7 +174,7 @@ public final class CProject {
     }
     // ---
     private static final PropertyIterableOfSomethingGetter<String>
-    DefinitionsGitter = new PropertyIterableOfSomethingGetter<>() {
+    DefinitionsGitter = new PropertyIterableOfSomethingGetter<String>() {
         @Override
         public Iterable<String> git (final CProperties props) {
             return props.GetDefinitions();
@@ -182,7 +182,7 @@ public final class CProject {
     };
     // ---
     private static final PropertyIterableOfSomethingGetter<Path>
-    IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
+    IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<Path>() {
         @Override
         public Iterable<Path> git (final CProperties props) {
             return props.GetIncludeDirectories();
@@ -190,7 +190,7 @@ public final class CProject {
     };
     // ---
     private static final PropertyIterableOfSomethingGetter<Path>
-    LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<>() {
+    LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<Path>() {
         @Override
         public Iterable<Path> git (final CProperties props) {
             return props.GetLibraryDirectories();
@@ -198,7 +198,7 @@ public final class CProject {
     };
     // ---
     private static final PropertyIterableOfSomethingGetter<String>
-    AdditionalLibrariesGitter = new PropertyIterableOfSomethingGetter<>() {
+    AdditionalLibrariesGitter = new PropertyIterableOfSomethingGetter<String>() {
         @Override
         public Iterable<String> git (final CProperties props) {
             return props.GetAdditionalLibraries();
@@ -209,9 +209,9 @@ public final class CProject {
                             final PropertyIterableOfSomethingGetter<T> gitter)
     {
         final IterableConcatenationIterator<T> iterator =
-                new IterableConcatenationIterator<>();
+                new IterableConcatenationIterator<T>();
         final PremadeIteratorWrapperIterable<T> result =
-                new PremadeIteratorWrapperIterable<>(iterator);
+                new PremadeIteratorWrapperIterable<T>(iterator);
 
         for (final CProperties prop: _props)
             iterator.add(gitter.git(prop));

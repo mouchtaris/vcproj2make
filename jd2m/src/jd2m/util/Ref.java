@@ -23,6 +23,6 @@ public final class Ref<T> {
     }
 
     public static <T> Ref<T> CreateRef (final T referee) {
-        return new Ref<>(referee);
+        return new Ref<T>(referee);
     }
 }

@@ -24,20 +24,20 @@ import jd2m.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformationE
 public class SimpleMappingAndOrderingCPropertiesTransformation
         extends AbstractCPropertiesMapper
 {
-    private final Map<String, String>   _libMappings        = new HashMap<>(50);
-    private final Map<String, String>   _defMappings        = new HashMap<>(50);
-    private final Map<Path, Path>       _libdirMappings     = new HashMap<>(50);
-    private final Map<Path, Path>       _incldirMappings    = new HashMap<>(50);
+    private final Map<String, String>   _libMappings        = new HashMap<String, String>(50);
+    private final Map<String, String>   _defMappings        = new HashMap<String, String>(50);
+    private final Map<Path, Path>       _libdirMappings     = new HashMap<Path, Path>(50);
+    private final Map<Path, Path>       _incldirMappings    = new HashMap<Path, Path>(50);
     //
-    private final Map<String, Integer>  _libsValues         = new HashMap<>(50);
-    private final Map<String, Integer>  _defsValues         = new HashMap<>(50);
-    private final Map<Path, Integer>    _libdirsValues      = new HashMap<>(50);
-    private final Map<Path, Integer>    _incldirsValues     = new HashMap<>(50);
+    private final Map<String, Integer>  _libsValues         = new HashMap<String, Integer>(50);
+    private final Map<String, Integer>  _defsValues         = new HashMap<String, Integer>(50);
+    private final Map<Path, Integer>    _libdirsValues      = new HashMap<Path, Integer>(50);
+    private final Map<Path, Integer>    _incldirsValues     = new HashMap<Path, Integer>(50);
     //
-    private final Deque<String>     _additionalLibs         =new LinkedList<>();
-    private final Deque<String>     _additionalDefs         =new LinkedList<>();
-    private final Deque<Path>       _additionalLibdirs      =new LinkedList<>();
-    private final Deque<Path>       _additionalIncldirs     =new LinkedList<>();
+    private final Deque<String>     _additionalLibs         =new LinkedList<String>();
+    private final Deque<String>     _additionalDefs         =new LinkedList<String>();
+    private final Deque<Path>       _additionalLibdirs      =new LinkedList<Path>();
+    private final Deque<Path>       _additionalIncldirs     =new LinkedList<Path>();
 
     // -----
 
@@ -324,28 +324,28 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         boolean IsMappable (V value);
     }
     private final MappabilityChecker<String> LibraryMappabilityChecker =
-            new MappabilityChecker<>() {
+            new MappabilityChecker<String>() {
                 @Override
                 public boolean IsMappable (final String value) {
                     return LibraryHasMapping(value);
                 }
             };
     private final MappabilityChecker<String> DefinitionMappabilityChecker =
-            new MappabilityChecker<>() {
+            new MappabilityChecker<String>() {
                 @Override
                 public boolean IsMappable (final String value) {
                     return DefinitionHasMapping(value);
                 }
             };
     private final MappabilityChecker<Path> LibraryDirectoryMappabilityChecker=
-            new MappabilityChecker<>() {
+            new MappabilityChecker<Path>() {
                 @Override
                 public boolean IsMappable (final Path value) {
                     return LibraryDirectoryHasMapping(value);
                 }
             };
     private final MappabilityChecker<Path> IncludeDirectoryMappabilityChecker =
-            new MappabilityChecker<>() {
+            new MappabilityChecker<Path>() {
                 @Override
                 public boolean IsMappable (final Path value) {
                     return IncludeDirectoryHasMapping(value);
@@ -358,28 +358,28 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         boolean IsOrderable (V value);
     }
     private final OrderabilityChecker<String> LibraryOrderabilityChecker =
-            new OrderabilityChecker<>() {
+            new OrderabilityChecker<String>() {
                 @Override
                 public boolean IsOrderable (final String value) {
                     return LibraryHasMapping(value);
                 }
             };
     private final OrderabilityChecker<String> DefinitionOrderabilityChecker =
-            new OrderabilityChecker<>() {
+            new OrderabilityChecker<String>() {
                 @Override
                 public boolean IsOrderable (final String value) {
                     return DefinitionHasMapping(value);
                 }
             };
     private final OrderabilityChecker<Path> LibraryDirectoryOrderabilityChecker=
-            new OrderabilityChecker<>() {
+            new OrderabilityChecker<Path>() {
                 @Override
                 public boolean IsOrderable (final Path value) {
                     return LibraryDirectoryHasMapping(value);
                 }
             };
     private final OrderabilityChecker<Path> IncludeDirectoryOrderabilityChecker=
-            new OrderabilityChecker<>() {
+            new OrderabilityChecker<Path>() {
                 @Override
                 public boolean IsOrderable (final Path value) {
                     return IncludeDirectoryHasMapping(value);
@@ -452,9 +452,9 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
                                             final OrderabilityChecker<V> oc,
                                             final CPropertiesResultStorer<V> rs)
     {
-        final List<V> unordered = new LinkedList<>();
+        final List<V> unordered = new LinkedList<V>();
         final SortedSet<V> ordered =
-                new TreeSet<>(new OrderingComparator<V>(orderings));
+                new TreeSet<V>(new OrderingComparator<V>(orderings));
 
         for (final V value: items) {
             V newValue = value;

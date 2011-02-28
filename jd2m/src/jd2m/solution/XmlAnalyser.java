@@ -53,14 +53,11 @@ final class XmlAnalyser {
             {
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     final String nodeName = child.getNodeName();
-                    switch (nodeName) {
-                        case "Project":
-                            VisitProject(child);
-                            break;
-                        case "Global":
-                            VisitGlobal(child);
-                            break;
-                    }
+                    if (nodeName.equals("Project"))
+                        VisitProject(child);
+                    else
+                    if (nodeName.equals("Global"))
+                        VisitGlobal(child);
                 }
             }
         }
@@ -161,20 +158,19 @@ final class XmlAnalyser {
                 {
                     final String type = node.getAttributes().
                             getNamedItem("type").getNodeValue();
-                    switch (type) {
-                        case "SolutionConfigurationPlatforms":
-                            assert !visitedSolutions;
-                            VisitSolutionConfigurationPlatforms(node);
-                            visitedSolutions = true;
-                            break;
-                        case "ProjectConfigurationPlatforms":
-                            assert !visitedProjects;
-                            VisitProjectConfigurationPlatforms(node);
-                            visitedProjects = true;
-                            break;
-                        default:
-                            throw new RuntimeException("Unknow child " + node);
+                    if (type.equals("SolutionConfigurationPlatforms")) {
+                        assert !visitedSolutions;
+                        VisitSolutionConfigurationPlatforms(node);
+                        visitedSolutions = true;
                     }
+                    else
+                    if (type.equals("ProjectConfigurationPlatforms")) {
+                        assert !visitedProjects;
+                        VisitProjectConfigurationPlatforms(node);
+                        visitedProjects = true;
+                    }
+                    else
+                        throw new RuntimeException("Unknow child " + node);
                 }
             }
             assert visitedSolutions && visitedProjects;

@@ -33,7 +33,7 @@ public final class ProjectLoader {
     LoadProjects (
             final SolutionLoadedData solutionLoadedData)
     {
-        final Map<String, CSolution> result = new HashMap<>(5);
+        final Map<String, CSolution> result = new HashMap<String, CSolution>(5);
         final Map<ProjectId, Map<String, CProject>> projects =
                 _loadProjectsFromProjectEntries(solutionLoadedData);
 
@@ -73,7 +73,7 @@ public final class ProjectLoader {
         final ProjectEntryHolder    holder  = solutionLoadedData.h();
         final VariableEvaluator     ve      = solutionLoadedData.e();
         //
-        final Map<ProjectId, Map<String, CProject>> result = new HashMap<>(100);
+        final Map<ProjectId, Map<String, CProject>> result = new HashMap<ProjectId, Map<String, CProject>>(100);
 
         for (final ProjectEntry entry: holder) {
             final PathResolver resolver = solutionLoadedData.r();

@@ -16,7 +16,7 @@ public final class PremadeIteratorWrapperIterable<T> implements Iterable<T> {
     }
 
     private boolean used = false;
-    private List<UsageListener> _listeners = new LinkedList<>();
+    private List<UsageListener> _listeners = new LinkedList<UsageListener>();
     private final Iterator<T> _iterator;
     public PremadeIteratorWrapperIterable (final Iterator<T> iterator) {
         _iterator = iterator;

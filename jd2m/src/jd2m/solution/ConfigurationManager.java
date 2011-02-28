@@ -32,7 +32,7 @@ public final class ConfigurationManager {
      * ProjectInfo} }
      */
     private final Map<String, Map<ProjectId, ProjectInfo>> _configurations =
-            new HashMap<>(20);
+            new HashMap<String, Map<ProjectId, ProjectInfo>>(20);
 
     public void RegisterConfiguration (final String confName) {
         final Object previous = _configurations.put(confName,

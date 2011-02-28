@@ -21,7 +21,7 @@ public final class ProjectId {
         return b0 && b1 && b2 && b3 && b4 && b5 && b6;
     }
 
-    private static Map<String, ProjectId> Instances = new HashMap<>(100);
+    private static Map<String, ProjectId> Instances = new HashMap<String, ProjectId>(100);
     public static ProjectId CreateNew (final String value) {
         final ProjectId newInstance = new ProjectId(value);
         final Object previous = Instances.put(value, newInstance);

@@ -24,7 +24,7 @@ public final class ProjectEntry implements
     private final ProjectId         _parentRefId;
     private final Name              _name;
     private final Path              _location;
-    private final List<ProjectId>   _dependencies = new LinkedList<>();
+    private final List<ProjectId>   _dependencies = new LinkedList<ProjectId>();
     private ProjectEntry (  final ProjectId identity,
                             final Name      name,
                             final Path      location,

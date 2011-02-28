@@ -27,19 +27,19 @@ public final class IterableConcatenationIterator<T> implements Iterator<T> {
     }
     //
     public static <T> IterableConcatenationIterator<T> create(final Iterable<? extends T> ite) {
-        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<>();
+        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<T>();
         return result.add(ite);
     }
     public static <T> IterableConcatenationIterator<T> create(final Iterable<? extends T> ite1, final Iterable<? extends T> ite2) {
-        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<>();
+        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<T>();
         return result.add(ite1).add(ite2);
     }
     public static <T> IterableConcatenationIterator<T> create(final Iterable<? extends T>[] ites) {
-        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<>();
+        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<T>();
         return result.add(java.util.Arrays.asList(ites));
     }
     public static <T, I extends Iterable<? extends T>> IterableConcatenationIterator<T> create(final Collection<I> col) {
-        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<>();
+        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<T>();
         return result.add(col);
     }
     /**
@@ -49,7 +49,7 @@ public final class IterableConcatenationIterator<T> implements Iterator<T> {
      * @return
      */
     public static <T> IterableConcatenationIterator<T> createFromIterableCollection(final Collection<? extends Iterable<? extends T>> ites) {
-        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<>();
+        final IterableConcatenationIterator<T> result = new IterableConcatenationIterator<T>();
         return result.add(ites);
     }
 

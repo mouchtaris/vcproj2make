@@ -10,10 +10,10 @@ import static java.util.Collections.unmodifiableList;
 
 public final class CProperties {
 
-    private final List<Path> _includes  = new LinkedList<>();
-    private final List<String> _defs    = new LinkedList<>();
-    private final List<Path> _libdirs   = new LinkedList<>();
-    private final List<String> _libs    = new LinkedList<>();
+    private final List<Path> _includes  = new LinkedList<Path>();
+    private final List<String> _defs    = new LinkedList<String>();
+    private final List<Path> _libdirs   = new LinkedList<Path>();
+    private final List<String> _libs    = new LinkedList<String>();
 
     public void AddIncludeDirectory (final Path dir) {
         assert !IsFile(dir.toString());

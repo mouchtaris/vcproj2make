@@ -45,7 +45,7 @@ final class XmlAnalyser {
     public static final Path API_DIRECTORY = CreatePath("../Include");
 
     private static class XmlTreeWalker {
-        private final Map<String, CProjectBuilder> _builders = new HashMap<>(5);
+        private final Map<String, CProjectBuilder> _builders = new HashMap<String, CProjectBuilder>(5);
         private final Name              _projectName;
         private final ProjectId         _projectId;
         private final Path              _projectLocation;
@@ -102,16 +102,14 @@ final class XmlAnalyser {
             {
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     final String name = child.getNodeName();
-                    switch (name) {
-                        case "Configurations":
-                            VisitConfigurations(child);
-                            break;
-                        case "References":
-                            VisitReferences(child);
-                            break;
-                        case "Files":
-                            VisitFiles(child);
-                    }
+                    if (name.equals("Configurations"))
+                        VisitConfigurations(child);
+                    else
+                    if (name.equals("References"))
+                        VisitReferences(child);
+                    else
+                    if (name.equals("Files"))
+                        VisitFiles(child);
                 }
             }
         }
@@ -264,7 +262,7 @@ final class XmlAnalyser {
             }
         }
 
-        private final List<Path> _sources = new LinkedList<>();
+        private final List<Path> _sources = new LinkedList<Path>();
         void VisitFiles (final Node files) {
             assert files.getNodeType() == Node.ELEMENT_NODE;
             assert files.getNodeName().equals("Files");
@@ -275,14 +273,11 @@ final class XmlAnalyser {
             {
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     final String childNodeName = child.getNodeName();
-                    switch (childNodeName) {
-                        case "Filter":
-                            VisitFilter(child);
-                            break;
-                        case "File":
-                            VisitFile(child);
-                            break;
-                    }
+                    if (childNodeName.equals("Filter"))
+                        VisitFilter(child);
+                    else
+                    if (childNodeName.equals("File"))
+                        VisitFile(child);
                 }
             }
 
@@ -304,14 +299,11 @@ final class XmlAnalyser {
             {
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     final String childNodeName = child.getNodeName();
-                    switch (childNodeName) {
-                        case "Filter":
-                            VisitFilter(child);
-                            break;
-                        case "File":
-                            VisitFile(child);
-                            break;
-                    }
+                    if (childNodeName.equals("Filter"))
+                        VisitFilter(child);
+                    else
+                    if (childNodeName.equals("File"))
+                        VisitFile(child);
                 }
             }
         }
@@ -336,14 +328,11 @@ final class XmlAnalyser {
             {
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     final String childNodeName = child.getNodeName();
-                    switch (childNodeName) {
-                        case "Filter":
-                            VisitFilter(child);
-                            break;
-                        case "File":
-                            VisitFile(child);
-                            break;
-                    }
+                    if (childNodeName.equals("Filter"))
+                        VisitFilter(child);
+                    else
+                    if (childNodeName.equals("File"))
+                        VisitFile(child);
                 }
             }
         }
@@ -351,13 +340,14 @@ final class XmlAnalyser {
         // -------------------------------------
         private CProjectType _u_vsProjTypeToCProjType (final String vsProjType){
             CProjectType result = null;
-            switch (vsProjType) {
-                case "1":   result = CProjectType.Executable;       break;
-                case "2":   result = CProjectType.DynamicLibrary;   break;
-                case "4":   result = CProjectType.StaticLibrary;    break;
-                default: throw new RuntimeException("Unknown VSProjType: "
-                            + vsProjType);
-            }
+            if (vsProjType.equals("1")) result = CProjectType.Executable;
+            else
+            if (vsProjType.equals("2")) result = CProjectType.DynamicLibrary;
+            else
+            if (vsProjType.equals("4")) result = CProjectType.StaticLibrary;
+            else
+                throw new RuntimeException("Unknown VSProjType: " + vsProjType);
+            
             return result;
         }
         private static final Pattern _u_SemicolonPattern = Pattern
@@ -543,32 +533,29 @@ final class XmlAnalyser {
             final NamedNodeMap toolAttrs = tool.getAttributes();
             final String toolName = toolAttrs.getNamedItem("Name")
                     .getNodeValue();
-            switch (toolName) {
-                case "VCCLCompilerTool": {
-                    assert !visitedCompilerRef.Deref();
-                    final Node definitionsAttr = toolAttrs
-                            .getNamedItem("PreprocessorDefinitions");
-                    final Node includeDirectoriesAttr = toolAttrs
-                            .getNamedItem("AdditionalIncludeDirectories");
-                    if (definitionsAttr != null) {
-                        final String definitions =  definitionsAttr
-                                                            .getNodeValue();
-                        _u_addDefinitions(props, definitions);
-                    }
-                    if (includeDirectoriesAttr != null) {
-                        final String includeDirs = includeDirectoriesAttr
-                                                            .getNodeValue();
-                        _u_addIncludeDirectories(props, includeDirs);
-                    }
-                    visitedCompilerRef.Assign(true);
-                    break;
+            if (toolName.equals("VCCLCompilerTool")) {
+                assert !visitedCompilerRef.Deref();
+                final Node definitionsAttr = toolAttrs
+                        .getNamedItem("PreprocessorDefinitions");
+                final Node includeDirectoriesAttr = toolAttrs
+                        .getNamedItem("AdditionalIncludeDirectories");
+                if (definitionsAttr != null) {
+                    final String definitions =  definitionsAttr
+                                                        .getNodeValue();
+                    _u_addDefinitions(props, definitions);
                 }
-                case "VCLinkerTool":
-                case "VCLibrarianTool":
-                    assert !visitedLinkerRef.Deref();
-                    _u_extractLinkerInfo(toolAttrs, outputDirectory, builder, type, props);
-                    visitedLinkerRef.Assign(true);
-                    break;
+                if (includeDirectoriesAttr != null) {
+                    final String includeDirs = includeDirectoriesAttr
+                                                        .getNodeValue();
+                    _u_addIncludeDirectories(props, includeDirs);
+                }
+                visitedCompilerRef.Assign(true);
+            }
+            else
+            if (toolName.equals("VCLinkerTool") || toolName.equals("VCLibrarianTool")) {
+                assert !visitedLinkerRef.Deref();
+                _u_extractLinkerInfo(toolAttrs, outputDirectory, builder, type, props);
+                visitedLinkerRef.Assign(true);
             }
         }
     }
@@ -587,7 +574,7 @@ final class XmlAnalyser {
                                     args.pathResolver)
                         .VisitDocument(doc)._builders;
 
-        final Map<String, CProject> result = new HashMap<>(5);
+        final Map<String, CProject> result = new HashMap<String, CProject>(5);
         for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
             result.put(entry.getKey(), entry.getValue().MakeProject());
         

@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import jd2m.util.ProjectId;
 
 public class ProjectEntryHolder implements Iterable<ProjectEntry> {
-    private final Map<String, ProjectEntry> _entries = new HashMap<>(100);
+    private final Map<String, ProjectEntry> _entries = new HashMap<String, ProjectEntry>(100);
 
     public void Add (final ProjectEntry entry) {
         final Object previous = 
@@ -29,7 +29,7 @@ public class ProjectEntryHolder implements Iterable<ProjectEntry> {
 
     @Override
     public Iterator<ProjectEntry> iterator () {
-        return new Iterator<> () {
+        return new Iterator<ProjectEntry> () {
             private final Iterator<Entry<String, ProjectEntry>> ite = _entries.entrySet().iterator();
             @Override public boolean        hasNext () { return ite.hasNext(); }
             @Override public ProjectEntry   next    () { return ite.next().getValue(); }

@@ -11,7 +11,7 @@ public final class VariableEvaluator {
     public static final String SolutionDir      = "SolutionDir";
     public static final String ProjectName      = "ProjectName";
     
-    private final Map<String, String> _values = new HashMap<>(20);
+    private final Map<String, String> _values = new HashMap<String, String>(20);
 
     public VariableEvaluator (final String solutionDirectory) {
         _values.put(SolutionDir, solutionDirectory);

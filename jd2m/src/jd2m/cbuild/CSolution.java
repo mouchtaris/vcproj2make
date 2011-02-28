@@ -12,7 +12,7 @@ public final class CSolution implements Iterable<CProject> {
     private final Path                      _location;
     private final Name                      _name;
     private final String                    _configurationName;
-    private final Map<ProjectId, CProject>  _projects = new HashMap<>(100);
+    private final Map<ProjectId, CProject>  _projects = new HashMap<ProjectId, CProject>(100);
 
     public CSolution (  final Path      location,
                         final Name      name,
@@ -37,7 +37,7 @@ public final class CSolution implements Iterable<CProject> {
     public Iterator<CProject> iterator() {
         final Iterator<Entry<ProjectId, CProject>> entriesIterator =
                 _projects.entrySet().iterator();
-        return new Iterator<>() {
+        return new Iterator<CProject>() {
             @Override
             public boolean hasNext() { return entriesIterator.hasNext(); }
             @Override

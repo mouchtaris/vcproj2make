@@ -113,10 +113,10 @@ public final class CProjectConverter {
         project                 = _project;
         solution                = _solution;
         makefileName            = _makefileName;
-        producables             = new HashMap<>(numberOfSources);
-        producablesPaths        = new HashSet<>(numberOfSources);
-        depsCommands            = new HashMap<>(numberOfDependencies);
-        depsCleanCommands       = new HashMap<>(numberOfDependencies);
+        producables             = new HashMap<Path, Path>(numberOfSources);
+        producablesPaths        = new HashSet<Path>(numberOfSources);
+        depsCommands            = new HashMap<String, Iterable<String>>(numberOfDependencies);
+        depsCleanCommands       = new HashMap<String, Iterable<String>>(numberOfDependencies);
 
         _u_populateProducables( _project.GetSources(),
                                 _project.GetIntermediate(), producables,
@@ -348,7 +348,7 @@ public final class CProjectConverter {
     private void _writeCleanTarget ()
     {
         _u_writeTarget( out, CleanTargetName, TransparentValuePreprocessor,
-                        null, new SingleValueIterable<>("rm -r -f -v $("
+                        null, new SingleValueIterable<String>("rm -r -f -v $("
                                 + OBJECTS + ") $(" + DEPENDS + ") $("
                                 + TARGET  + ")"));
     }
@@ -358,13 +358,13 @@ public final class CProjectConverter {
 
     private void _writeRcleanTarget ()
     {
-        final Collection<? super Object> allCommands = new LinkedList<>();
+        final Collection<? super Object> allCommands = new LinkedList<Object>();
         for (final Iterable<?> commands: depsCleanCommands.values())
             for (final Object command: commands)
                 allCommands.add(command);
 
         _u_writeTarget( out, RcleanTargetName, TransparentValuePreprocessor,
-                        new SingleValueIterable<>(CleanTargetName), allCommands);
+                        new SingleValueIterable<String>(CleanTargetName), allCommands);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -466,7 +466,7 @@ public final class CProjectConverter {
             _u_writeTargetHeader(   out,
                                     objectPathString,
                                     TransparentValuePreprocessor,
-                                    new SingleValueIterable<>(sourcePath));
+                                    new SingleValueIterable<Path>(sourcePath));
             //
             ResetStringBuilder();
             sb.append("$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MD -c -o")
@@ -493,7 +493,7 @@ public final class CProjectConverter {
             //
             _u_writeTarget( out, pathString,
                             TransparentValuePreprocessor, null,
-                            new SingleValueIterable<>(command));
+                            new SingleValueIterable<String>(command));
         }
         ReleaseStringBuilder();
     }

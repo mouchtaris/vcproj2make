@@ -32,7 +32,7 @@ final class WxLibrariesCPropertiesTrasformation extends
     public static final int WX28UD_AUI_ORDER = 10; // TODO replace with actual value
 
     static {
-        final Map<String, String> wxWinToLinuxName = new HashMap<>(20);
+        final Map<String, String> wxWinToLinuxName = new HashMap<String, String>(20);
         wxWinToLinuxName.put(WX28UD_ADV_WIN, WX28UD_ADV_LINUX);
         wxWinToLinuxName.put(WX28UD_AUI_WIN, WX28UD_AUI_LINUX);
         // TODO complete win to linux wx libs name mapping
@@ -40,7 +40,7 @@ final class WxLibrariesCPropertiesTrasformation extends
 
         // ----
 
-        final Map<String, Integer> orderingMapping = new HashMap<>(20);
+        final Map<String, Integer> orderingMapping = new HashMap<String, Integer>(20);
         orderingMapping.put(WX28UD_ADV_LINUX, WX28UD_ADV_ORDER);
         orderingMapping.put(WX28UD_AUI_LINUX, WX28UD_AUI_ORDER);
         // TODO complete linux wx lib ordering
