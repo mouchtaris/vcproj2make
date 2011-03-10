@@ -48,8 +48,8 @@ public final class CProjectConverter {
     private static final String XLinkerRPathOption  = "--rpath";
 
     private static final String PredefinedCXXFLAGS  = CXXFLAGS +
-                                                    " = -ansi -pedantic -Wall" +
-													" -m32 "
+                                                    " = -ansi -pedantic -Wall"
+                                                    + " -m32 -g "
                                                     + "-fdiagnostics-show-option";
     private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
 
@@ -412,7 +412,8 @@ public final class CProjectConverter {
                 break;
             case Executable:
                 sb.append("$(CXX)").append(CXXFLAGS_VAR).append(OBJECTS_VAR)
-                        .append(TARGET_VAR).append(LDFLAGS_VAR);
+                        .append(LDFLAGS_VAR)
+                        .append(" -o").append(TARGET_VAR);
                 break;
         }
 

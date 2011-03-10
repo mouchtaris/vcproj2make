@@ -24,8 +24,10 @@ final class WxLibrariesCPropertiesTrasformation extends
     public static final String WX28UD_AUI_WIN   = "wxmsw28ud_aui";
 
     // Linux Libraries Names
-    public static final String WX28UD_ADV_LINUX  = "SOMETHING_LINUX_wxmsw28ud_adv";
-    public static final String WX28UD_AUI_LINUX  = "SOMETHING_LINUX_wxmsw28ud_aui";
+    public static final String WX28UD_ADV_LINUX  = null;//"SOMETHING_LINUX_wxmsw28ud_adv";
+    public static final String WX28UD_AUI_LINUX  = null;//"SOMETHING_LINUX_wxmsw28ud_aui";
+    public static final String UNIX_DYNAMIC_LIBRARY_LOADING_AND_LINKING_LIBRARY = "dl";
+    public static final String UNIX_POSIX_THREADS_LIBRARY = "pthread";
 
     // Linux Libraries Ordering Values
     public static final int WX28UD_ADV_ORDER = 20; // TODO replace with actual value
@@ -61,8 +63,21 @@ final class WxLibrariesCPropertiesTrasformation extends
         //
         AddDefinition("_LINUX_");
         AddDefinition("_UNIX_");
+        AddDefinition("DELTA_SUICIDAL_VM_ERROR");
+        AddDefinition("DELTA_ZOMBIE_VM_ERROR");
+        AddDefinition("DELTA_PROFILE_ACTIVATED");
+        AddDefinition("NO_VLD");
+        AddDefinition("DELTA_ENABLE_ASSIGNMENT_AND_RETURN_WARNINGS");
         //
-        SetLibraryMapping("winmm", null);
-        SetLibraryMapping("ws2_32", null);
+        for (final String lib2nullify: new String[]{
+                "winmm", "ws2_32", "wxmsw28ud_html", "wxmsw28ud_core",
+                "wxmsw28ud_richtext", "wxbase28ud", "wxbase28ud_xml",
+                "wxtiffd", "wxjpegd", "wxpngd", "wxzlibd", "wxexpatd",
+                "comctl32", "rpcrt4", "wsock32", "oleacc", "iphlpapi",
+                "odbc32", "odbccp32"})
+            SetLibraryMapping(lib2nullify, null);
+        //
+        AddLibrary(UNIX_DYNAMIC_LIBRARY_LOADING_AND_LINKING_LIBRARY);
+        AddLibrary(UNIX_POSIX_THREADS_LIBRARY);
     }
 }
