@@ -74,7 +74,10 @@ final class WxLibrariesCPropertiesTrasformation extends
                 "wxmsw28ud_richtext", "wxbase28ud", "wxbase28ud_xml",
                 "wxtiffd", "wxjpegd", "wxpngd", "wxzlibd", "wxexpatd",
                 "comctl32", "rpcrt4", "wsock32", "oleacc", "iphlpapi",
-                "odbc32", "odbccp32"})
+                "odbc32", "odbccp32", "wxmsw28u_adv", "wxmsw28u_aui",
+                "wxmsw28u_html", "wxmsw28u_core", "wxmsw28u_richtext",
+                "wxbase28u", "wxbase28u_xml", "wxtiff", "wxjpeg",
+                "wxpng", "wxzlib", "wxexpat"})
             SetLibraryMapping(lib2nullify, null);
         //
         AddLibrary(UNIX_DYNAMIC_LIBRARY_LOADING_AND_LINKING_LIBRARY);
