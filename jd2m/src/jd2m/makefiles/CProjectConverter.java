@@ -17,6 +17,7 @@ import jd2m.cbuild.CProject;
 import jd2m.util.SingleValueIterable;
 
 import static jd2m.makefiles.MakefileUtilities.ShellEscape;
+import static jd2m.makefiles.MakefileUtilities.MakeEscape;
 import static jd2m.util.PathHelper.StripExtension;
 import static jd2m.util.PathHelper.GetExtension;
 import static jd2m.util.PathHelper.CPP_EXTENSION;
@@ -49,7 +50,7 @@ public final class CProjectConverter {
 
     private static final String PredefinedCXXFLAGS  = CXXFLAGS +
                                                     " = -ansi -pedantic -Wall"
-                                                    + " -m32 -g "
+                                                    + " -Wextra -m32 -g "
                                                     + "-fdiagnostics-show-option";
     private static final String PredefinedARFLAGS   = ARFLAGS + " = crv";
 
@@ -82,7 +83,7 @@ public final class CProjectConverter {
 
     private static final String PredefinedAllAndObjectsTarget =
             AllTargetName + ": " + DepsTargetName + " " + DirsTargetName +
-                    " " + ObjectsTargetName + " " + TargetTargetName + "\n" +
+            " " + ObjectsTargetName + " " + TargetTargetName + "\n" +
             ObjectsTargetName + ": $(" + OBJECTS + ")";
 
     private static final String PredefinedTargetTargetHeader =
@@ -295,7 +296,9 @@ public final class CProjectConverter {
 
     private void _writeTargetVariable ()
     {
-        out.printf("%s = %s%n", TARGET, GetFullTargetPathForUnixProject(project));
+        out.printf("%s = %s%n", TARGET,
+                MakeEscaperValuePreprocessor.process(
+                        GetFullTargetPathForUnixProject(project).toString()));
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -372,7 +375,7 @@ public final class CProjectConverter {
 
     private void _writeDirsTarget ()
     {
-        _u_writeTargetHeader(out, DirsTargetName, TransparentValuePreprocessor,
+        _u_writeTargetHeader(out, DirsTargetName, MakeEscaperValuePreprocessor,
                         producablesPaths);
     }
 
@@ -386,7 +389,8 @@ public final class CProjectConverter {
     private static final String ARFLAGS_VAR = " $(" + ARFLAGS + ")";
     private void _writeEachTargetTarget ()
     {
-        _u_writeTargetName(out, TARGET_VAR);
+        _u_writeTargetName(out,
+                GetFullTargetPathForUnixProject(project).toString());
 
         for (final ProjectId depId: project.GetDependencies()) {
             final CProject depProj = solution.GetProject(depId);
@@ -394,7 +398,9 @@ public final class CProjectConverter {
             final Path projDir = depProj.GetLocation().getParent();
             assert projDir != null;
             final Path projResultAbsolute = projDir.resolve(projResult);
-            _u_writeTargetDependency(out, projResultAbsolute.toString());
+            _u_writeTargetDependency(out,
+                    MakeEscaperValuePreprocessor.process(
+                            projResultAbsolute.toString()));
         }
         _u_writeTargetDependency(out, OBJECTS_VAR);
         out.println();
@@ -489,7 +495,8 @@ public final class CProjectConverter {
         for (final Path path: producablesPaths) {
             ResetStringBuilder();
             final String pathString = path.toString();
-            sb.append("mkdir -p -v ").append(pathString);
+            sb.append("mkdir -p -v ").append(PathPreprocessor
+                    .process(pathString));
             final String command = sb.toString();
             //
             _u_writeTarget( out, pathString,
@@ -670,11 +677,20 @@ public final class CProjectConverter {
                     return ShellEscape(value);
                 }
             };
+    private final static ValuePreprocessor PathPreprocessor =
+            ShellEscaperValuePreprocessor;
     private final static ValuePreprocessor TransparentValuePreprocessor =
             new ValuePreprocessor() {
                 @Override
                 public String process (final String value) {
                     return value;
+                }
+            };
+    private final static ValuePreprocessor MakeEscaperValuePreprocessor =
+            new ValuePreprocessor() {
+                @Override
+                public String process (final String value) {
+                    return MakeEscape(value);
                 }
             };
 }

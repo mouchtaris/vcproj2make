@@ -10,8 +10,8 @@ class EvilFilesRemoverTask {
 
     public final Collection<String> FilesToKill =
             java.util.Collections.unmodifiableCollection(java.util.Arrays.asList(new String[]{
-                    "../Tools/Delta/DeltaCompiler/Include/unistd.h",
-                    "../Tools/Delta/ResourceLoaderLib/Include/unistd.h"
+                    DeltaProperties.DeltaRoot + "DeltaCompiler/Include/unistd.h",
+                    DeltaProperties.DeltaRoot + "ResourceLoaderLib/Include/unistd.h"
             }));
 
     private final Path SolutionBaseDir;

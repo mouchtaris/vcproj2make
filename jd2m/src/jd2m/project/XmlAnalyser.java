@@ -4,7 +4,6 @@ import jd2m.util.Ref;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.Reference;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
@@ -350,6 +349,9 @@ final class XmlAnalyser {
             
             return result;
         }
+        private static boolean _u_PropertySheetIsIgnorable (final String psheet) {
+            return psheet.startsWith("$(VCInstallDir)");
+        }
         private static final Pattern _u_SemicolonPattern = Pattern
                 .compile(";+");
         private void _u_addPropertySheets ( final CProjectBuilder builder,
@@ -359,6 +361,8 @@ final class XmlAnalyser {
         {
             final String[] tokens = _u_SemicolonPattern.split(sheetsLine, 0);
             for (final String token: tokens) {
+                if (_u_PropertySheetIsIgnorable((token)))
+                    continue;
                 final String sheetUnixRelativePath = UnixifyPath(token);
                 final Path sheetFullPath = _pathResolver
                         .ProjectResolve(_projectId, sheetUnixRelativePath);
@@ -494,8 +498,10 @@ final class XmlAnalyser {
             }
             //
             if (!outputDirectory.equals(outputDirectory0str)) {
-                LOG.log(Level.WARNING, "Project''s output directory {0} and linker''s output directory {1} do not match. Resetting outputDirectory to linker''s value",
-                        new Object[] {outputDirectory, outputDirectory0str});
+                LOG.log(Level.WARNING, "Project''s output directory {0} and linker''s output directory {1} do not match. Resetting outputDirectory to linker''s value ({2}, {3}, {4})",
+                        new Object[] {  outputDirectory, outputDirectory0str,
+                                        _projectName, _projectId,
+                                        _projectLocation});
                 final Path outputDirectory0 = CreatePath(outputDirectory0str);
                 builder.SetOutput(outputDirectory0);
             }

@@ -16,6 +16,8 @@ public final class MakefileUtilities {
     }
 
     public static String ShellEscape (final String line) {
+        assert line.indexOf("\\'") == -1;
+
         _resetSB();
 
         SB.append('\'');
@@ -26,7 +28,7 @@ public final class MakefileUtilities {
     }
 
     public static String MakeEscape (final String line) {
-        final String level0 = line.replaceAll("#", "\\#");
+        final String level0 = line.replaceAll("([#\\|])", "\\\\$0");
         final String level1 = level0.replaceAll("\\$", "$$");
         final String result = level1;
         return result;
@@ -42,7 +44,7 @@ public final class MakefileUtilities {
                 result = output.resolve("lib" + target + ".so");
                 break;
             case StaticLibrary:
-                result = output.resolve(target + ".a");
+                result = output.resolve("lib" + target + ".a");
                 break;
             case Executable:
                 result = output.resolve(target);

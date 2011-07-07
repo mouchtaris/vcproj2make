@@ -10,8 +10,8 @@ class WindowsSourcesConvertTask {
 
     public final Collection<String> FilesToModify =
             java.util.Collections.unmodifiableCollection(java.util.Arrays.asList(new String[]{
-                    "../Tools/Delta/ResourceLoaderLib/Src/RcParser.cpp",
-                    "../Tools/Delta/DebugExprEvaluator/Src/DebugExprParser.cpp"
+                    DeltaProperties.DeltaRoot + "ResourceLoaderLib/Src/RcParser.cpp",
+                    DeltaProperties.DeltaRoot + "DebugExprEvaluator/Src/DebugExprParser.cpp"
             }));
 
     private final Path SolutionBaseDir;

@@ -18,7 +18,7 @@ public final class SolutionLoader {
         final PathResolver pathResolver =
                 new PathResolver(solutionRootDireactory, projectEntryHolder);
         final VariableEvaluator variableEvaluator =
-                new VariableEvaluator(solutionRootDireactory.toString());
+                new VariableEvaluator(solutionRootDireactory.toString() + "/");// TODO make util for appending "/" to  directories
         final XmlAnalyserArguments args =
                 new XmlAnalyserArguments(   configurationManager,
                                             projectEntryHolder,

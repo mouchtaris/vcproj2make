@@ -41,3 +41,8 @@ glob:deltaide2make/xmlstore_tost.xml
 glob:vcproj2make_old/vcproj2make_testprojects/isidll/Project/isidll_VS/isidll_VSMakefile.mk
 glob:vcproj2make_old/vcproj2make_testprojects/isistatic/Project/isistatic_VS/isistatic_VSMakefile.mk
 glob:vcproj2make_old/vcproj2make_testprojects/isiapp/Project/isiapp_VS/isiapp_VSMakefile.mk
+syntax: glob
+jd2m/build
+jd2m/dist
+jd2m/nbproject/private/private.properties
+jd2m/nbproject/private/private.xml
