@@ -211,11 +211,11 @@ public final class CProjectConverter {
                                                     .resolve(dependencyOutput);
             final String    dependencyTarget= dependency.GetTarget();
             final String    dependencyOutputString = dependencyAbsoluteOutput
-                                                        .toString();
+                                            .toString();
             // Add dependency output directory to library directories with -L
             _u_writeVariableValue(  out,
                                     AdditionalLibraryDirectoryPrefix,
-                                    dependencyOutputString,
+                                    ShellEscape(dependencyOutputString),
                                     _EMPTY_STRING);
             // Add the generated library to the linking inputs with -l
             _u_writeVariableValue(  out, LibraryLinkingPrefix,
@@ -410,16 +410,25 @@ public final class CProjectConverter {
             case DynamicLibrary:
                 sb.append("$(CXX)").append(CXXFLAGS_VAR).append(" -shared")
                         .append(OBJECTS_VAR).append(LDFLAGS_VAR)
-                        .append(" -o").append(TARGET_VAR);
+                        .append(" -o")
+                        .append(ShellEscaperValuePreprocessor.process(
+                                GetFullTargetPathForUnixProject(project)
+                                .toString()));
                 break;
             case StaticLibrary:
-                sb.append("$(AR)").append(ARFLAGS_VAR)
-                        .append(TARGET_VAR).append(OBJECTS_VAR);
+                sb.append("$(AR)").append(ARFLAGS_VAR).append(" ")
+                        .append(ShellEscaperValuePreprocessor.process(
+                                GetFullTargetPathForUnixProject(project)
+                                .toString()))
+                        .append(OBJECTS_VAR);
                 break;
             case Executable:
                 sb.append("$(CXX)").append(CXXFLAGS_VAR).append(OBJECTS_VAR)
                         .append(LDFLAGS_VAR)
-                        .append(" -o").append(TARGET_VAR);
+                        .append(" -o")
+                        .append(ShellEscaperValuePreprocessor.process(
+                                GetFullTargetPathForUnixProject(project)
+                                .toString()));
                 break;
         }
 
