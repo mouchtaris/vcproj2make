@@ -1,5 +1,6 @@
 package jd2m.solution;
 
+import java.nio.file.Files;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,7 +87,7 @@ final class XmlAnalyser {
             // <Project> tags are also used for solution filters.
             final Path projectXmlFileFullPath = _pathResolver
                     .SolutionResolve(projectXmlFilePath);
-            if (projectXmlFileFullPath.exists()) {
+            if (Files.exists(projectXmlFileFullPath)) {
                 _projectEntry = ProjectEntry.Create(
                         ProjectId.GetOrCreate(id.getNodeValue()),
                         name.getNodeValue(),
@@ -317,7 +318,7 @@ final class XmlAnalyser {
                             final XmlAnalyserArguments args)
     {
         try {
-            final InputStream is = file.newInputStream(StandardOpenOption.READ);
+            final InputStream is = Files.newInputStream(file, StandardOpenOption.READ);
             final InputStream buffed_ins = new BufferedInputStream(is);
             ParseXML(buffed_ins, args);
         } catch (IOException ex) {

@@ -1,5 +1,6 @@
 package jd2m.makefiles;
 
+import java.nio.file.Files;
 import java.io.IOException;
 import java.nio.file.Path;
 import jd2m.cbuild.CProject;
@@ -45,9 +46,9 @@ public class CSolutionConverter {
                                                                 cproject,
                                                                 makefileName);
             GenerateMakefileFromCProject(
-                    makefilePath.newOutputStream(   CREATE,
-                                                    WRITE,
-                                                    TRUNCATE_EXISTING),
+                    Files.newOutputStream(makefilePath, CREATE,
+                                                        WRITE,
+                                                        TRUNCATE_EXISTING),
                     cproject,
                     csolution,
                     makefileName);

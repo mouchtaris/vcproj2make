@@ -1,6 +1,7 @@
 package jd2m;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -23,7 +24,7 @@ class EvilFilesRemoverTask {
         for (final String filepath: FilesToKill) {
             final Path fullpath = SolutionBaseDir.resolve(filepath);
             try {
-                fullpath.delete();
+                Files.delete(fullpath);
             }
             catch (final IOException ex) {
                 LOG.log(Level.WARNING, "Removing file {0}: was not found",

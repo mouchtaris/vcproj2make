@@ -208,10 +208,8 @@ public final class CProject {
     private <T> Iterable<T> _GetIterableOfSomethingFromProperties (
                             final PropertyIterableOfSomethingGetter<T> gitter)
     {
-        final IterableConcatenationIterator<T> iterator =
-                new IterableConcatenationIterator<T>();
-        final PremadeIteratorWrapperIterable<T> result =
-                new PremadeIteratorWrapperIterable<T>(iterator);
+        final IterableConcatenationIterator<T> iterator = new IterableConcatenationIterator<T>();
+        final PremadeIteratorWrapperIterable<T> result = new PremadeIteratorWrapperIterable<T>(iterator);
 
         for (final CProperties prop: _props)
             iterator.add(gitter.git(prop));

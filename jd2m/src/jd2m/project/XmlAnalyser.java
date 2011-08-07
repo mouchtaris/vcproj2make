@@ -1,5 +1,6 @@
 package jd2m.project;
 
+import java.nio.file.Files;
 import jd2m.util.Ref;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -32,7 +33,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import static jd2m.util.PathHelper.IsWindowsPath;
 import static jd2m.util.PathHelper.UnixifyPath;
 import static jd2m.util.PathHelper.CreatePath;
 import static jd2m.util.PathHelper.GetFileSystem;
@@ -56,7 +56,7 @@ final class XmlAnalyser {
                         final VariableEvaluator ve,
                         final PathResolver      pathResolver)
         {
-            assert !IsWindowsPath(projectLocation.toString());
+      //    assert !IsWindowsPath(projectLocation.toString());
 
             _projectName        = projectName;
             _projectId          = projectId;
@@ -88,11 +88,9 @@ final class XmlAnalyser {
             assert root.getNodeName().equals("VisualStudioProject");
 
             final NamedNodeMap attrs    = root.getAttributes();
-            final String projectName    = attrs.getNamedItem("Name")
-                    .getNodeValue();
+            final String projectName    = attrs.getNamedItem("Name").getNodeValue();
             assert _projectName.Equals(projectName);
-            final String projectId      = attrs.getNamedItem("ProjectGUID")
-                    .getNodeValue();
+            final String projectId      = attrs.getNamedItem("ProjectGUID").getNodeValue();
             assert _projectId.Equals(projectId);
 
             for(Node child = root.getFirstChild();
@@ -368,7 +366,7 @@ final class XmlAnalyser {
                         .ProjectResolve(_projectId, sheetUnixRelativePath);
                 try {
                     final Document doc = DocumentBuilder
-                            .parse(sheetFullPath.newInputStream(READ));
+                            .parse(Files.newInputStream(sheetFullPath, READ));
                     for (   Node child = doc.getFirstChild();
                             child != null;
                             child = child.getNextSibling())
@@ -485,7 +483,7 @@ final class XmlAnalyser {
                 assert outputDirectory0 != null;
                 outputDirectory0str = outputDirectory0.toString();
                 //
-                final Path nameWithExtPath = outputFile.getName();
+                final Path nameWithExtPath = outputFile.getFileName();
                 final String[] nameTokens = _u_SplitName(
                         nameWithExtPath.toString());
                 unevaluatedName = nameTokens[0];
@@ -575,10 +573,7 @@ final class XmlAnalyser {
     static Map<String, CProject> ParseProjectXML (final Document doc,
                                             final XmlAnalyserArguments args)
     {
-        final Map<String, CProjectBuilder> builders =
-                new XmlTreeWalker(  args.name, args.id, args.location, args.ve,
-                                    args.pathResolver)
-                        .VisitDocument(doc)._builders;
+        final Map<String, CProjectBuilder> builders = new XmlTreeWalker(  args.name, args.id, args.location, args.ve, args.pathResolver).VisitDocument(doc)._builders;
 
         final Map<String, CProject> result = new HashMap<String, CProject>(5);
         for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
@@ -629,7 +624,7 @@ final class XmlAnalyser {
     {
         Map<String, CProject> result = null;
         try {
-            final InputStream is = path.newInputStream(StandardOpenOption.READ);
+            final InputStream is = Files.newInputStream(path, StandardOpenOption.READ);
             final InputStream bins = new BufferedInputStream(is);
             result = ParseProjectXML(bins, args);
         } catch (IOException ex) {

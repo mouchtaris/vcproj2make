@@ -50,7 +50,7 @@ public class PathResolver {
 
     public Path ProjectPath (final ProjectEntry entry) {
         final Path location = entry.GetLocation();
-        assert !IsWindowsPath(location.toString());
+    //  assert !IsWindowsPath(location.toString());
         assert !location.isAbsolute();
         final Path result = _solutionDir.resolve(location);
         {

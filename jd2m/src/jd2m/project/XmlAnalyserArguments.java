@@ -11,19 +11,22 @@ final class XmlAnalyserArguments {
     final Name              name;
     final ProjectId         id;
     final Path              location;
+    final String            relativeLocation;   // always unix path
     final VariableEvaluator ve;
     final PathResolver      pathResolver;
 
     XmlAnalyserArguments (  final Name              _name,
                             final ProjectId         _id,
                             final Path              _location,
+                            final String            _relativeLocation,
                             final VariableEvaluator _ve,
                             final PathResolver      _pathResolver)
     {
-        name            = _name;
-        id              = _id;
-        location        = _location;
-        ve              = _ve;
-        pathResolver    = _pathResolver;
+        name                = _name;
+        id                  = _id;
+        location            = _location;
+        relativeLocation    = _relativeLocation;
+        ve                  = _ve;
+        pathResolver        = _pathResolver;
     }
 }

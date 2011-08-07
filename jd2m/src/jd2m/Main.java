@@ -34,10 +34,12 @@ public class Main {
 //                "/tmp/deltaide/IDE/"
                 args[1]
         );
+        final String solutionTargetDirectory = args[2];
         Map<String, CSolution> solutions =
                 ProjectLoader.LoadProjects(
                         SolutionLoader.LoadSolution(solutionFilePath,
-                                                    solutionRoot)
+                                                    solutionRoot,
+                                                    solutionTargetDirectory)
                 );
 
         final WxLibrariesCPropertiesTrasformation trans =
@@ -57,7 +59,7 @@ public class Main {
 
     private static void SetupLoggers() {
         final Logger jd2mLogger = Logger.getLogger("jd2m");
-        jd2mLogger.setLevel(Level.WARNING);
+        jd2mLogger.setLevel(Level.INFO);
     }
 
     private Main () {
