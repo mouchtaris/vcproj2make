@@ -114,4 +114,10 @@ public final class PathHelper {
         final String result = level1;
         return result;
     }
+    
+    public static boolean IsAbsoluteUnixPath (final String pathname) {
+        final boolean isunix = !IsWindowsPath(pathname);
+        final boolean isabsolute = pathname.charAt(0) == '/';
+        return isunix && isabsolute;
+    }
 }

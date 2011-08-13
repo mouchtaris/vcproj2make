@@ -1,0 +1,31 @@
+package jcproj.vcxproj;
+
+/**
+ *
+ * @date Sunday 7th of August 2011
+ * @author amalia
+ */
+public class Import extends Element {
+    
+    ///////////////////////////////////////////////////////
+    
+    public String GetProject () {
+        return project;
+    }
+    
+    ///////////////////////////////////////////////////////
+    
+    public Import (final String project) {
+        this.project = project;
+    }
+    
+    ///////////////////////////////////////////////////////
+    
+    ///////////////////////////////////////////////////////
+    // Private
+    
+    ///////////////////////////////////////////////////////
+    // State
+    final String project;
+    
+} // class Import
