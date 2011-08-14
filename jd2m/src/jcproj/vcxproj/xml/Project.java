@@ -1,10 +1,13 @@
 package jcproj.vcxproj.xml;
 
+import java.util.Collections;
 import jcproj.vcxproj.ProjectGuid;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import jcproj.util.FilteringIterable;
+import jcproj.util.Predicate;
 
 /**
  *
@@ -72,6 +75,21 @@ public final class Project {
     public void AddProjectReference (final ProjectGuid projid, final String relpath) {
         final Object previous = references.put(projid, relpath);
         assert previous == null;
+    }
+    
+    ///////////////////////////////////////////////////////
+    
+    ///////////////////////////////////////////////////////
+    
+    public Iterable<Group<? extends Import>> GetImportGroup (final String label) {
+        return new FilteringIterable<>(
+                Collections.unmodifiableSet(importgroups),
+                new Predicate<Group<? extends Import>>() {
+                    @Override
+                    public boolean HoldsFor (final Group<? extends Import> something) {
+                        return something.GetLabel().equals(label);
+                    }
+                });
     }
     
     ///////////////////////////////////////////////////////

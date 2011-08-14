@@ -41,17 +41,21 @@ public final class Group<T> implements Conditioned {
     
     ///////////////////////////////////////////////////////
     
+    public boolean Equals (final Group<?> other) {
+        boolean d00, d01, d02;
+        return
+                (d00 = Objects.equals(type, other.type))
+            &&  (d00 = Objects.equals(label, other.label))
+            &&  (d00 = Objects.equals(condition, other.condition))
+            ;
+    }
+    
     @Override
     public boolean equals (final Object o) {
         boolean result = o != null && Objects.equals(getClass(), o.getClass());
         
-        if (result) {
-            final Group<?> other = (Group<?>) o;
-            
-            result =       Objects.equals(type, other.type)
-                        && Objects.equals(label, other.label)
-                        && Objects.equals(condition, other.condition);
-        }
+        if (result)
+            result = Equals((Group<?>) o);
         
         return result;
     }
