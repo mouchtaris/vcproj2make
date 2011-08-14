@@ -1,5 +1,6 @@
-package jcproj.vcxproj;
+package jcproj.vcxproj.xml;
 
+import jcproj.vcxproj.ProjectGuid;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

@@ -1,7 +1,8 @@
 package jcproj.vcxproj;
 
-import java.util.HashSet;
-import java.util.Set;
+import jcproj.vcxproj.ProjectGuid;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -46,7 +47,7 @@ public final class ProjectGuidFactory {
         boolean b1 = value.charAt(0)              == '{';
         boolean b2 = value.charAt(ID_LENGTH - 1)  == '}';
         boolean b3 = value.charAt(9)              == '-';
-        boolean b4= value.charAt(14)              == '-';
+        boolean b4 = value.charAt(14)             == '-';
         boolean b5 = value.charAt(19)             == '-';
         boolean b6 = value.charAt(24)             == '-';
         return b0 && b1 && b2 && b3 && b4 && b5 && b6;
@@ -56,8 +57,8 @@ public final class ProjectGuidFactory {
     
     public ProjectGuid Create (final String str) {
         final ProjectGuid projid = ParseProjectGuid(str);
-        final boolean added = projids.add(projid);
-        assert added;
+        final ProjectGuid previous = projids.put(projid, projid);
+        assert previous == null;
         return projid;
     }
     
@@ -66,8 +67,16 @@ public final class ProjectGuidFactory {
     public ProjectGuid Get (final String str) {
         final ProjectGuid projid = ParseProjectGuid(str);
         assert projid.toString().equalsIgnoreCase(str);
+        assert ParseProjectGuid(projid.toString()).Equals(projid);
+        assert ParseProjectGuid(projid.toString()).toString().equals(projid.toString());
         
-        return projids.contains(projid)? projid : null;
+        ProjectGuid result = null;
+        if (projids.containsKey(projid)) {
+            result = projids.get(projid);
+            assert result != null;
+        }
+        
+        return result;
     }
     
     ///////////////////////////////////////////////////////
@@ -81,11 +90,11 @@ public final class ProjectGuidFactory {
     private ProjectGuid ParseProjectGuid (final String str) {
         assert IsValid(str);
         
-        final long  a   = Long.parseLong(str.substring(1, 9), 0x10);
-        final int   b   = Integer.parseInt(str.substring(10, 14), 0x10);
-        final int   c   = Integer.parseInt(str.substring(15, 19), 0x10);
-        final int   d   = Integer.parseInt(str.substring(20, 24), 0x10);
-        final long  e   = Long.parseLong(str.substring(25, 37), 0x10);
+        final long  a   = Long   .parseLong(str.substring( 1,  9), 0x10);
+        final int   b   = Integer.parseInt (str.substring(10, 14), 0x10);
+        final int   c   = Integer.parseInt (str.substring(15, 19), 0x10);
+        final int   d   = Integer.parseInt (str.substring(20, 24), 0x10);
+        final long  e   = Long   .parseLong(str.substring(25, 37), 0x10);
         
         return new ProjectGuid(a, b, c, d, e);
     }
@@ -94,7 +103,7 @@ public final class ProjectGuidFactory {
     
     ///////////////////////////////////////////////////////
     // State
-    private final Set<ProjectGuid>      projids       = new HashSet<>(100);
+    private final Map<ProjectGuid, ProjectGuid> projids = new HashMap<>(100);
     
     ///////////////////////////////////////////////////////
     // Singleton

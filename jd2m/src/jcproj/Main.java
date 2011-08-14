@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package jcproj;
 
 import java.nio.file.Path;
@@ -17,12 +13,12 @@ import jcproj.loading.ConfigurationManager;
 import jcproj.loading.ProjectConfigurationEntry;
 import jcproj.loading.ProjectLoader;
 import jcproj.loading.SolutionLoader;
-import jcproj.vcxproj.Project;
+import jcproj.vcxproj.xml.Project;
 import jcproj.vcxproj.ProjectGuidFactory;
 
 /**
  *
- * @author TURBO_X
+ * @author amalia
  */
 public class Main {
     

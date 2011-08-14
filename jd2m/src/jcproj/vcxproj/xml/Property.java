@@ -1,23 +1,29 @@
-package jcproj.vcxproj;
+package jcproj.vcxproj.xml;
 
 /**
  *
  * @date Sunday 7th of August 2011
  * @author amalia
  */
-public class ProjectReference extends Item {
+public class Property extends Element {
     
     ///////////////////////////////////////////////////////
     
-    public String GetProject () {
-        return project;
+    public String GetId () {
+        return id;
     }
     
     ///////////////////////////////////////////////////////
     
-    public ProjectReference (final String include, final String project) {
-        super(include);
-        this.project = project;
+    public String GetValue () {
+        return value;
+    }
+    
+    ///////////////////////////////////////////////////////
+    
+    public Property (final String id, final String value) {
+        this.id = id;
+        this.value = value;
     }
     
     ///////////////////////////////////////////////////////
@@ -27,6 +33,7 @@ public class ProjectReference extends Item {
     
     ///////////////////////////////////////////////////////
     // State
-    final String project;
-    
-} // class ProjectReference
+    private final String id;
+    private final String value;
+
+} // class Property

@@ -6,7 +6,7 @@ package jd2m;
  */
 public class DeltaProperties {
     
-    public static final String DeltaRoot = "/home/amalia/Desktop/op/UnderGO/ScriptFighter/";
+    public static final String DeltaRoot = "/home/amalia/op/UnderGO/ScriptFighter/";
     
     private DeltaProperties () {
     }

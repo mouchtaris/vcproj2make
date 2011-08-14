@@ -1,10 +1,11 @@
 package jcproj.loading;
 
+import jcproj.loading.xml.ProjectXmlWalker;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import jcproj.vcxproj.Project;
+import jcproj.vcxproj.xml.Project;
 import org.xml.sax.SAXException;
 
 /**

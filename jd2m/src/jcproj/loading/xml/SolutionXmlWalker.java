@@ -1,9 +1,11 @@
-package jcproj.loading;
+package jcproj.loading.xml;
 
 import jcproj.vcxproj.ProjectGuid;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import jcproj.loading.ConfigurationManager;
+import jcproj.loading.ProjectConfigurationEntry;
 import jcproj.vcxproj.ProjectGuidFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

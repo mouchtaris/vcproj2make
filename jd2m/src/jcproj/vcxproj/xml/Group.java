@@ -1,4 +1,4 @@
-package jcproj.vcxproj;
+package jcproj.vcxproj.xml;
 
 import java.util.LinkedList;
 import java.util.List;

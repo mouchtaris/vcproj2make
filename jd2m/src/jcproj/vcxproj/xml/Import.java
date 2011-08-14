@@ -1,22 +1,22 @@
-package jcproj.vcxproj;
+package jcproj.vcxproj.xml;
 
 /**
  *
  * @date Sunday 7th of August 2011
  * @author amalia
  */
-public class Item extends Element {
+public class Import extends Element {
     
     ///////////////////////////////////////////////////////
-
-    public String GetInclude () {
-        return include;
+    
+    public String GetProject () {
+        return project;
     }
     
     ///////////////////////////////////////////////////////
     
-    protected Item (final String include) {
-        this.include = include;
+    public Import (final String project) {
+        this.project = project;
     }
     
     ///////////////////////////////////////////////////////
@@ -26,6 +26,6 @@ public class Item extends Element {
     
     ///////////////////////////////////////////////////////
     // State
-    private final String include;
-
-} // class Item
+    final String project;
+    
+} // class Import

@@ -1,6 +1,5 @@
 package jcproj.cbuild;
 
-import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -9,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import jd2m.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformationException;
+import jcproj.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformationException;
 
 /**
  * <p>A {@code null} mapping value implies that the mappable of the given mapping
@@ -24,20 +23,20 @@ import jd2m.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformationE
 public class SimpleMappingAndOrderingCPropertiesTransformation
         extends AbstractCPropertiesMapper
 {
-    private final Map<String, String>   _libMappings        = new HashMap<String, String>(50);
-    private final Map<String, String>   _defMappings        = new HashMap<String, String>(50);
-    private final Map<Path, Path>       _libdirMappings     = new HashMap<Path, Path>(50);
-    private final Map<Path, Path>       _incldirMappings    = new HashMap<Path, Path>(50);
+    private final Map<String, String>   _libMappings        = new HashMap<>(50);
+    private final Map<String, String>   _defMappings        = new HashMap<>(50);
+    private final Map<String, String>   _libdirMappings     = new HashMap<>(50);
+    private final Map<String, String>   _incldirMappings    = new HashMap<>(50);
     //
-    private final Map<String, Integer>  _libsValues         = new HashMap<String, Integer>(50);
-    private final Map<String, Integer>  _defsValues         = new HashMap<String, Integer>(50);
-    private final Map<Path, Integer>    _libdirsValues      = new HashMap<Path, Integer>(50);
-    private final Map<Path, Integer>    _incldirsValues     = new HashMap<Path, Integer>(50);
+    private final Map<String, Integer>  _libsValues         = new HashMap<>(50);
+    private final Map<String, Integer>  _defsValues         = new HashMap<>(50);
+    private final Map<String, Integer>  _libdirsValues      = new HashMap<>(50);
+    private final Map<String, Integer>  _incldirsValues     = new HashMap<>(50);
     //
-    private final Deque<String>     _additionalLibs         =new LinkedList<String>();
-    private final Deque<String>     _additionalDefs         =new LinkedList<String>();
-    private final Deque<Path>       _additionalLibdirs      =new LinkedList<Path>();
-    private final Deque<Path>       _additionalIncldirs     =new LinkedList<Path>();
+    private final Deque<String>         _additionalLibs     = new LinkedList<>();
+    private final Deque<String>         _additionalDefs     = new LinkedList<>();
+    private final Deque<String>         _additionalLibdirs  = new LinkedList<>();
+    private final Deque<String>         _additionalIncldirs = new LinkedList<>();
 
     // -----
 
@@ -49,11 +48,11 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         _additionalDefs.add(def);
     }
 
-    public void AddLibraryDirectory (final Path path) {
+    public void AddLibraryDirectory (final String path) {
         _additionalLibdirs.add(path);
     }
 
-    public void AddIncludeDirectory (final Path path) {
+    public void AddIncludeDirectory (final String path) {
         _additionalIncldirs.add(path);
     }
 
@@ -67,29 +66,29 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         _u_addMappingIfNotExistent(_defMappings, from, to);
     }
 
-    public void SetLibraryDirectoryMapping (final Path from, final Path to){
+    public void SetLibraryDirectoryMapping (final String from, final String to){
         _u_addMappingIfNotExistent(_libdirMappings, from, to);
     }
 
-    public void SetIncludeDirectoryMapping (final Path from, final Path to){
+    public void SetIncludeDirectoryMapping (final String from, final String to){
         _u_addMappingIfNotExistent(_incldirMappings, from, to);
     }
 
     // -----
     
-    public void SetLibraryOrderingValue (final String lib, final int value) {
+    public void SetLibraryOrderingValue (final String lib, final Integer value) {
         _u_addMappingIfNotExistent(_libsValues, lib, value);
     }
 
-    public void SetDefinitionOrderingValue (final String def, final int value) {
+    public void SetDefinitionOrderingValue (final String def, final Integer value) {
         _u_addMappingIfNotExistent(_defsValues, def, value);
     }
 
-    public void SetLibraryDirectoryOrderingValue (final Path d, final int v) {
+    public void SetLibraryDirectoryOrderingValue (final String d, final Integer v) {
         _u_addMappingIfNotExistent(_libdirsValues, d, v);
     }
 
-    public void SetIncludeDirectoryOrderingValue (final Path d, final int v) {
+    public void SetIncludeDirectoryOrderingValue (final String d, final Integer v) {
         _u_addMappingIfNotExistent(_incldirsValues, d, v);
     }
     
@@ -103,11 +102,11 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         return _defMappings.containsKey(def);
     }
 
-    public boolean LibraryDirectoryHasMapping (final Path libdir) {
+    public boolean LibraryDirectoryHasMapping (final String libdir) {
         return _libdirMappings.containsKey(libdir);
     }
 
-    public boolean IncludeDirectoryHasMapping (final Path incldir) {
+    public boolean IncludeDirectoryHasMapping (final String incldir) {
         return _incldirMappings.containsKey(incldir);
     }
 
@@ -121,11 +120,11 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
         return _defsValues.containsKey(def);
     }
 
-    public boolean LibraryDirectoryHasOrderingValue (final Path libdir) {
+    public boolean LibraryDirectoryHasOrderingValue (final String libdir) {
         return _libdirsValues.containsKey(libdir);
     }
 
-    public boolean IncludeDirectoryHasOrderingValue (final Path incldir) {
+    public boolean IncludeDirectoryHasOrderingValue (final String incldir) {
         return _incldirsValues.containsKey(incldir);
     }
 
@@ -138,8 +137,8 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     @Override
-    public Path MapIncludeDirectory (final Path incldir) {
-        final Path result = _u_getMappingIfExistent(_incldirMappings, incldir);
+    public String MapIncludeDirectory (final String incldir) {
+        final String result = _u_getMappingIfExistent(_incldirMappings, incldir);
         return result;
     }
 
@@ -150,8 +149,8 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     @Override
-    public Path MapLibraryDirectory (final Path libdir) {
-        final Path result = _u_getMappingIfExistent(_libdirMappings, libdir);
+    public String MapLibraryDirectory (final String libdir) {
+        final String result = _u_getMappingIfExistent(_libdirMappings, libdir);
         return result;
     }
 
@@ -172,14 +171,14 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     public boolean HasMappableIncludeDirectory (final CProperties props) {
-        for (final Path incldir: props.GetIncludeDirectories())
+        for (final String incldir: props.GetIncludeDirectories())
             if (IncludeDirectoryHasMapping(incldir))
                 return true;
         return false;
     }
 
     public boolean HasMappableLibraryDirectory (final CProperties props) {
-        for (final Path libdir: props.GetLibraryDirectories())
+        for (final String libdir: props.GetLibraryDirectories())
             if (LibraryDirectoryHasMapping(libdir))
                 return true;
         return false;
@@ -202,14 +201,14 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     public boolean HasOrderableLibraryDirectory (final CProperties props) {
-        for (final Path libdir: props.GetLibraryDirectories())
+        for (final String libdir: props.GetLibraryDirectories())
             if (LibraryDirectoryHasOrderingValue(libdir))
                 return true;
         return false;
     }
 
     public boolean HasOrderableIncludeDirectory (final CProperties props) {
-        for (final Path incldir: props.GetIncludeDirectories())
+        for (final String incldir: props.GetIncludeDirectories())
             if (IncludeDirectoryHasOrderingValue(incldir))
                 return true;
         return false;
@@ -337,17 +336,17 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
                     return DefinitionHasMapping(value);
                 }
             };
-    private final MappabilityChecker<Path> LibraryDirectoryMappabilityChecker=
-            new MappabilityChecker<Path>() {
+    private final MappabilityChecker<String> LibraryDirectoryMappabilityChecker=
+            new MappabilityChecker<String>() {
                 @Override
-                public boolean IsMappable (final Path value) {
+                public boolean IsMappable (final String value) {
                     return LibraryDirectoryHasMapping(value);
                 }
             };
-    private final MappabilityChecker<Path> IncludeDirectoryMappabilityChecker =
-            new MappabilityChecker<Path>() {
+    private final MappabilityChecker<String> IncludeDirectoryMappabilityChecker =
+            new MappabilityChecker<String>() {
                 @Override
-                public boolean IsMappable (final Path value) {
+                public boolean IsMappable (final String value) {
                     return IncludeDirectoryHasMapping(value);
                 }
             };
@@ -371,17 +370,17 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
                     return DefinitionHasMapping(value);
                 }
             };
-    private final OrderabilityChecker<Path> LibraryDirectoryOrderabilityChecker=
-            new OrderabilityChecker<Path>() {
+    private final OrderabilityChecker<String> LibraryDirectoryOrderabilityChecker=
+            new OrderabilityChecker<String>() {
                 @Override
-                public boolean IsOrderable (final Path value) {
+                public boolean IsOrderable (final String value) {
                     return LibraryDirectoryHasMapping(value);
                 }
             };
-    private final OrderabilityChecker<Path> IncludeDirectoryOrderabilityChecker=
-            new OrderabilityChecker<Path>() {
+    private final OrderabilityChecker<String> IncludeDirectoryOrderabilityChecker=
+            new OrderabilityChecker<String>() {
                 @Override
-                public boolean IsOrderable (final Path value) {
+                public boolean IsOrderable (final String value) {
                     return IncludeDirectoryHasMapping(value);
                 }
             };
@@ -419,25 +418,25 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     };
     //
     private class LibraryDirectoryResultStorer
-            extends CPropertiesResultStorer<Path>
+            extends CPropertiesResultStorer<String>
     {
         public LibraryDirectoryResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override
-        public void Store (final Path libdir) {
+        public void Store (final String libdir) {
             props.AddLibraryDrectory(libdir);
         }
     };
     //
     private class IncludeDirectoryResultStorer
-            extends CPropertiesResultStorer<Path>
+            extends CPropertiesResultStorer<String>
     {
         public IncludeDirectoryResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override
-        public void Store (final Path incldir) {
+        public void Store (final String incldir) {
             props.AddIncludeDirectory(incldir);
         }
     };
@@ -452,9 +451,9 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
                                             final OrderabilityChecker<V> oc,
                                             final CPropertiesResultStorer<V> rs)
     {
-        final List<V> unordered = new LinkedList<V>();
+        final List<V> unordered = new LinkedList<>();
         final SortedSet<V> ordered =
-                new TreeSet<V>(new OrderingComparator<V>(orderings));
+                new TreeSet<>(new OrderingComparator<>(orderings));
 
         for (final V value: items) {
             V newValue = value;

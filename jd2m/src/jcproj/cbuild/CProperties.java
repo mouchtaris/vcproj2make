@@ -1,59 +1,41 @@
 package jcproj.cbuild;
 
-import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
-import static jd2m.util.PathHelper.IsFile;
-import static jd2m.util.PathHelper.CreatePath;
+import static jd2m.util.PathHelper.IsUnixDirectory;
+import static jd2m.util.PathHelper.IsAbsoluteUnixPath;
 import static java.util.Collections.unmodifiableList;
 
 public final class CProperties {
 
-    private final List<Path> _includes  = new LinkedList<Path>();
-    private final List<String> _defs    = new LinkedList<String>();
-    private final List<Path> _libdirs   = new LinkedList<Path>();
-    private final List<String> _libs    = new LinkedList<String>();
+    private final List<String> _includes    = new LinkedList<>();
+    private final List<String> _defs        = new LinkedList<>();
+    private final List<String> _libdirs     = new LinkedList<>();
+    private final List<String> _libs        = new LinkedList<>();
 
-    public void AddIncludeDirectory (final Path dir) {
-        assert !IsFile(dir.toString());
-        assert !dir.isAbsolute();
+    public void AddIncludeDirectory (final String dir) {
+        assert !IsUnixDirectory(dir.toString());
+        assert !IsAbsoluteUnixPath(dir);
         _includes.add(dir);
     }
-    public void AddIncludeDirectory (final String dirpath) {
-        AddIncludeDirectory(CreatePath(dirpath));
-    }
 
-    public void AddIncludeDirectories (final Iterable<? extends Path> dirs) {
-        for (final Path dir: dirs)
+    public void AddIncludeDirectories (final Iterable<? extends String> dirs) {
+        for (final String dir: dirs)
             AddIncludeDirectory(dir);
-    }
-
-    public void AddIncludeDirectoriesFromPaths (final Iterable<String> paths) {
-        for (final String path: paths)
-            AddIncludeDirectory(CreatePath(path));
     }
 
     public void AddDefinition (final String def) {
         _defs.add(def);
     }
 
-    public void AddLibraryDrectory (final Path dir) {
+    public void AddLibraryDrectory (final String dir) {
         _libdirs.add(dir);
     }
 
-    public void AddLibraryDrectory (final String dirpath) {
-        AddLibraryDrectory(CreatePath(dirpath));
-    }
-
-    public void AddLibraryDrectories (final Iterable<? extends Path> dirs) {
-        for (final Path dir: dirs)
+    public void AddLibraryDrectories (final Iterable<? extends String> dirs) {
+        for (final String dir: dirs)
             AddLibraryDrectory(dir);
-    }
-
-    public void AddLibraryDirectoriesFromPaths (final Iterable<String> paths) {
-        for (final String path: paths)
-            AddLibraryDrectory(CreatePath(path));
     }
 
     /**
@@ -82,11 +64,11 @@ public final class CProperties {
         return unmodifiableList(_defs);
     }
 
-    public Iterable<Path> GetIncludeDirectories () {
+    public Iterable<String> GetIncludeDirectories () {
         return unmodifiableList(_includes);
     }
 
-    public Iterable<Path> GetLibraryDirectories () {
+    public Iterable<String> GetLibraryDirectories () {
         return unmodifiableList(_libdirs);
     }
 

@@ -6,7 +6,7 @@ import org.w3c.dom.Node;
 
 /**
  *
- * Utilities for patsing common structures of Microsoft Visual Studio XML
+ * Utilities for parsing common structures of Microsoft Visual Studio XML
  * files.
  * 
  * @date Sunday 7th of August 2011

@@ -1,29 +1,25 @@
 package jcproj.cbuild;
 
+import jcproj.vcxproj.ProjectGuid;
 import jd2m.util.IterableConcatenationIterator;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import jd2m.util.Name;
 import jd2m.util.PremadeIteratorWrapperIterable;
-import jd2m.util.ProjectId;
 
-import static jd2m.util.PathHelper.CreatePath;
-import static jd2m.util.PathHelper.IsAbsoluteUnixPath;;
+import static jd2m.util.PathHelper.IsAbsoluteUnixPath;
 import static java.util.Collections.unmodifiableList;
 
 /**
  * @author TURBO_X
  */
 public final class CProject {
-    static List<CProperties> CreatePropertiesList () {
-        return new LinkedList<>();
-    }
 
     private final List<CProperties> _props = CreatePropertiesList();
     private final String            _location;
     private final Name              _name;
-    private final ProjectId         _id;
+    private final ProjectGuid       _id;
     private final String            _configuration;
     private final String            _target;
     private final String            _targetExt;
@@ -31,7 +27,7 @@ public final class CProject {
     private final String            _intermediate;
     private final String            _api;
     private final CProjectType      _type;
-    private final List<ProjectId>   _deps = new LinkedList<>();
+    private final List<ProjectGuid> _deps = new LinkedList<>();
     private final List<String>      _sources = new LinkedList<>();
 
     /**
@@ -43,6 +39,17 @@ public final class CProject {
     List<CProperties> GetProps () {
         return _props;
     }
+    
+    /**
+     * Package-protected so that {@link CPropertiesTransformationApplicator}
+     * can create a properties list in the same way that this class
+     * internally would.
+     * @return {@link #_props}
+     */
+    static List<CProperties> CreatePropertiesList () {
+        return new LinkedList<>();
+    }
+    
 
     /**
      *
@@ -52,14 +59,14 @@ public final class CProject {
      * @param configuration the project's configuration name/description
      * @param target the project's result/output/target file base-name (without extension)
      * @param targetExt the project's result/output/target file extension
-     * @param output the project's result/output/target directory
-     * @param intermediate the project's intermediate directory
-     * @param apiDirectory the project's API-related files containing directory
+     * @param output the project's result/output/target directory (relative pathname)
+     * @param intermediate the project's intermediate directory (relative pathname)
+     * @param apiDirectory the project's API-related files containing directory (relative pathname)
      * @param type the project's type ({@link CProjectType})
      */
     public CProject (   final String        location,
                         final Name          name,
-                        final ProjectId     id,
+                        final ProjectGuid   id,
                         final String        configuration,
                         final String        target,
                         final String        targetExt,
@@ -87,7 +94,7 @@ public final class CProject {
         _props.addAll(props);
     }
 
-    public void AddDependency (final ProjectId depId) {
+    public void AddDependency (final ProjectGuid depId) {
         _deps.add(depId);
     }
 
@@ -100,11 +107,11 @@ public final class CProject {
     // getters
     ////////////////////////////////////////////
 
-    public ProjectId GetId () {
+    public ProjectGuid GetId () {
         return _id;
     }
 
-    public Path GetLocation () {
+    public String GetLocation () {
         return _location;
     }
 
@@ -116,22 +123,22 @@ public final class CProject {
         return _GetIterableOfSomethingFromProperties(DefinitionsGitter);
     }
 
-    public Iterable<Path> GetIncludeDirectories () {
+    public Iterable<String> GetIncludeDirectories () {
         return _GetIterableOfSomethingFromProperties(IncludeDirectoriesGitter);
     }
 
-    public Iterable<Path> GetLibraryDirectories () {
+    public Iterable<String> GetLibraryDirectories () {
         return _GetIterableOfSomethingFromProperties(LibraryDirectoriesGitter);
     }
 
-    public Iterable<ProjectId> GetDependencies () {
+    public Iterable<ProjectGuid> GetDependencies () {
         return unmodifiableList(_deps);
     }
     public int GetNumberOfDependencies () {
         return _deps.size();
     }
 
-    public Path GetOutput () {
+    public String GetOutput () {
         return _output;
     }
 
@@ -143,14 +150,14 @@ public final class CProject {
         return _GetIterableOfSomethingFromProperties(AdditionalLibrariesGitter);
     }
 
-    public Iterable<Path> GetSources () {
+    public Iterable<String> GetSources () {
         return unmodifiableList(_sources);
     }
     public int GetNumberOfSources () {
         return _sources.size();
     }
 
-    public Path GetIntermediate () {
+    public String GetIntermediate () {
         return _intermediate;
     }
 
@@ -178,18 +185,18 @@ public final class CProject {
         }
     };
     // ---
-    private static final PropertyIterableOfSomethingGetter<Path>
-    IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<Path>() {
+    private static final PropertyIterableOfSomethingGetter<String>
+    IncludeDirectoriesGitter = new PropertyIterableOfSomethingGetter<String>() {
         @Override
-        public Iterable<Path> git (final CProperties props) {
+        public Iterable<String> git (final CProperties props) {
             return props.GetIncludeDirectories();
         }
     };
     // ---
-    private static final PropertyIterableOfSomethingGetter<Path>
-    LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<Path>() {
+    private static final PropertyIterableOfSomethingGetter<String>
+    LibraryDirectoriesGitter = new PropertyIterableOfSomethingGetter<String>() {
         @Override
-        public Iterable<Path> git (final CProperties props) {
+        public Iterable<String> git (final CProperties props) {
             return props.GetLibraryDirectories();
         }
     };
@@ -205,8 +212,8 @@ public final class CProject {
     private <T> Iterable<T> _GetIterableOfSomethingFromProperties (
                             final PropertyIterableOfSomethingGetter<T> gitter)
     {
-        final IterableConcatenationIterator<T> iterator = new IterableConcatenationIterator<T>();
-        final PremadeIteratorWrapperIterable<T> result = new PremadeIteratorWrapperIterable<T>(iterator);
+        final IterableConcatenationIterator<T> iterator = new IterableConcatenationIterator<>();
+        final PremadeIteratorWrapperIterable<T> result = new PremadeIteratorWrapperIterable<>(iterator);
 
         for (final CProperties prop: _props)
             iterator.add(gitter.git(prop));

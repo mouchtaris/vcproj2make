@@ -1,20 +1,21 @@
 package jcproj.cbuild;
 
-import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import jcproj.vcxproj.ProjectGuid;
+import jcproj.vcxproj.ProjectGuidFactory;
 import jd2m.util.Name;
-import jd2m.util.ProjectId;
 
-public final class CSolution implements Iterable<CProject> {
-    private final Path                      _location;
-    private final Name                      _name;
-    private final String                    _configurationName;
-    private final Map<ProjectId, CProject>  _projects = new HashMap<ProjectId, CProject>(100);
+public final class CSolution {
+    private final String                        _location;
+    private final Name                          _name;
+    private final String                        _configurationName;
+    private final Map<ProjectGuid, CProject>    _projects = new HashMap<>(100);
 
-    public CSolution (  final Path      location,
+    public CSolution (  final String    location,
                         final Name      name,
                         final String    configurationName)
     {
@@ -28,24 +29,34 @@ public final class CSolution implements Iterable<CProject> {
         assert previous == null;
     }
 
-    public CProject GetProject (final ProjectId projId) {
+    public CProject GetProject (final ProjectGuid projId) {
         final CProject result = _projects.get(projId);
         return result;
     }
+    public CProject GetProject (final String projid) {
+        return GetProject(ProjectGuidFactory.GetSingleton().Get(projid));
+    }
 
-    @Override
-    public Iterator<CProject> iterator() {
-        final Iterator<Entry<ProjectId, CProject>> entriesIterator =
-                _projects.entrySet().iterator();
-        return new Iterator<CProject>() {
+    public Iterable<CProject> GetCProjectIterable () {
+        return new Iterable<CProject>() {
             @Override
-            public boolean hasNext() { return entriesIterator.hasNext(); }
-            @Override
-            public CProject next() { return entriesIterator.next().getValue(); }
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException("Not supported.");
+            public Iterator<CProject> iterator () {
+                final Iterator<Entry<ProjectGuid, CProject>> entriesIterator = _projects.entrySet().iterator();
+                return new Iterator<CProject>() {
+                    @Override
+                    public boolean hasNext() { return entriesIterator.hasNext(); }
+                    @Override
+                    public CProject next() { return entriesIterator.next().getValue(); }
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException("Not supported.");
+                    }
+                };
             }
         };
+    }
+    
+    public Iterable<Map.Entry<ProjectGuid, CProject>> GetEntryIteratable () {
+        return Collections.unmodifiableSet(_projects.entrySet());
     }
 }

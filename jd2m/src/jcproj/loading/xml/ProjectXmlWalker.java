@@ -1,20 +1,20 @@
-package jcproj.loading;
+package jcproj.loading.xml;
 
 import jcproj.vcxproj.ProjectGuid;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jcproj.vcxproj.ClCompile;
-import jcproj.vcxproj.ClCompileDefinition;
-import jcproj.vcxproj.ClInclude;
-import jcproj.vcxproj.Group;
-import jcproj.vcxproj.Import;
-import jcproj.vcxproj.ItemDefinition;
-import jcproj.vcxproj.LinkDefinition;
-import jcproj.vcxproj.Project;
-import jcproj.vcxproj.ProjectConfiguration;
+import jcproj.vcxproj.xml.ClCompile;
+import jcproj.vcxproj.xml.ClCompileDefinition;
+import jcproj.vcxproj.xml.ClInclude;
+import jcproj.vcxproj.xml.Group;
+import jcproj.vcxproj.xml.Import;
+import jcproj.vcxproj.xml.ItemDefinition;
+import jcproj.vcxproj.xml.LinkDefinition;
+import jcproj.vcxproj.xml.Project;
+import jcproj.vcxproj.xml.ProjectConfiguration;
 import jcproj.vcxproj.ProjectGuidFactory;
-import jcproj.vcxproj.Property;
+import jcproj.vcxproj.xml.Property;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 

@@ -10,7 +10,7 @@ import jd2m.util.Locatable;
 import jd2m.util.Namable;
 import jd2m.util.Name;
 
-import static jd2m.util.PathHelper.IsWindowsPath;
+import static jd2m.util.PathHelper.CouldBeWindowsPath;
 import static jd2m.util.PathHelper.CreatePath;
 import static java.util.Collections.unmodifiableList;
 
@@ -70,7 +70,7 @@ public final class ProjectEntry implements
                                         final String location,
                                         final ProjectId parentRefId)
     {
-        assert !IsWindowsPath(location);
+        assert !CouldBeWindowsPath(location);
         return new ProjectEntry(id, new Name(name), CreatePath(location),
                                 parentRefId);
     }

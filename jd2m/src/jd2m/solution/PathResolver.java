@@ -4,7 +4,7 @@ import java.io.File;
 import java.nio.file.Path;
 import jd2m.util.ProjectId;
 
-import static jd2m.util.PathHelper.IsWindowsPath;
+import static jd2m.util.PathHelper.CouldBeWindowsPath;
 import static jd2m.util.PathHelper.IsFileName;
 import static jd2m.util.PathHelper.UnixifyPath;
 import static jd2m.util.PathHelper.CreatePath;
@@ -28,7 +28,7 @@ public class PathResolver {
         return result;
     }
     public Path SolutionResolve (final String path) {
-        assert !IsWindowsPath(path) || IsFileName(path);
+        assert !CouldBeWindowsPath(path) || IsFileName(path);
         final Path result = _solutionDir.resolve(path);
         return result;
     }

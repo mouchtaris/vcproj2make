@@ -36,7 +36,10 @@ public final class ProjectGuid {
     
     @Override
     public boolean equals (final Object o) {
-        return getClass().equals(o.getClass()) && Equals((ProjectGuid) o);
+        // based on the assumption that only the factory creates instances:
+        // Equals(other) => equals(other)
+        assert !(getClass().equals(o.getClass()) && Equals((ProjectGuid) o)) || super.equals(o);
+        return super.equals(o);
     }
     
     ///////////////////////////////////////////////////////

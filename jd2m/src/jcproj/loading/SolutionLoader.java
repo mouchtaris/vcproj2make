@@ -1,5 +1,6 @@
 package jcproj.loading;
 
+import jcproj.loading.xml.SolutionXmlWalker;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

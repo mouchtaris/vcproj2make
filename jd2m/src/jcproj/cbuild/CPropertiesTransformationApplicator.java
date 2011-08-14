@@ -16,7 +16,7 @@ public final class CPropertiesTransformationApplicator {
     public static void ApplyToSolution (final CPropertiesTransformation trans,
                                         final CSolution solution)
     {
-        for (final CProject project: solution)
+        for (final CProject project: solution.GetCProjectIterable())
             ApplyToProject(trans, project);
     }
 

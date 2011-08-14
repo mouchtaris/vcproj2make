@@ -1,7 +1,5 @@
 package jcproj.cbuild;
 
-import java.nio.file.Path;
-
 /**
  *
  * @author muhtaris
@@ -9,12 +7,12 @@ import java.nio.file.Path;
 public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
 
     @Override
-    public Path MapIncludeDirectory (final Path includeDirectory) {
+    public String MapIncludeDirectory (final String includeDirectory) {
         return includeDirectory;
     }
 
     @Override
-    public Path MapLibraryDirectory (final Path libraryDirectory) {
+    public String MapLibraryDirectory (final String libraryDirectory) {
         return libraryDirectory;
     }
 
@@ -54,7 +52,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
         if (from == to)
             throw new RuntimeException("from == to");
 
-        for (final Path incl: from.GetIncludeDirectories())
+        for (final String incl: from.GetIncludeDirectories())
             to.AddIncludeDirectory(MapIncludeDirectory(incl));
     }
 
@@ -74,7 +72,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
         if (from == to)
             throw new RuntimeException("from == to");
 
-        for (final Path libdir: from.GetLibraryDirectories())
+        for (final String libdir: from.GetLibraryDirectories())
             to.AddLibraryDrectory(MapLibraryDirectory(libdir));
     }
 
