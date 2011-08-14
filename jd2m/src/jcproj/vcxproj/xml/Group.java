@@ -1,5 +1,7 @@
 package jcproj.vcxproj.xml;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +11,7 @@ import java.util.Objects;
  * @date Sunday 7th of August 2011
  * @author amalia
  */
-public final class Group<T> implements Conditioned {
+public final class Group<T> implements Conditioned, Iterable<T> {
     
     ///////////////////////////////////////////////////////
     
@@ -19,6 +21,13 @@ public final class Group<T> implements Conditioned {
         assert added;
     }
 
+    ///////////////////////////////////////////////////////
+    
+    @Override
+    public Iterator<T> iterator () {
+        return Collections.unmodifiableList(items).iterator();
+    }
+    
     ///////////////////////////////////////////////////////
     
     public String GetLabel () {
