@@ -18,7 +18,7 @@
 	d
 }
 ### Pair
-/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"-]*) *= *([}{0-9a-zA-Z.\\\|"-]*) *\x0d?$/{
+/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"_-]*) *= *([}{0-9a-zA-Z.\\\|"_-]*) *\x0d?$/{
 	# Save original pattern space
 	h
 	# Bring left-value to pattern space
@@ -30,7 +30,7 @@
 	# ... select first line
 	s,^(.*)\n(.*)$,\1,g
 	# ... reapply RegExp
-	s/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"-]*) *= *([}{0-9a-zA-Z.\\\|"-]*) *\x0d?$/\4/g
+	s/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"_-]*) *= *([}{0-9a-zA-Z.\\\|"_-]*) *\x0d?$/\4/g
 	# ... escape any double quotes
 	s,",\&quot;,g
 	# ... append escaped right value to hold space 
@@ -40,7 +40,7 @@
 	# ... select first line
 	s,(.*)\n(.*)\n(.*),\1,g
 	# ... reapply RegExp
-	s/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"-]*) *= *([}{0-9a-zA-Z.\\\|"-]*) *\x0d?$/\1/g
+	s/^((\t|[ ])*)([}{0123456789a-zA-Z.\\\|"_-]*) *= *([}{0-9a-zA-Z.\\\|"_-]*) *\x0d?$/\1/g
 	# ... append initial whitespace to hold space
 	H
 	# Add result components to hold space

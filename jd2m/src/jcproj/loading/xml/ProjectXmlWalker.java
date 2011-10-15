@@ -32,7 +32,15 @@ import static jcproj.util.xml.XmlTreeVisitor.GetChildIfExistsSingleSubelementVal
  * @author amalia
  */
 public class ProjectXmlWalker {
-    
+
+	private interface AttributeName {
+		public static final String Include       = "Include";
+		public static final String Configuration = "Configuration";
+		public static final String Platform      = "Platform";
+        public static final String Condition     = "Condition";
+        public static final String Label         = "Label";
+	}
+	
     ///////////////////////////////////////////////////////
     
     public Project GetProject () {
@@ -41,13 +49,13 @@ public class ProjectXmlWalker {
     
     ///////////////////////////////////////////////////////
     
-    public void VisitDocument (final Node document) {
+    public void VisitDocument (final Node document) throws XmlWalkingException {
         VisitRoot(document.getFirstChild());
     }
     
     ///////////////////////////////////////////////////////
     
-    public void VisitRoot (final Node root) {
+    public void VisitRoot (final Node root) throws XmlWalkingException {
         final NamedNodeMap  attrs   = root.getAttributes();
         
         assert root.getNodeName().equals("Project");
@@ -58,29 +66,29 @@ public class ProjectXmlWalker {
         for (final Node node : MakeChildrenIterator(root))
             if (node.getNodeType() == Node.ELEMENT_NODE)
                 switch (node.getNodeName()) {
-                    case "ItemGroup":
+                    case NodesNames.ItemGroup:
                         VisitItemGroup(node);
                         break;
-                    case "PropertyGroup":
+                    case NodesNames.PropertyGroup:
                         VisitPropertyGroup(node);
                         break;
-                    case "Import":
+                    case NodesNames.Import:
                         VisitImport(node);
                         break;
-                    case "ImportGroup":
+                    case NodesNames.ImportGroup:
                         VisitImportGroup(node);
                         break;
-                    case "ItemDefinitionGroup":
+                    case NodesNames.ItemDefinitionGroup:
                         VisitItemDefinitionGroup(node);
                         break;
                     default:
-                        Loagger.log(Level.WARNING, "Ignoring element of type {0} while parsing <Project>", node.getNodeName());
+						throw new XmlWalkingException(root, node);
                 }
     }
     
     ///////////////////////////////////////////////////////
     
-    public void VisitItemGroup (final Node group) {
+    public void VisitItemGroup (final Node group) throws XmlWalkingException {
         final String label = GetAttributeValueIfExists(group, "Label");
         final String condition = GetAttributeValueIfExists(group, "Condition");
         
@@ -88,22 +96,22 @@ public class ProjectXmlWalker {
         for (final Node node : MakeChildrenIterator(group))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 switch (node.getNodeName()) {
-                    case "ProjectConfiguration":
+                    case NodesNames.ProjectConfiguration:
                         project.AddItemGroup(MakeProjectConfigurationsItemGroup(label, condition, group));
                         break;
-                    case "ClCompile":
-                    case "ClInclude":
+                    case NodesNames.ClCompile:
+                    case NodesNames.ClInclude:
                         VisitClCompileOrClIncludeElements(label, condition, group);
                         break;
-                    case "ProjectReference":
+                    case NodesNames.ProjectReference:
                         VisitProjectReferences(label, condition, group);
                         break;
-                    case "ResourceCompile":
-                    case "None":
+                    case NodesNames.ResourceCompile:
+                    case NodesNames.None:
                         // ignore
                         break;
                     default:
-                        Loagger.log(Level.WARNING, "Ignoring a whole <ItemGroup> \"{1}\" of <{0}>s", new Object[]{node.getNodeName(),label});
+						throw new XmlWalkingException(group, node);
                 }
                 break;
             }
@@ -116,12 +124,12 @@ public class ProjectXmlWalker {
         
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
-                assert node.getNodeName().equals("ProjectConfiguration");
+                assert NodesNames.ProjectConfiguration.equals(node.getNodeName());
                 
-                final String include = node.getAttributes().getNamedItem("Include").getNodeValue();
+                final String include = node.getAttributes().getNamedItem(AttributeName.Include).getNodeValue();
                 
-                final String configuration = GetChildSingleSubelementValue(node, "Configuration");
-                final String platform = GetChildSingleSubelementValue(node, "Platform");
+                final String configuration = GetChildSingleSubelementValue(node, AttributeName.Configuration);
+                final String platform = GetChildSingleSubelementValue(node, AttributeName.Platform);
                 assert configuration != null;
                 assert platform != null;
                 
@@ -135,51 +143,51 @@ public class ProjectXmlWalker {
     
     ///////////////////////////////////////////////////////
     
-    public void VisitClCompileOrClIncludeElements (final String label, final String condition, final Node groupnode) {
+    public void VisitClCompileOrClIncludeElements (final String label, final String condition, final Node groupnode) throws XmlWalkingException{
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
-                final String include = GetAttributeValue(node, "Include");
+                final String include = GetAttributeValue(node, AttributeName.Include);
                 assert include != null;
                 
                 switch (node.getNodeName()) {
-                    case "ClCompile": {
+                    case NodesNames.ClCompile: {
                         final ClCompile clcompile = new ClCompile(include);
 
                         for (final Node child : MakeChildrenIterator(node))
                             if (child.getNodeType() == Node.ELEMENT_NODE)
                                 switch (child.getNodeName()) {
-                                    case "ExcludedFromBuild": {
-                                        final String compilecondition = GetAttributeValue(child, "Condition");
+                                    case NodesNames.ExcludedFromBuild: {
+                                        final String compilecondition = GetAttributeValue(child, AttributeName.Condition);
                                         clcompile.AddExcludeFromBuildCondition(compilecondition);
                                         break;
                                     }
-                                    case "PrecompiledHeader": {
-                                        final String precompiledheadercondition = GetAttributeValue(child, "Condition");
+                                    case NodesNames.PrecompiledHeader: {
+                                        final String precompiledheadercondition = GetAttributeValue(child, AttributeName.Condition);
                                         if (GetSingleSubelementValue(node).equals("Create"))
                                             clcompile.AddPrecompiledHeaderCreationCondition(precompiledheadercondition);
                                         break;
                                     }
-                                    case "FileType":
-                                    case "CompileAsManaged":
+                                    case NodesNames.FileType:
+                                    case NodesNames.CompileAsManaged:
                                         // ignore
                                         break;
                                     default:
-                                        Loagger.log(Level.WARNING, "Ignoring element <{0}> in <ClCompile> in group \"{1}\"", new Object[]{child.getNodeName(),label});
+                                        throw new XmlWalkingException(node, child);
                                 }
                         
                         Loagger.log(Level.INFO, "Adding ClCompile {0}", clcompile.GetInclude());
                         project.AddClCompile(clcompile);
                         break;
                     }
-                    case "ClInclude": {
-                        final ClInclude clinclude = new ClInclude(Objects.requireNonNull(GetAttributeValue(node, "Include")));
+                    case NodesNames.ClInclude: {
+                        final ClInclude clinclude = new ClInclude(Objects.requireNonNull(GetAttributeValue(node, AttributeName.Include)));
                         
                         Loagger.log(Level.INFO, "Added ClInclude={0}", clinclude.GetInclude());
                         project.AddClInclude(clinclude);
                         break;
                     }
                     default:
-                        Loagger.log(Level.WARNING, "Ignoring element <{0}> in ItemGroup \"{1}\" \"{2}\"", new Object[]{node.getNodeName(), label, condition});
+                        throw new XmlWalkingException(groupnode, node);
                 }
             }
     }
@@ -189,10 +197,10 @@ public class ProjectXmlWalker {
     public void VisitProjectReferences (final String label, final String condition, final Node groupnode) {
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
-                assert node.getNodeName().equals("ProjectReference");
-                final String relpath = GetAttributeValue(node, "Include");
+                assert node.getNodeName().equals(NodesNames.ProjectReference);
+                final String relpath = GetAttributeValue(node, AttributeName.Include);
                 assert relpath != null;
-                final String projidstr = GetChildSingleSubelementValue(node, "Project");
+                final String projidstr = GetChildSingleSubelementValue(node, NodesNames.Project);
                 assert projidstr != null;
                 final ProjectGuid projid = ProjectGuidFactory.GetSingleton().Get(projidstr);
                 
@@ -204,8 +212,8 @@ public class ProjectXmlWalker {
     ///////////////////////////////////////////////////////
     
     public void VisitPropertyGroup (final Node groupnode) {
-        final String label = GetAttributeValueIfExists(groupnode, "Label");
-        final String condition = GetAttributeValueIfExists(groupnode, "Condition");
+        final String label = GetAttributeValueIfExists(groupnode, AttributeName.Label);
+        final String condition = GetAttributeValueIfExists(groupnode, AttributeName.Condition);
 
         final Group<Property> group = new Group<>(Property.class, label, condition);
         
@@ -225,7 +233,7 @@ public class ProjectXmlWalker {
     ///////////////////////////////////////////////////////
     
     public void VisitImport (final Node node) {
-        final String project_ = GetAttributeValue(node, "Project");
+        final String project_ = GetAttributeValue(node, NodesNames.Project);
         assert project_ != null;
         
         project.AddImport(new Import(project_));
@@ -235,23 +243,23 @@ public class ProjectXmlWalker {
     
     ///////////////////////////////////////////////////////
 
-    public void VisitImportGroup (final Node groupnode) {
-        final String label = GetAttributeValue(groupnode, "Label");
+    public void VisitImportGroup (final Node groupnode) throws XmlWalkingException {
+        final String label = GetAttributeValue(groupnode, AttributeName.Label);
         assert label != null;
-        final String condition = GetAttributeValueIfExists(groupnode, "Condition");
+        final String condition = GetAttributeValueIfExists(groupnode, AttributeName.Condition);
         
         final Group<Import> group = new Group<>(Import.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE)
-                if (node.getNodeName().equals("Import")) {
-                    final String project_ = GetAttributeValue(node, "Project");
+                if (NodesNames.Import.equals(node.getNodeName())) {
+                    final String project_ = GetAttributeValue(node, NodesNames.Project);
                     group.Add(new Import(project_));
 
                     Loagger.log(Level.INFO, "Added import \"{0}\" from ImportGroup \"{1}\"", new Object[]{project_, label});
                 }
-                else    
-                    Loagger.log(Level.WARNING, "Ignoring element {0} in ImportGroup \"{1}\"", new Object[]{node.getNodeName(), label});
+                else
+                    throw new XmlWalkingException(groupnode, node);
                 
         
         project.AddImportGroup(group);
@@ -259,37 +267,37 @@ public class ProjectXmlWalker {
     
     ///////////////////////////////////////////////////////
     
-    public void VisitItemDefinitionGroup (final Node nodegroup) {
-        final String label = GetAttributeValueIfExists(nodegroup, "Label");
-        final String condition = GetAttributeValueIfExists(nodegroup, "Condition");
+    public void VisitItemDefinitionGroup (final Node nodegroup) throws XmlWalkingException {
+        final String label = GetAttributeValueIfExists(nodegroup, AttributeName.Label);
+        final String condition = GetAttributeValueIfExists(nodegroup, AttributeName.Condition);
         
         final Group<ItemDefinition> group = new Group<>(ItemDefinition.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(nodegroup))
             if (node.getNodeType() == Node.ELEMENT_NODE)
                 switch (node.getNodeName()) {
-                    case "ClCompile":
+                    case NodesNames.ClCompile:
                         group.Add(new ClCompileDefinition(
-                                GetChildIfExistsSingleSubelementValue(node, "PrecompiledHeader"),
-                                GetChildIfExistsSingleSubelementValue(node, "WarningLevel"),
-                                GetChildIfExistsSingleSubelementValue(node, "Optimization"),
-                                GetChildIfExistsSingleSubelementValue(node, "PreprocessorDefinitions"),
-                                GetChildIfExistsSingleSubelementValue(node, "PrecompiledHeaderFile"),
-                                GetChildIfExistsSingleSubelementValue(node, "ObjectFileName"),
-                                GetChildIfExistsSingleSubelementValue(node, "FunctionLevelLinking"),
-                                GetChildIfExistsSingleSubelementValue(node, "IntrinsicFunctions")));
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeader),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.WarningLevel),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.Optimization),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PreprocessorDefinitions),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeaderFile),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.ObjectFileName),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.FunctionLevelLinking),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.IntrinsicFunctions)));
                         break;
-                    case "Link":
+                    case NodesNames.Link:
                         group.Add(new LinkDefinition(
-                                GetChildIfExistsSingleSubelementValue(node, "SubSystem"),
-                                GetChildIfExistsSingleSubelementValue(node, "GenerateDebugInformation"),
-                                GetChildIfExistsSingleSubelementValue(node, "AdditionalDependencies")));
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.SubSystem),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.GenerateDebugInformation),
+                                GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalDependencies)));
                         break;
-                    case "ResourceCompile":
+                    case NodesNames.ResourceCompile:
                         // ignore
                         break;
                     default:
-                        Loagger.log(Level.WARNING, "Ignoring ItemDefinition \"{0}\" in group \"{1}\"", new Object[]{node.getNodeName(), label});
+                        throw new XmlWalkingException(nodegroup, node);
                 }
         
         project.AddItemDefinitionGroup(group);

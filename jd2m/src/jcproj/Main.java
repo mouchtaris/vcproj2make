@@ -22,14 +22,13 @@ import jcproj.vcxproj.ProjectGuidFactory;
  */
 public class Main {
     
+	@SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main (final String[] args) throws Throwable {
-        Logger.getLogger("jcproj").setLevel(Level.WARNING);
+        Logger.getLogger("jcproj").setLevel(Level.INFO);
         ProjectGuidFactory.SingletonCreate();
         
         final String solutionPathname = args[0];
         final Path solutionPath = Paths.get(solutionPathname);
-        assert Files.exists(solutionPath);
-        assert Files.isRegularFile(solutionPath);
         final Path solutionBasedir = solutionPath.getParent();
         
         final ConfigurationManager confmanager = SolutionLoader.LoadSolution(Files.newInputStream(solutionPath));
@@ -41,6 +40,9 @@ public class Main {
                 projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entry.GetRelativePath()))));
         
         System.out.println(projects);
+    }
+
+    private Main() {
     }
     
 }

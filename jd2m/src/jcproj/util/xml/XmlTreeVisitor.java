@@ -12,7 +12,7 @@ import org.w3c.dom.Node;
  * @date Sunday 7th of August 2011
  * @author amalia
  */
-public final class XmlTreeVisitor {
+public class XmlTreeVisitor {
     
     ///////////////////////////////////////////////////////
     // Node utilities

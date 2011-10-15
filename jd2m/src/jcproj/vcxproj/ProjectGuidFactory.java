@@ -1,8 +1,8 @@
 package jcproj.vcxproj;
 
-import jcproj.vcxproj.ProjectGuid;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -10,7 +10,7 @@ import java.util.Map;
  * @data Monday 8th of August 2011
  * @author amalia
  */
-public final class ProjectGuidFactory {
+public class ProjectGuidFactory {
     
     ///////////////////////////////////////////////////////
     // Public fields
@@ -57,7 +57,12 @@ public final class ProjectGuidFactory {
     
     public ProjectGuid Create (final String str) {
         final ProjectGuid projid = ParseProjectGuid(str);
-        final ProjectGuid previous = projids.put(projid, projid);
+        
+        assert projid.toString().equalsIgnoreCase(str);
+        assert ParseProjectGuid(projid.toString()).Equals(projid);
+        assert ParseProjectGuid(projid.toString()).toString().equals(projid.toString());
+        
+        final ProjectGuid previous = projids.put(str, projid);
         assert previous == null;
         return projid;
     }
@@ -65,25 +70,15 @@ public final class ProjectGuidFactory {
     ///////////////////////////////////////////////////////
     
     public ProjectGuid Get (final String str) {
-        final ProjectGuid projid = ParseProjectGuid(str);
-        assert projid.toString().equalsIgnoreCase(str);
-        assert ParseProjectGuid(projid.toString()).Equals(projid);
-        assert ParseProjectGuid(projid.toString()).toString().equals(projid.toString());
-        
-        ProjectGuid result = null;
-        if (projids.containsKey(projid)) {
-            result = projids.get(projid);
-            assert result != null;
-        }
-        
+        final ProjectGuid result = projids.containsKey(str)? projids.get(str) : null;
+        assert result != null;
         return result;
     }
     
     ///////////////////////////////////////////////////////
     // Private
     
-    private ProjectGuidFactory () {
-    }
+    private ProjectGuidFactory () {}
     
     ///////////////////////////////////////////////////////
     
@@ -102,8 +97,17 @@ public final class ProjectGuidFactory {
     ///////////////////////////////////////////////////////
     
     ///////////////////////////////////////////////////////
+    // String-Key No-case Comparator 
+    private class NoCaseStringComparator implements Comparator<String> {
+        @Override
+        public int compare (final String o1, final String o2) {
+            return o1.compareToIgnoreCase(o2);
+        }
+    }
+    
+    ///////////////////////////////////////////////////////
     // State
-    private final Map<ProjectGuid, ProjectGuid> projids = new HashMap<>(100);
+    private final Map<String, ProjectGuid> projids = new TreeMap<>(new NoCaseStringComparator());
     
     ///////////////////////////////////////////////////////
     // Singleton
