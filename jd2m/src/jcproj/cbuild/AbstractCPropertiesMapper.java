@@ -46,6 +46,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
     // -------------------------------------------
     // Utilities
 
+    @SuppressWarnings("FinalMethod")
     public final void CopyIncludeDirectories (  final CProperties from,
                                                 final CProperties to)
     {
@@ -56,6 +57,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
             to.AddIncludeDirectory(MapIncludeDirectory(incl));
     }
 
+    @SuppressWarnings("FinalMethod")
     public final void CopyDefinitions (         final CProperties from,
                                                 final CProperties to)
     {
@@ -66,6 +68,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
             to.AddDefinition(MapDefinition(def));
     }
 
+    @SuppressWarnings("FinalMethod")
     public final void CopyLibraryDirectories (  final CProperties from,
                                                 final CProperties to)
     {
@@ -76,6 +79,7 @@ public abstract class AbstractCPropertiesMapper implements CPropertiesMapper {
             to.AddLibraryDrectory(MapLibraryDirectory(libdir));
     }
 
+    @SuppressWarnings("FinalMethod")
     public final void CopyLibraries (           final CProperties from,
                                                 final CProperties to)
     {

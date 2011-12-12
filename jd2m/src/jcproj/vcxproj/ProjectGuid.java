@@ -9,6 +9,7 @@ import java.util.Objects;
  * @data Monday 8th of August 2011
  * @author amalia
  */
+@SuppressWarnings("FinalClass")
 public final class ProjectGuid {
     
     ///////////////////////////////////////////////////////
@@ -23,6 +24,7 @@ public final class ProjectGuid {
     
     ///////////////////////////////////////////////////////
     
+    @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
     public boolean Equals (final ProjectGuid other) {
         return other != null
                 && Objects.equals(A, other.A)
@@ -85,6 +87,6 @@ public final class ProjectGuid {
     
     ///////////////////////////////////////////////////////
     // Static utils
-    private final static StringBuilder  sb  = new StringBuilder();
+    private final static StringBuilder  sb  = new StringBuilder(1 << 18); //256KiB
     private final static Formatter      f   = new Formatter(sb);
 } // class ProjectGuid

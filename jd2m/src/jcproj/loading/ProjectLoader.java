@@ -15,6 +15,7 @@ import org.xml.sax.SAXException;
  * @data Sunday 7th of August 2011
  * @author amalia
  */
+@SuppressWarnings("FinalClass")
 public final class ProjectLoader {
     
         ///////////////////////////////////////////////////////

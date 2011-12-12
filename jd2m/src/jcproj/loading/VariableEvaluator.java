@@ -10,6 +10,7 @@ import java.util.Set;
  * @date (of rebirth) 14th August 2011
  * @author muhtaris
  */
+@SuppressWarnings("FinalClass")
 public final class VariableEvaluator {
     
     ///////////////////////////////////////////////////////

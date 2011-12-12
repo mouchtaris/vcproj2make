@@ -11,6 +11,7 @@ import java.util.Objects;
  * @date Sunday 7th of August 2011
  * @author amalia
  */
+@SuppressWarnings("FinalClass")
 public final class Group<T> implements Conditioned, Iterable<T> {
     
     ///////////////////////////////////////////////////////
@@ -50,6 +51,7 @@ public final class Group<T> implements Conditioned, Iterable<T> {
     
     ///////////////////////////////////////////////////////
     
+    @SuppressWarnings({"AccessingNonPublicFieldOfAnotherObject", "NestedAssignment"})
     public boolean Equals (final Group<?> other) {
         boolean d00, d01, d02;
         return

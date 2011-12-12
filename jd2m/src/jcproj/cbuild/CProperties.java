@@ -7,6 +7,7 @@ import static jd2m.util.PathHelper.IsUnixDirectory;
 import static jd2m.util.PathHelper.IsAbsoluteUnixPath;
 import static java.util.Collections.unmodifiableList;
 
+@SuppressWarnings("FinalClass")
 public final class CProperties {
 
     private final List<String> _includes    = new LinkedList<String>();

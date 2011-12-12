@@ -7,6 +7,7 @@ import java.util.Iterator;
  * @date 14th of August 2011
  * @author muhtaris
  */
+@SuppressWarnings("FinalClass")
 public final class FilteringIterable<T> implements Iterable<T> {
 
     ///////////////////////////////////////////////////////
@@ -19,6 +20,7 @@ public final class FilteringIterable<T> implements Iterable<T> {
             private T current;
             
             @Override
+            @SuppressWarnings("NestedAssignment")
             public boolean hasNext () {
                 while (iter.hasNext())
                     if (pred.HoldsFor(current = iter.next()))

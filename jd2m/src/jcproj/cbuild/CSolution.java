@@ -9,6 +9,7 @@ import jcproj.vcxproj.ProjectGuid;
 import jcproj.vcxproj.ProjectGuidFactory;
 import jd2m.util.Name;
 
+@SuppressWarnings("FinalClass")
 public final class CSolution {
     private final String                        _location;
     private final Name                          _name;

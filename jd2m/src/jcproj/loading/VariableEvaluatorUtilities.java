@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
  * @date (of refactoring other things into here) 14th of August 2011
  * @author muhtaris
  */
+@SuppressWarnings("FinalClass")
 public final class VariableEvaluatorUtilities {
     
     ///////////////////////////////////////////////////////

@@ -258,6 +258,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     @Override
     public boolean IsApplicableTo (final CProperties props) {
         Boolean v0, v1, v2, v3, v4, v5, v6, v7; // for debugging inspection
+        @SuppressWarnings("NestedAssignment")
         final boolean result =  (v0 = HasMappableDefinition(props))         ||
                                 (v2 = HasMappableIncludeDirectory(props))   ||
                                 (v1 = HasMappableLibrary(props))            ||
@@ -300,9 +301,10 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
 
     // ------------------------------------
 
+    @SuppressWarnings("FinalClass")
     private static final class OrderingComparator<V> implements Comparator<V> {
         private final Map<V, Integer> _orderingValues;
-        public OrderingComparator (final Map<V, Integer> orderingValues) {
+        OrderingComparator (final Map<V, Integer> orderingValues) {
             _orderingValues = orderingValues;
         }
         @Override
@@ -396,7 +398,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
     //
     private class LibraryResultStorer extends CPropertiesResultStorer<String>{
-        public LibraryResultStorer (final CProperties _props) {
+        LibraryResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override
@@ -408,7 +410,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     private class DefinitionResultStorer
             extends CPropertiesResultStorer<String>
     {
-        public DefinitionResultStorer (final CProperties _props) {
+        DefinitionResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override
@@ -420,7 +422,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     private class LibraryDirectoryResultStorer
             extends CPropertiesResultStorer<String>
     {
-        public LibraryDirectoryResultStorer (final CProperties _props) {
+        LibraryDirectoryResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override
@@ -432,7 +434,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     private class IncludeDirectoryResultStorer
             extends CPropertiesResultStorer<String>
     {
-        public IncludeDirectoryResultStorer (final CProperties _props) {
+        IncludeDirectoryResultStorer (final CProperties _props) {
             super(_props);
         }
         @Override

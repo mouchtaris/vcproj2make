@@ -14,6 +14,7 @@ import static java.util.Collections.unmodifiableList;
 /**
  * @author TURBO_X
  */
+@SuppressWarnings("FinalClass")
 public final class CProject {
 
     private final List<CProperties> _props = CreatePropertiesList();
@@ -36,6 +37,7 @@ public final class CProject {
      * modified ones.
      * @return {@link #_props}
      */
+    @SuppressWarnings("ReturnOfCollectionOrArrayField")
     List<CProperties> GetProps () {
         return _props;
     }

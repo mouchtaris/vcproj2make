@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
  * @date    Sunday 7th of August 2011
  * @author  amalia
  */
+@SuppressWarnings("FinalClass")
 public final class SolutionLoader {
 
     ///////////////////////////////////////////////////////
@@ -44,6 +45,9 @@ public final class SolutionLoader {
     }
     
     ///////////////////////////////////////////////////////
+
+    private SolutionLoader() {
+    }
     
     
 } // class SolutionLoader

@@ -16,6 +16,7 @@ import jcproj.util.Predicate;
  * @data Sunday 7th of August 2011
  * @author amalia
  */
+@SuppressWarnings("FinalClass")
 public final class Project {
 
     ///////////////////////////////////////////////////////

@@ -1,5 +1,6 @@
 package jcproj.vcxproj.xml;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class ClCompile extends Item {
     ///////////////////////////////////////////////////////
     
     public List<String> GetExcludeFromBuildConditions () {
-        return excludeFromBuildConditions;
+        return Collections.unmodifiableList(excludeFromBuildConditions);
     }
     
     ///////////////////////////////////////////////////////

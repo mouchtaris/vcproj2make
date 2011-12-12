@@ -8,6 +8,7 @@ import jcproj.vcxproj.ProjectGuid;
 import jcproj.cbuild.CProjectType;
 import jd2m.util.Name;
 
+@SuppressWarnings("FinalClass")
 public final class CProjectBuilder {
     private boolean used = false;
     public CProject MakeProject () {

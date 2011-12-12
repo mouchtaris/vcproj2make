@@ -8,6 +8,7 @@ import static jcproj.cbuild.CProject.CreatePropertiesList;
  *
  * @author muhtaris
  */
+@SuppressWarnings("FinalClass")
 public final class CPropertiesTransformationApplicator {
 
     private CPropertiesTransformationApplicator () {

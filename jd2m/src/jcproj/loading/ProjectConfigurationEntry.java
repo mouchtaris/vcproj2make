@@ -10,6 +10,7 @@ import jcproj.vcxproj.ProjectGuid;
  * @date Sunday 7th August 2011
  * @author amalia
  */
+@SuppressWarnings("FinalClass")
 public final class ProjectConfigurationEntry implements Cloneable {
     
     ///////////////////////////////////////////////////////
@@ -50,6 +51,7 @@ public final class ProjectConfigurationEntry implements Cloneable {
     
     ///////////////////////////////////////////////////////
     
+    @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
     public ProjectConfigurationEntry clone (final String configurationId, final boolean buildable) {
         final ProjectConfigurationEntry result = clone();
         result.buildable = buildable;
@@ -67,6 +69,7 @@ public final class ProjectConfigurationEntry implements Cloneable {
     ///////////////////////////////////////////////////////
     
     @Override
+    @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
     public boolean equals (final Object obj) {
         boolean result = false;
         
@@ -86,6 +89,7 @@ public final class ProjectConfigurationEntry implements Cloneable {
         return result;
     }
 
+    @Override
     public int hashCode() {
         int hash = 7;
         hash = 67 * hash + Objects.hashCode(this.id);
