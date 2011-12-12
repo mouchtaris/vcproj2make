@@ -14,6 +14,7 @@ import jcproj.vcxproj.xml.LinkDefinition;
 import jcproj.vcxproj.xml.Project;
 import jcproj.vcxproj.xml.ProjectConfiguration;
 import jcproj.vcxproj.ProjectGuidFactory;
+import jcproj.vcxproj.xml.LibDefinition;
 import jcproj.vcxproj.xml.Property;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -292,6 +293,10 @@ public class ProjectXmlWalker {
                             GetChildIfExistsSingleSubelementValue(node, NodesNames.SubSystem),
                             GetChildIfExistsSingleSubelementValue(node, NodesNames.GenerateDebugInformation),
                             GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalDependencies)));
+                else
+                if (nodename.equals(NodesNames.Lib))
+                    group.Add(new LibDefinition(
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalLibraryDirectories)));
                 else
                 if (nodename.equals(NodesNames.ResourceCompile))
                     // ignore
