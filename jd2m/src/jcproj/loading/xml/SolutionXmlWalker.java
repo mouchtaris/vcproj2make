@@ -37,18 +37,19 @@ public class SolutionXmlWalker {
         boolean visitedGlobal = false;
         
         for (Node child : MakeChildrenIterator(root))
-            if (child.getNodeType() == Node.ELEMENT_NODE)
-                switch (child.getNodeName()) {
-                    case "Project":
-                        VisitProject(child);
-                        break;
-                    case "Global": {
-                        assert !visitedGlobal;
-                        visitedGlobal = true;
-                        VisitGlobal(child);
-                        break;
-                    }
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                final String childnodename = child.getNodeName();
+                if (childnodename.equals("Project"))
+                    VisitProject(child);
+                else
+                if (childnodename.equals("Global")) {
+                    assert !visitedGlobal;
+                    visitedGlobal = true;
+                    VisitGlobal(child);
                 }
+                else
+                    throw new XmlWalkingException(root, child);
+            }
     }
   
     ///////////////////////////////////////////////////////
@@ -63,32 +64,32 @@ public class SolutionXmlWalker {
         boolean visitedSolutionProperties   = false;
         
         for (Node node : MakeChildrenIterator(global))
-            if (node.getNodeName().equals("GlobalSection"))
-                switch (node.getAttributes().getNamedItem("type").getNodeValue()) {
-                    case "SolutionConfigurationPlatforms": {
-                        assert !visitedSolutions;
-                        visitedSolutions = true;
-                        VisitSolutionConfigurationPlatforms(node);
-                        break;
-                    }
-                    case "ProjectConfigurationPlatforms": {
-                        assert !visitedProjects;
-                        visitedProjects = true;
-                        VisitProjectConfigurationPlatforms(node);
-                        break;
-                    }
-                    case "SolutionProperties": {
-                        assert !visitedSolutionProperties;
-                        visitedSolutionProperties = true;
-                        VisitSolutionProperties(node);
-                        break;
-                    }
-                    case "NestedProjects":
-                        // tots ignors
-                        break;
-                    default:
-                        throw new XmlWalkingException(global, node);
+            if (node.getNodeName().equals("GlobalSection")) {
+                final String type = node.getAttributes().getNamedItem("type").getNodeValue();
+                if (type.equals("SolutionConfigurationPlatforms")) {
+                    assert !visitedSolutions;
+                    visitedSolutions = true;
+                    VisitSolutionConfigurationPlatforms(node);
                 }
+                else
+                if (type.equals("ProjectConfigurationPlatforms")) {
+                    assert !visitedProjects;
+                    visitedProjects = true;
+                    VisitProjectConfigurationPlatforms(node);
+                }
+                else
+                if (type.equals("SolutionProperties")) {
+                    assert !visitedSolutionProperties;
+                    visitedSolutionProperties = true;
+                    VisitSolutionProperties(node);
+                }
+                else
+                if (type.equals("NestedProjects"))
+                    // tots ignors
+                    {}
+                else
+                    throw new XmlWalkingException(global, node);
+            }
 
         assert visitedSolutions && visitedProjects;
     }
@@ -98,14 +99,14 @@ public class SolutionXmlWalker {
     public void VisitSolutionProperties (final Node solProps) throws XmlWalkingException {
         // typical ignorer
         for (Node pair : MakeChildrenIterator(solProps))
-            if (pair.getNodeType() == Node.ELEMENT_NODE)
-                switch (XmlTreeVisitor.GetPairLeft(pair)) {
-                    case "HideSolutionNode":
+            if (pair.getNodeType() == Node.ELEMENT_NODE) {
+                final String left = XmlTreeVisitor.GetPairLeft(pair);
+                if (left.equals("HideSolutionNode"))
                         // ignore
-                        break;
-                    default:
-                        throw new XmlWalkingException(solProps, pair);
-                }
+                    {}
+                else
+                    throw new XmlWalkingException(solProps, pair);
+            }
     }
             
     ///////////////////////////////////////////////////////
@@ -160,7 +161,7 @@ public class SolutionXmlWalker {
     ///////////////////////////////////////////////////////
     // Private
     private final ConfigurationManager                          manager = new ConfigurationManager();
-    private final Map<ProjectGuid, ProjectConfigurationEntry>   entries = new HashMap<>(100);
+    private final Map<ProjectGuid, ProjectConfigurationEntry>   entries = new HashMap<ProjectGuid, ProjectConfigurationEntry>(100);
     
     // Static 
     private static final Pattern Dot = Pattern.compile("\\.");

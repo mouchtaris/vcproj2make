@@ -27,8 +27,8 @@ public final class CProject {
     private final String            _intermediate;
     private final String            _api;
     private final CProjectType      _type;
-    private final List<ProjectGuid> _deps = new LinkedList<>();
-    private final List<String>      _sources = new LinkedList<>();
+    private final List<ProjectGuid> _deps = new LinkedList<ProjectGuid>();
+    private final List<String>      _sources = new LinkedList<String>();
 
     /**
      * Package-protected so that {@link CPropertiesTransformationApplicator}
@@ -47,7 +47,7 @@ public final class CProject {
      * @return {@link #_props}
      */
     static List<CProperties> CreatePropertiesList () {
-        return new LinkedList<>();
+        return new LinkedList<CProperties>();
     }
     
 
@@ -212,8 +212,8 @@ public final class CProject {
     private <T> Iterable<T> _GetIterableOfSomethingFromProperties (
                             final PropertyIterableOfSomethingGetter<T> gitter)
     {
-        final IterableConcatenationIterator<T> iterator = new IterableConcatenationIterator<>();
-        final PremadeIteratorWrapperIterable<T> result = new PremadeIteratorWrapperIterable<>(iterator);
+        final IterableConcatenationIterator<T> iterator = new IterableConcatenationIterator<T>();
+        final PremadeIteratorWrapperIterable<T> result = new PremadeIteratorWrapperIterable<T>(iterator);
 
         for (final CProperties prop: _props)
             iterator.add(gitter.git(prop));

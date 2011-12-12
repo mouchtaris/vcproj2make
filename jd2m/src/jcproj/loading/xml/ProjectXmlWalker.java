@@ -64,26 +64,25 @@ public class ProjectXmlWalker {
         assert attrs.getNamedItem("xmlns").getNodeValue().equals("http://schemas.microsoft.com/developer/msbuild/2003");
         
         for (final Node node : MakeChildrenIterator(root))
-            if (node.getNodeType() == Node.ELEMENT_NODE)
-                switch (node.getNodeName()) {
-                    case NodesNames.ItemGroup:
-                        VisitItemGroup(node);
-                        break;
-                    case NodesNames.PropertyGroup:
-                        VisitPropertyGroup(node);
-                        break;
-                    case NodesNames.Import:
-                        VisitImport(node);
-                        break;
-                    case NodesNames.ImportGroup:
-                        VisitImportGroup(node);
-                        break;
-                    case NodesNames.ItemDefinitionGroup:
-                        VisitItemDefinitionGroup(node);
-                        break;
-                    default:
-						throw new XmlWalkingException(root, node);
-                }
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                final String nodename = node.getNodeName();
+                if (nodename.equals(NodesNames.ItemGroup))
+                    VisitItemGroup(node);
+                else
+                if (nodename.equals(NodesNames.PropertyGroup))
+                    VisitPropertyGroup(node);
+                else
+                if (nodename.equals(NodesNames.Import))
+                    VisitImport(node);
+                else
+                if (nodename.equals(NodesNames.ImportGroup))
+                    VisitImportGroup(node);
+                else
+                if (nodename.equals(NodesNames.ItemDefinitionGroup))
+                    VisitItemDefinitionGroup(node);
+                else
+                    throw new XmlWalkingException(root, node);
+            }
     }
     
     ///////////////////////////////////////////////////////
@@ -95,24 +94,23 @@ public class ProjectXmlWalker {
         // Dispatch according to the first item. The rest are supposed to be the same
         for (final Node node : MakeChildrenIterator(group))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
-                switch (node.getNodeName()) {
-                    case NodesNames.ProjectConfiguration:
-                        project.AddItemGroup(MakeProjectConfigurationsItemGroup(label, condition, group));
-                        break;
-                    case NodesNames.ClCompile:
-                    case NodesNames.ClInclude:
-                        VisitClCompileOrClIncludeElements(label, condition, group);
-                        break;
-                    case NodesNames.ProjectReference:
-                        VisitProjectReferences(label, condition, group);
-                        break;
-                    case NodesNames.ResourceCompile:
-                    case NodesNames.None:
-                        // ignore
-                        break;
-                    default:
-						throw new XmlWalkingException(group, node);
-                }
+                final String nodename = node.getNodeName();
+                if (nodename.equals(NodesNames.ProjectConfiguration))
+                    project.AddItemGroup(MakeProjectConfigurationsItemGroup(label, condition, group));
+                else
+                if (nodename.equals(NodesNames.ClCompile) ||
+                    nodename.equals(NodesNames.ClInclude))
+                    VisitClCompileOrClIncludeElements(label, condition, group);
+                else
+                if (nodename.equals(NodesNames.ProjectReference))
+                    VisitProjectReferences(label, condition, group);
+                else
+                if (nodename.equals(NodesNames.ResourceCompile)||
+                    nodename.equals(NodesNames.None))
+                    // ignore
+                    {}
+                else
+                    throw new XmlWalkingException(group, node);
                 break;
             }
     }
@@ -120,7 +118,7 @@ public class ProjectXmlWalker {
     ///////////////////////////////////////////////////////
     
     public Group<ProjectConfiguration> MakeProjectConfigurationsItemGroup (final String label, final String condition, final Node groupnode) {
-        final Group<ProjectConfiguration> group = new Group<>(ProjectConfiguration.class, label, condition);
+        final Group<ProjectConfiguration> group = new Group<ProjectConfiguration>(ProjectConfiguration.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
@@ -149,46 +147,48 @@ public class ProjectXmlWalker {
                 final String include = GetAttributeValue(node, AttributeName.Include);
                 assert include != null;
                 
-                switch (node.getNodeName()) {
-                    case NodesNames.ClCompile: {
-                        final ClCompile clcompile = new ClCompile(include);
+                final String nodename = node.getNodeName();
+                if (nodename.equals(NodesNames.ClCompile)) {
+                    final ClCompile clcompile = new ClCompile(include);
 
-                        for (final Node child : MakeChildrenIterator(node))
-                            if (child.getNodeType() == Node.ELEMENT_NODE)
-                                switch (child.getNodeName()) {
-                                    case NodesNames.ExcludedFromBuild: {
-                                        final String compilecondition = GetAttributeValue(child, AttributeName.Condition);
-                                        clcompile.AddExcludeFromBuildCondition(compilecondition);
-                                        break;
-                                    }
-                                    case NodesNames.PrecompiledHeader: {
-                                        final String precompiledheadercondition = GetAttributeValue(child, AttributeName.Condition);
-                                        if (GetSingleSubelementValue(node).equals("Create"))
-                                            clcompile.AddPrecompiledHeaderCreationCondition(precompiledheadercondition);
-                                        break;
-                                    }
-                                    case NodesNames.FileType:
-                                    case NodesNames.CompileAsManaged:
-                                        // ignore
-                                        break;
-                                    default:
-                                        throw new XmlWalkingException(node, child);
-                                }
-                        
-                        Loagger.log(Level.INFO, "Adding ClCompile {0}", clcompile.GetInclude());
-                        project.AddClCompile(clcompile);
-                        break;
-                    }
-                    case NodesNames.ClInclude: {
-                        final ClInclude clinclude = new ClInclude(Objects.requireNonNull(GetAttributeValue(node, AttributeName.Include)));
-                        
-                        Loagger.log(Level.INFO, "Added ClInclude={0}", clinclude.GetInclude());
-                        project.AddClInclude(clinclude);
-                        break;
-                    }
-                    default:
-                        throw new XmlWalkingException(groupnode, node);
+                    for (final Node child : MakeChildrenIterator(node))
+                        if (child.getNodeType() == Node.ELEMENT_NODE) {
+                            final String childnodename = child.getNodeName();
+                            if (childnodename.equals(NodesNames.ExcludedFromBuild)) {
+                                final String compilecondition = GetAttributeValue(child, AttributeName.Condition);
+                                clcompile.AddExcludeFromBuildCondition(compilecondition);
+                                break;
+                            }
+                            else
+                            if (childnodename.equals(NodesNames.PrecompiledHeader)) {
+                                final String precompiledheadercondition = GetAttributeValue(child, AttributeName.Condition);
+                                if (GetSingleSubelementValue(node).equals("Create"))
+                                    clcompile.AddPrecompiledHeaderCreationCondition(precompiledheadercondition);
+                                break;
+                            }
+                            else
+                            if (childnodename.equals(NodesNames.FileType) ||
+                                childnodename.equals(NodesNames.CompileAsManaged))
+                                // ignore
+                            {}
+                            else
+                                throw new XmlWalkingException(node, child);
+                        }
+
+                    Loagger.log(Level.INFO, "Adding ClCompile {0}", clcompile.GetInclude());
+                    project.AddClCompile(clcompile);
+                    break;
                 }
+                else
+                if (nodename.equals(NodesNames.ClInclude)) {
+                    final ClInclude clinclude = new ClInclude(Objects.requireNonNull(GetAttributeValue(node, AttributeName.Include)));
+
+                    Loagger.log(Level.INFO, "Added ClInclude={0}", clinclude.GetInclude());
+                    project.AddClInclude(clinclude);
+                    break;
+                }
+                else
+                    throw new XmlWalkingException(groupnode, node);
             }
     }
     
@@ -215,7 +215,7 @@ public class ProjectXmlWalker {
         final String label = GetAttributeValueIfExists(groupnode, AttributeName.Label);
         final String condition = GetAttributeValueIfExists(groupnode, AttributeName.Condition);
 
-        final Group<Property> group = new Group<>(Property.class, label, condition);
+        final Group<Property> group = new Group<Property>(Property.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE) {
@@ -248,7 +248,7 @@ public class ProjectXmlWalker {
         assert label != null;
         final String condition = GetAttributeValueIfExists(groupnode, AttributeName.Condition);
         
-        final Group<Import> group = new Group<>(Import.class, label, condition);
+        final Group<Import> group = new Group<Import>(Import.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(groupnode))
             if (node.getNodeType() == Node.ELEMENT_NODE)
@@ -271,34 +271,34 @@ public class ProjectXmlWalker {
         final String label = GetAttributeValueIfExists(nodegroup, AttributeName.Label);
         final String condition = GetAttributeValueIfExists(nodegroup, AttributeName.Condition);
         
-        final Group<ItemDefinition> group = new Group<>(ItemDefinition.class, label, condition);
+        final Group<ItemDefinition> group = new Group<ItemDefinition>(ItemDefinition.class, label, condition);
         
         for (final Node node : MakeChildrenIterator(nodegroup))
-            if (node.getNodeType() == Node.ELEMENT_NODE)
-                switch (node.getNodeName()) {
-                    case NodesNames.ClCompile:
-                        group.Add(new ClCompileDefinition(
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeader),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.WarningLevel),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.Optimization),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PreprocessorDefinitions),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeaderFile),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.ObjectFileName),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.FunctionLevelLinking),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.IntrinsicFunctions)));
-                        break;
-                    case NodesNames.Link:
-                        group.Add(new LinkDefinition(
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.SubSystem),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.GenerateDebugInformation),
-                                GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalDependencies)));
-                        break;
-                    case NodesNames.ResourceCompile:
-                        // ignore
-                        break;
-                    default:
-                        throw new XmlWalkingException(nodegroup, node);
-                }
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                final String nodename = node.getNodeName();
+                if (nodename.equals(NodesNames.ClCompile))
+                    group.Add(new ClCompileDefinition(
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeader),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.WarningLevel),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.Optimization),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.PreprocessorDefinitions),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.PrecompiledHeaderFile),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.ObjectFileName),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.FunctionLevelLinking),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.IntrinsicFunctions)));
+                else
+                if (nodename.equals(NodesNames.Link))
+                    group.Add(new LinkDefinition(
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.SubSystem),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.GenerateDebugInformation),
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalDependencies)));
+                else
+                if (nodename.equals(NodesNames.ResourceCompile))
+                    // ignore
+                    {}
+                else
+                    throw new XmlWalkingException(nodegroup, node);
+            }
         
         project.AddItemDefinitionGroup(group);
     }

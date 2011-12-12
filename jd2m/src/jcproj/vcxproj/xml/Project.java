@@ -82,7 +82,7 @@ public final class Project {
     ///////////////////////////////////////////////////////
     
     public Iterable<Group<? extends Import>> GetImportGroup (final String label) {
-        return new FilteringIterable<>(
+        return new FilteringIterable<Group<? extends Import>>(
                 Collections.unmodifiableSet(importgroups),
                 new Predicate<Group<? extends Import>>() {
                     @Override
@@ -99,13 +99,13 @@ public final class Project {
     
     ///////////////////////////////////////////////////////
     // State
-    private final Set<Group<? extends Item>>            itemgroups              = new HashSet<>(5);
-    private final Set<Group<? extends Property>>        propertygroups          = new HashSet<>(5);
-    private final Set<Import>                           imports                 = new HashSet<>(5);
-    private final Set<Group<? extends Import>>          importgroups            = new HashSet<>(5);
-    private final Set<Group<? extends ItemDefinition>>  itemdefinitiongroups    = new HashSet<>(5);
-    private final Set<ClInclude>                        clincludes              = new HashSet<>(5);
-    private final Set<ClCompile>                        clcompiles              = new HashSet<>(5);
-    private final Map<ProjectGuid, String>              references              = new HashMap<>(5);
+    private final Set<Group<? extends Item>>            itemgroups              = new HashSet<Group<? extends Item>>(5);
+    private final Set<Group<? extends Property>>        propertygroups          = new HashSet<Group<? extends Property>>(5);
+    private final Set<Import>                           imports                 = new HashSet<Import>(5);
+    private final Set<Group<? extends Import>>          importgroups            = new HashSet<Group<? extends Import>>(5);
+    private final Set<Group<? extends ItemDefinition>>  itemdefinitiongroups    = new HashSet<Group<? extends ItemDefinition>>(5);
+    private final Set<ClInclude>                        clincludes              = new HashSet<ClInclude>(5);
+    private final Set<ClCompile>                        clcompiles              = new HashSet<ClCompile>(5);
+    private final Map<ProjectGuid, String>              references              = new HashMap<ProjectGuid, String>(5);
     
 } // class Project

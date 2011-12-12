@@ -82,7 +82,7 @@ public final class VariableEvaluator {
     ///////////////////////////////////////////////////////
     // State
     
-    private final Map<String, String> resettable = new HashMap<>(20);
-    private final Map<String, String> persistent = new HashMap<>(20);
-    private final Set<String>         globals    = new HashSet<>(20);
+    private final Map<String, String> resettable = new HashMap<String, String>(20);
+    private final Map<String, String> persistent = new HashMap<String, String>(20);
+    private final Set<String>         globals    = new HashSet<String>(20);
 }

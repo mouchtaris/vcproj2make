@@ -13,7 +13,7 @@ public final class CSolution {
     private final String                        _location;
     private final Name                          _name;
     private final String                        _configurationName;
-    private final Map<ProjectGuid, CProject>    _projects = new HashMap<>(100);
+    private final Map<ProjectGuid, CProject>    _projects = new HashMap<ProjectGuid, CProject>(100);
 
     public CSolution (  final String    location,
                         final Name      name,

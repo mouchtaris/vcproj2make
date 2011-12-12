@@ -46,8 +46,8 @@ public class ConfigurationManager {
     ///////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////
     // Private
-    private Map<String, Set<ProjectConfigurationEntry>> configs = new HashMap<>(20);
-    private Map<String, Set<String>>                    platforms = new HashMap<>(20);
+    private Map<String, Set<ProjectConfigurationEntry>> configs = new HashMap<String, Set<ProjectConfigurationEntry>>(20);
+    private Map<String, Set<String>>                    platforms = new HashMap<String, Set<String>>(20);
         
     private final static Logger Loagger = Logger.getLogger(ConfigurationManager.class.getName());
     
@@ -63,7 +63,7 @@ public class ConfigurationManager {
                 plats.add(platform);
         }
         else {
-            final Set<String> plats = new HashSet<>(10);
+            final Set<String> plats = new HashSet<String>(10);
             plats.add(platform);
             
             final Object previousPlatformsEntry = platforms.put(config, plats);

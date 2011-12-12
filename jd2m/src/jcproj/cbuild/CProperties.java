@@ -9,10 +9,10 @@ import static java.util.Collections.unmodifiableList;
 
 public final class CProperties {
 
-    private final List<String> _includes    = new LinkedList<>();
-    private final List<String> _defs        = new LinkedList<>();
-    private final List<String> _libdirs     = new LinkedList<>();
-    private final List<String> _libs        = new LinkedList<>();
+    private final List<String> _includes    = new LinkedList<String>();
+    private final List<String> _defs        = new LinkedList<String>();
+    private final List<String> _libdirs     = new LinkedList<String>();
+    private final List<String> _libs        = new LinkedList<String>();
 
     public void AddIncludeDirectory (final String dir) {
         assert !IsUnixDirectory(dir.toString());

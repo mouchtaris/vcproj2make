@@ -41,7 +41,7 @@ public class ClCompile extends Item {
     ///////////////////////////////////////////////////////
     // State
     
-    private final List<String>  excludeFromBuildConditions          = new LinkedList<>();
-    private final List<String>  precompiledHeaderCreationConditions = new LinkedList<>();
+    private final List<String>  excludeFromBuildConditions          = new LinkedList<String>();
+    private final List<String>  precompiledHeaderCreationConditions = new LinkedList<String>();
     
 } // class ClCompile

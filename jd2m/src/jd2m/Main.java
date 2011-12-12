@@ -23,38 +23,45 @@ public class Main {
     public static void MakeMakefiles (final String[] args) throws IOException {
         SetupLoggers();
         
-        System.out.println("hi')");
-        final Path solutionFilePath = Paths.get(
-//                "./../deltaide2make/Solution.xml"
-                args[0]
-        );
-        final Path solutionRoot     = Paths.get(
-//                "C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\thesis_new\\deltaide\\IDE"
-//                "/home/muhtaris/deltux/svn_deltaide/IDE"
-//                "/tmp/deltaide/IDE/"
-                args[1]
-        );
-        final String solutionTargetDirectory = args[2];
-        Map<String, CSolution> solutions =
-                ProjectLoader.LoadProjects(
-                        SolutionLoader.LoadSolution(solutionFilePath,
-                                                    solutionRoot,
-                                                    solutionTargetDirectory)
-                );
-
-        final WxLibrariesCPropertiesTrasformation trans =
-                new WxLibrariesCPropertiesTrasformation();
-
-        for (final Entry<String, CSolution> solutionentry: solutions.entrySet())
-        {
-            final CSolution csolution = solutionentry.getValue();
-            ApplyToSolution(trans, csolution);
-            
-            GenerateMakefelesFromCSolution(csolution, "Blibliblo");
+        if (args.length == 0) {
+            System.out.println("args: solutionFilePath(xml) solutionRoot(for "
+                    + "project loading) solutionTargetDirectory(for makefile "
+                    + "generation) ");
         }
+        else {
+            System.out.println("hi')");
+            final Path solutionFilePath = Paths.get(
+    //                "./../deltaide2make/Solution.xml"
+                    args[0]
+            );
+            final Path solutionRoot     = Paths.get(
+    //                "C:\\Users\\TURBO_X\\Documents\\uni\\UOC\\CSD\\thesis_new\\deltaide\\IDE"
+    //                "/home/muhtaris/deltux/svn_deltaide/IDE"
+    //                "/tmp/deltaide/IDE/"
+                    args[1]
+            );
+            final String solutionTargetDirectory = args[2];
+            Map<String, CSolution> solutions =
+                    ProjectLoader.LoadProjects(
+                            SolutionLoader.LoadSolution(solutionFilePath,
+                                                        solutionRoot,
+                                                        solutionTargetDirectory)
+                    );
 
-        new WindowsSourcesConvertTask(solutionRoot).DoConversion();
-        new EvilFilesRemoverTask(solutionRoot).DoKilling();
+            final WxLibrariesCPropertiesTrasformation trans =
+                    new WxLibrariesCPropertiesTrasformation();
+
+            for (final Entry<String, CSolution> solutionentry: solutions.entrySet())
+            {
+                final CSolution csolution = solutionentry.getValue();
+                ApplyToSolution(trans, csolution);
+
+                GenerateMakefelesFromCSolution(csolution, "Blibliblo");
+            }
+
+            new WindowsSourcesConvertTask(solutionRoot).DoConversion();
+            new EvilFilesRemoverTask(solutionRoot).DoKilling();
+        }
     }
 
     private static void SetupLoggers() {

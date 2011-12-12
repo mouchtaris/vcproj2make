@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import jcproj.loading.xml.XmlWalkingException;
 import org.xml.sax.SAXException;
 
 /**
@@ -21,7 +22,8 @@ public final class SolutionLoader {
             throws
             ParserConfigurationException,
             SAXException,
-            IOException
+            IOException, 
+            XmlWalkingException
     {
         final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker();
         solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));
@@ -33,7 +35,8 @@ public final class SolutionLoader {
     public static ConfigurationManager LoadSolution (final File solution)
             throws  ParserConfigurationException,
                     SAXException,
-                    IOException
+                    IOException, 
+                    XmlWalkingException
     {
         final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker();
         solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));

@@ -107,7 +107,7 @@ public class ProjectGuidFactory {
     
     ///////////////////////////////////////////////////////
     // State
-    private final Map<String, ProjectGuid> projids = new TreeMap<>(new NoCaseStringComparator());
+    private final Map<String, ProjectGuid> projids = new TreeMap<String, ProjectGuid>(new NoCaseStringComparator());
     
     ///////////////////////////////////////////////////////
     // Singleton

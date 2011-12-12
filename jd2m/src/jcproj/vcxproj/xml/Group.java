@@ -96,6 +96,6 @@ public final class Group<T> implements Conditioned, Iterable<T> {
     private final Class<? extends T>    type;
     private final String                label;
     private final String                condition;
-    private final List<T>               items   = new LinkedList<>();
+    private final List<T>               items   = new LinkedList<T>();
 
 } // class Group

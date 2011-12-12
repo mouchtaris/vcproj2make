@@ -23,20 +23,20 @@ import jcproj.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformatio
 public class SimpleMappingAndOrderingCPropertiesTransformation
         extends AbstractCPropertiesMapper
 {
-    private final Map<String, String>   _libMappings        = new HashMap<>(50);
-    private final Map<String, String>   _defMappings        = new HashMap<>(50);
-    private final Map<String, String>   _libdirMappings     = new HashMap<>(50);
-    private final Map<String, String>   _incldirMappings    = new HashMap<>(50);
+    private final Map<String, String>   _libMappings        = new HashMap<String, String>(50);
+    private final Map<String, String>   _defMappings        = new HashMap<String, String>(50);
+    private final Map<String, String>   _libdirMappings     = new HashMap<String, String>(50);
+    private final Map<String, String>   _incldirMappings    = new HashMap<String, String>(50);
     //
-    private final Map<String, Integer>  _libsValues         = new HashMap<>(50);
-    private final Map<String, Integer>  _defsValues         = new HashMap<>(50);
-    private final Map<String, Integer>  _libdirsValues      = new HashMap<>(50);
-    private final Map<String, Integer>  _incldirsValues     = new HashMap<>(50);
+    private final Map<String, Integer>  _libsValues         = new HashMap<String, Integer>(50);
+    private final Map<String, Integer>  _defsValues         = new HashMap<String, Integer>(50);
+    private final Map<String, Integer>  _libdirsValues      = new HashMap<String, Integer>(50);
+    private final Map<String, Integer>  _incldirsValues     = new HashMap<String, Integer>(50);
     //
-    private final Deque<String>         _additionalLibs     = new LinkedList<>();
-    private final Deque<String>         _additionalDefs     = new LinkedList<>();
-    private final Deque<String>         _additionalLibdirs  = new LinkedList<>();
-    private final Deque<String>         _additionalIncldirs = new LinkedList<>();
+    private final Deque<String>         _additionalLibs     = new LinkedList<String>();
+    private final Deque<String>         _additionalDefs     = new LinkedList<String>();
+    private final Deque<String>         _additionalLibdirs  = new LinkedList<String>();
+    private final Deque<String>         _additionalIncldirs = new LinkedList<String>();
 
     // -----
 
@@ -451,9 +451,9 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
                                             final OrderabilityChecker<V> oc,
                                             final CPropertiesResultStorer<V> rs)
     {
-        final List<V> unordered = new LinkedList<>();
+        final List<V> unordered = new LinkedList<V>();
         final SortedSet<V> ordered =
-                new TreeSet<>(new OrderingComparator<>(orderings));
+                new TreeSet<V>(new OrderingComparator<V>(orderings));
 
         for (final V value: items) {
             V newValue = value;

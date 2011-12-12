@@ -41,7 +41,7 @@ public final class CProjectBuilder {
         return result;
     }
 
-    private final List<CProperties> _props = new LinkedList<>();
+    private final List<CProperties> _props = new LinkedList<CProperties>();
     private String                  _location;
     private Name                    _name;
     private ProjectGuid             _id;
@@ -52,8 +52,8 @@ public final class CProjectBuilder {
     private String                  _intermediate;
     private String                  _api;
     private CProjectType            _type;
-    private final List<ProjectGuid> _deps = new LinkedList<>();
-    private final List<String>      _sources = new LinkedList<>();
+    private final List<ProjectGuid> _deps = new LinkedList<ProjectGuid>();
+    private final List<String>      _sources = new LinkedList<String>();
 
     public void AddProperty      (final CProperties  p    ) { _props         .add(p);  }
     public void SetLocation      (final String       l    ) { _location      = l;      }

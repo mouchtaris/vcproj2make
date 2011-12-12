@@ -80,8 +80,8 @@ public final class ProjectConfigurationEntry implements Cloneable {
             result =        Objects.equals(this.id, other.id)
                         &&  Objects.equals(this.configid, other.configid);
         }
-        catch (final NullPointerException|ClassCastException npex)
-            { }
+        catch (final NullPointerException npex) {}
+        catch (final ClassCastException ccex) {}
 
         return result;
     }
