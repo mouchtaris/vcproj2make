@@ -3,10 +3,9 @@ package jcproj.vcxproj.xml;
 import java.util.Collections;
 import jcproj.vcxproj.ProjectGuid;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import jcproj.util.FilteringIterable;
+import jcproj.util.HashSet;
 import jcproj.util.Predicate;
 
 /**
@@ -31,8 +30,10 @@ public final class Project {
     
     ///////////////////////////////////////////////////////
     
-    public void AddPropertyGroup (final Group<? extends Property> group) {
-        final boolean added = propertygroups.add(group);
+    public void AddPropertyGroup (final Group<Property> group) {
+        final boolean added = propertygroups.contains(group)?
+                propertygroups.add(propertygroups.pop(group).Merge(group)):
+                propertygroups.add(group);
         assert added;
     }
     
@@ -100,13 +101,13 @@ public final class Project {
     
     ///////////////////////////////////////////////////////
     // State
-    private final Set<Group<? extends Item>>            itemgroups              = new HashSet<Group<? extends Item>>(5);
-    private final Set<Group<? extends Property>>        propertygroups          = new HashSet<Group<? extends Property>>(5);
-    private final Set<Import>                           imports                 = new HashSet<Import>(5);
-    private final Set<Group<? extends Import>>          importgroups            = new HashSet<Group<? extends Import>>(5);
-    private final Set<Group<? extends ItemDefinition>>  itemdefinitiongroups    = new HashSet<Group<? extends ItemDefinition>>(5);
-    private final Set<ClInclude>                        clincludes              = new HashSet<ClInclude>(5);
-    private final Set<ClCompile>                        clcompiles              = new HashSet<ClCompile>(5);
-    private final Map<ProjectGuid, String>              references              = new HashMap<ProjectGuid, String>(5);
+    private final HashSet<Group<? extends Item>>            itemgroups              = new HashSet<Group<? extends Item>>(5);
+    private final HashSet<Group<Property>>                  propertygroups          = new HashSet<Group<Property>>(5);
+    private final HashSet<Import>                           imports                 = new HashSet<Import>(5);
+    private final HashSet<Group<? extends Import>>          importgroups            = new HashSet<Group<? extends Import>>(5);
+    private final HashSet<Group<? extends ItemDefinition>>  itemdefinitiongroups    = new HashSet<Group<? extends ItemDefinition>>(5);
+    private final HashSet<ClInclude>                        clincludes              = new HashSet<ClInclude>(5);
+    private final HashSet<ClCompile>                        clcompiles              = new HashSet<ClCompile>(5);
+    private final Map<ProjectGuid, String>                  references              = new HashMap<ProjectGuid, String>(5);
     
 } // class Project

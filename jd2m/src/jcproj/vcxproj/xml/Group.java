@@ -21,6 +21,13 @@ public final class Group<T> implements Conditioned, Iterable<T> {
         final boolean added = items.add(o);
         assert added;
     }
+    
+    ///////////////////////////////////////////////////////
+    
+    public Group<T> Merge (final Group<T> g) {
+        items.addAll(g.GetItems());
+        return this;
+    }
 
     ///////////////////////////////////////////////////////
     
@@ -92,6 +99,9 @@ public final class Group<T> implements Conditioned, Iterable<T> {
     
     ///////////////////////////////////////////////////////
     // Private
+    private List<T> GetItems () {
+        return Collections.unmodifiableList(items);
+    }
     
     ///////////////////////////////////////////////////////
     // State
