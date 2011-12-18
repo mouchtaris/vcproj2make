@@ -30,5 +30,10 @@ interface NodesNames {
     public static final String GenerateDebugInformation     = "GenerateDebugInformation";
     public static final String AdditionalDependencies       = "AdditionalDependencies";
     public static final String AdditionalLibraryDirectories = "AdditionalLibraryDirectories";
+    public static final String Midl                         = "Midl";
+    public static final String Bscmake                      = "Bscmake";
+    public static final String PostBuildEvent               = "PostBuildEvent";
+    public static final String PreBuildEvent                = "PreBuildEvent";
+    public static final String Command                      = "Command";
 	
 }

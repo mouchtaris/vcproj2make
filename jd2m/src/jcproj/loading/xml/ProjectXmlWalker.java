@@ -1,5 +1,6 @@
 package jcproj.loading.xml;
 
+import jcproj.vcxproj.xml.PreBuildEvent;
 import jcproj.vcxproj.ProjectGuid;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -15,6 +16,7 @@ import jcproj.vcxproj.xml.Project;
 import jcproj.vcxproj.xml.ProjectConfiguration;
 import jcproj.vcxproj.ProjectGuidFactory;
 import jcproj.vcxproj.xml.LibDefinition;
+import jcproj.vcxproj.xml.PostBuildEvent;
 import jcproj.vcxproj.xml.Property;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -298,7 +300,17 @@ public class ProjectXmlWalker {
                     group.Add(new LibDefinition(
                             GetChildIfExistsSingleSubelementValue(node, NodesNames.AdditionalLibraryDirectories)));
                 else
-                if (nodename.equals(NodesNames.ResourceCompile))
+                if (nodename.equals(NodesNames.PostBuildEvent))
+                    group.Add(new PostBuildEvent(
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.Command)));
+                else
+                if (nodename.equals(NodesNames.PreBuildEvent))
+                    group.Add(new PreBuildEvent(
+                            GetChildIfExistsSingleSubelementValue(node, NodesNames.Command)));
+                else
+                if (nodename.equals(NodesNames.ResourceCompile) ||
+                        nodename.equals(NodesNames.Midl) ||
+                        nodename.equals(NodesNames.Bscmake))
                     // ignore
                     {}
                 else
