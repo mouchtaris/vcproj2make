@@ -22,7 +22,7 @@ public class Main {
 
     public static void MakeMakefiles (final String[] args) throws IOException {
         SetupLoggers();
-        
+
         if (args.length == 0) {
             System.out.println("args: solutionFilePath(xml) solutionRoot(for "
                     + "project loading) solutionTargetDirectory(for makefile "

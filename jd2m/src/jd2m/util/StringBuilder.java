@@ -14,7 +14,7 @@ public final class StringBuilder {
             new java.lang.StringBuilder(1024);
 
     /** returns a the instance of the string builder, resetted, and locks it.
-     * 
+     *
      * @return
      */
     public static java.lang.StringBuilder GetStringBuilder ()

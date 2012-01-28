@@ -41,7 +41,7 @@ public final class ProjectLoader {
         final String                solutionName        = solutionLoadedData.n();
         final PathResolver          pathResolver        = solutionLoadedData.r();
         final Path                  solutionDirectory   = pathResolver.GetSolutionDirectory();
-        
+
         for (   final Entry<String, Map<ProjectId, ProjectConfigurationEntry>> solConfEntry:
                 configurationManger.GetConfigurations().entrySet())
         {

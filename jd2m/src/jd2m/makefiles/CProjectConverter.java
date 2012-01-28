@@ -78,7 +78,7 @@ public final class CProjectConverter {
         AllTargetName, ObjectsTargetName, DirsTargetName,
         TargetTargetName, DepsTargetName, CleanTargetName,
         RcleanTargetName };
-    
+
     private static final String PHONY               = ".PHONY";
 
     private static final String PredefinedAllAndObjectsTarget =
@@ -160,17 +160,17 @@ public final class CProjectConverter {
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    
+
     private void _writeFlags ()
     {
         _writeCppFlags();
         _writeLdFlags();
         _writeCxxAndArFlags();
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    
+
     private void _writeCppFlags ()
     {
         _u_writeVariable(       out,
@@ -239,7 +239,7 @@ public final class CProjectConverter {
         //
         _u_endOfVariable(out);
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
@@ -248,7 +248,7 @@ public final class CProjectConverter {
         out.println(PredefinedCXXFLAGS);
         out.println(PredefinedARFLAGS);
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -404,7 +404,7 @@ public final class CProjectConverter {
         }
         _u_writeTargetDependency(out, OBJECTS_VAR);
         out.println();
-        
+
         final StringBuilder sb = GetStringBuilder();
         switch (project.GetType()) {
             case DynamicLibrary:
@@ -468,7 +468,7 @@ public final class CProjectConverter {
     private void _writeEachObjectTarget ()
     {
         final StringBuilder sb = GetStringBuilder();
-        
+
         for (final Entry<Path, Path> producable: producables.entrySet()) {
             final Path sourcePath = producable.getKey();
             final Path producablePath = producable.getValue();
@@ -644,7 +644,7 @@ public final class CProjectConverter {
                             final Map<String, Iterable<String>> depsCleanCommands,
                             final int numberOfDependencies,
                             final String makefileName)
-    {   
+    {
         for (final ProjectId depId: deps) {
             final CProject depProject = csolution.GetProject(depId);
             final String depName = depProject.GetName().StringValue();
@@ -675,7 +675,7 @@ public final class CProjectConverter {
         assert depsCleanCommands.size() == numberOfDependencies;
     }
     // -----
-    
+
     private interface ValuePreprocessor {
         String process (String value);
     }

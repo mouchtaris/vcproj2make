@@ -15,7 +15,7 @@ public:
 	void SetX(float x)
 		{ Vector::x = x; }
 
-	void operator ++ (void) const { 
+	void operator ++ (void) const {
 	}
 
 private:

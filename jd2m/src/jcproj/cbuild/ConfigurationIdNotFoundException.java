@@ -9,7 +9,7 @@ public class ConfigurationIdNotFoundException extends RuntimeException {
 	public ConfigurationIdNotFoundException (final String msg) {
 		super(msg);
 	}
-	
+
 	public ConfigurationIdNotFoundException (final String msg, final Throwable cause) {
 		super(msg, cause);
 	}

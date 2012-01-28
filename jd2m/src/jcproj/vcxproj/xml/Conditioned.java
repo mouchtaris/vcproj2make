@@ -6,7 +6,7 @@ package jcproj.vcxproj.xml;
  * @author amalia
  */
 public interface Conditioned {
-    
-    String GetCondition ();
-    
+
+	String GetCondition ();
+
 } // interface Conditioned

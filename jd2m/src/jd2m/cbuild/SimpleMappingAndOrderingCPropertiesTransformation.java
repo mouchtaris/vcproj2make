@@ -18,7 +18,7 @@ import jd2m.cbuild.exceptions.SimpleMappingAndOrderingCPropertiesTransformationE
  * <p>A {@code null} ordering value implies that the mappable of the given mapping
  * does not take part in the ordering and, therefore, will be placed before
  * any orderable mappable.</p>
- * 
+ *
  * @author muhtaris
  */
 public class SimpleMappingAndOrderingCPropertiesTransformation
@@ -76,7 +76,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     // -----
-    
+
     public void SetLibraryOrderingValue (final String lib, final int value) {
         _u_addMappingIfNotExistent(_libsValues, lib, value);
     }
@@ -92,9 +92,9 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     public void SetIncludeDirectoryOrderingValue (final Path d, final int v) {
         _u_addMappingIfNotExistent(_incldirsValues, d, v);
     }
-    
+
     // -----
-    
+
     public boolean LibraryHasMapping (final String lib) {
         return _libMappings.containsKey(lib);
     }
@@ -216,7 +216,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
     }
 
     // -----
-    
+
     @Override
     public CProperties ApplyTo (final CProperties props) {
         final CProperties result = new CProperties();
@@ -315,7 +315,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformation
             final int result = value1.compareTo(value2);
             return result;
         }
-        
+
     }
 
     // -------------------------------------

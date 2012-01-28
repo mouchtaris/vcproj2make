@@ -48,7 +48,7 @@ final class WxLibrariesCPropertiesTrasformation extends
         // TODO complete linux wx lib ordering
         OrderingMapping = unmodifiableMap(orderingMapping);
     }
-    
+
 
     public WxLibrariesCPropertiesTrasformation () {
         for (final Entry<String, String> libMapping: WinToLinuxNames.entrySet())

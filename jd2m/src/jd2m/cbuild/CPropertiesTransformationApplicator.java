@@ -33,10 +33,10 @@ public final class CPropertiesTransformationApplicator {
 
         final int replacementsSize = replacements.size();
         assert replacementsSize == oldSize;
-        
+
         props.clear();
         assert props.isEmpty();
-        
+
         props.addAll(replacements);
         assert props.size() == oldSize;
     }

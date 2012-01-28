@@ -25,5 +25,5 @@ public final class ProjectConfigurationEntry {
     public String GetConfigurationName() {
         return configurationName;
     }
-    
+
 }

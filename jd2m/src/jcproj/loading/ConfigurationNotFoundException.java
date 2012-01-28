@@ -18,5 +18,5 @@ public class ConfigurationNotFoundException extends RuntimeException {
 	public ConfigurationNotFoundException () {
 	}
 
-	
+
 }

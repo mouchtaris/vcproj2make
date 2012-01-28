@@ -17,7 +17,7 @@ public final class SingleValueIterable<T> implements Iterable<T> {
     public Iterator<T> iterator () {
         return new Iterator<T>() {
             private boolean consumed = false;
-            
+
             @Override
             public boolean hasNext() {
                 final boolean result = !consumed;

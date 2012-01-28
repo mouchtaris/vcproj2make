@@ -25,7 +25,7 @@ public final class ConfigurationManager {
                                                 final String projConfName)
     {
         final Map<ProjectId, ProjectConfigurationEntry> solConf = _configurations.get(solConfName);
-        
+
         if (solConf != null) {
             final ProjectId projId = ProjectId.GetIfExists(projIdStr);
             if (projId == null)
@@ -43,7 +43,7 @@ public final class ConfigurationManager {
     {
         boolean result = true;
         final Map<ProjectId, ProjectConfigurationEntry> solutionRegistrations = _configurations.get(solConf);
-        
+
         if (solutionRegistrations == null)
             result = false;
         else {
@@ -74,7 +74,7 @@ public final class ConfigurationManager {
     public Map<String, Map<ProjectId, ProjectConfigurationEntry>> GetConfigurations () {
         return unmodifiableMap(_configurations);
     }
-    
-    
+
+
     private static final Logger LOG = Logger.getLogger(ConfigurationManager.class.getName());
 }

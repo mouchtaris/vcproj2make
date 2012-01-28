@@ -20,7 +20,7 @@ public final class PathHelper {
     }
 
     /**
-     * 
+     *
      * @param pathname
      * @return
      * @deprecated Why do you need a path?
@@ -30,11 +30,11 @@ public final class PathHelper {
         final Path result = Paths.get(pathname);
         return result;
     }
-    
+
     /**
      * Checks if the given path could be a windows path. A windows path will
      * not contain a forward slash.
-     * 
+     *
      * @param pathname
      * @return {@code pathname.indexOf('/') == -1}
      */
@@ -43,7 +43,7 @@ public final class PathHelper {
         boolean result = slashIndex == -1;
         return result;
     }
-    
+
     /**
      * Checks if the given path is ".", ".." or ends with a forward slash
      * ('/').
@@ -56,11 +56,11 @@ public final class PathHelper {
         final boolean   b01         = lastChar == '/';
         return b00 || b01;
     }
-    
+
     /**
      * Checks if the given path is ".", ".." or ends with a backward slash
      * ('\\').
-     * 
+     *
      * @param pathname
      * @return {@link #IsUnisexDirectory IsUnisexDirectory()} {@code || lastChar == '\\' }
      */
@@ -75,12 +75,12 @@ public final class PathHelper {
      * Checks that the given path does not end with a Unix path separator
      * ('/') and that it has an extension, if {@code withExtension} is
      * {@code true}.
-     * 
+     *
      * @param pathname
      * @param withExtension
      * @return
      * @deprecated use {@link #IsUnixDirectory}
-     */    
+     */
     @Deprecated
     public static boolean IsFile (  final String pathname,
                                     final boolean withExtension)
@@ -106,7 +106,7 @@ public final class PathHelper {
             }
             result = result && hasExtension;
         }
-        
+
         return result;
     }
 
@@ -168,7 +168,7 @@ public final class PathHelper {
      * <li> {@link #CouldBeWindowsPath CouldBeWindowsPath(pathname)} </li>
      * </ol></p>
      * @param pathname
-     * @return 
+     * @return
      */
     public static String UnixifyPath (final String pathname) {
         assert CouldBeWindowsPath(pathname);
@@ -179,7 +179,7 @@ public final class PathHelper {
     /**
      * Strips the extension from the given path (which may be a full path,
      * including directories).
-     * 
+     *
      * @param pathname
      * @return the pathname stripped of its extension
      */
@@ -194,7 +194,7 @@ public final class PathHelper {
     /**
      * Fetches the extension of the given path, which may be a full path
      * (including directories).
-     * 
+     *
      * @param pathname
      * @return the extension of the given path
      */
@@ -208,7 +208,7 @@ public final class PathHelper {
 
     /**
      * Replaces all "." and ".." with "_" and "__", respectively.
-     * 
+     *
      * @param pathname
      * @return a path without upward elements
      */
@@ -218,9 +218,9 @@ public final class PathHelper {
         final String result = level1;
         return result;
     }
-    
+
     /**
-     * 
+     *
      * @param pathname
      * @return {@code IsUnix() && pathname[0] == '/'}
      */
@@ -229,7 +229,7 @@ public final class PathHelper {
         final boolean isabsolute = pathname.charAt(0) == '/';
         return isunix && isabsolute;
     }
-    
+
     public static boolean IsAbsoluteWindowsPath (final String pathname) {
         final boolean iswindows     = CouldBeWindowsPath(pathname);
         final boolean isabsolute0   = pathname.charAt(0) == '\\';

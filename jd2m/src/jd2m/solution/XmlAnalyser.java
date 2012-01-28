@@ -139,7 +139,7 @@ final class XmlAnalyser {
                 }
             }
         }
-        
+
         private boolean _globalVisited = false;
         void VisitGlobal (final Node global) {
             assert global.getNodeType() == Node.ELEMENT_NODE;
@@ -296,7 +296,7 @@ final class XmlAnalyser {
                             args.pathResolver).
                 VisitDocument(doc);
     }
-    
+
     static void ParseXML (  final InputStream ins,
                             final XmlAnalyserArguments args)
     {

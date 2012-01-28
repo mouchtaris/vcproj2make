@@ -9,7 +9,7 @@ public class ConfigurationIdReregisteredException extends RuntimeException {
 	public ConfigurationIdReregisteredException (final String msg) {
 		super(msg);
 	}
-	
+
 	public ConfigurationIdReregisteredException (final String msg, final Throwable cause) {
 		super(msg, cause);
 	}

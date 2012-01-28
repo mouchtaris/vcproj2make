@@ -1,4 +1,4 @@
-﻿function foreacharg     (args, f) 
+﻿function foreacharg     (args, f)
 function println        (...)
 function printlns       (...)
 function printsec       (...)
@@ -8,7 +8,7 @@ function islinux
 function deltaconfiguration
 function isdebug
 function isrelease
-function libifyname     (filename) 
+function libifyname     (filename)
 function del            (delegator, delegate)
 function loadlibs
 function libsloaded
@@ -49,7 +49,7 @@ function argspopback                    (args, popnum)
 function argspopfront                   (args, popnum)
 function fcomposition                   (f1, f2)                        // f1(f2(...))
 function fncomposition                  (f1, f2, ...)                   // f1(f2(f3(... fn(...) ... )))
-function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member 
+function membercalltransformation       (object, membername, args)      // "transforms" the given value (object) by calling its member
                                                                         // in the slot with the given membername, passing to it the expanded args
 function membercalltransformer          (membername, args)              // returns a functor that takes an object and does what membercalltransformation does
 function memberaccesstranformer         (memberindex)                   // returns a functor that takes an object and returns the element found at index "memberindex"
@@ -241,8 +241,8 @@ function prototypesClashForAnyMixIn             (object, newMixInPrototype)
 function mixinRequirementsFulfilledByAnyMixIn   (object, newMixInRequirements)
 function mixin                                  (newInstanceState, mixin_instance, mixin_prototype)
 //
-function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields)  
-                Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields) 
+function Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields)
+                Class_checkedStateInitialisation(newObjectInstance, validFieldsNames, fields)
                         newObjectInstance: the new object instance whose state will be initialised
                         validFieldsNames : a delta object with all the valid fields' names (in normal form)
                         fields           : a delta object which maps field-names to values
@@ -298,7 +298,7 @@ function mixinObject                (newInstance, newInstanceStateFields, newIns
 function unmixinObject              (instance)
 function Object
 function Objcet_isObjectClass       (class)
-function Object_getInstanceCounters 
+function Object_getInstanceCounters
 
 //////////////////////////////
 // *** class Class - hand made
@@ -357,7 +357,7 @@ function obj_load_delta    (core)
 
 //
 function produceVMFunctionInstaller (vm, append_f)           // writes a function that installs all functions of the given VM to a
-                                                             // a given object, considering them defined in global scope of the 
+                                                             // a given object, considering them defined in global scope of the
                                                              // same source file.
 
 
@@ -410,7 +410,7 @@ function Path_fromPath    (path, isWindowsPath)    "path" can be a deltastring o
                                                     absolutity by ::file_isabsolutepath.
 function Path_castFromPath(path, isWindowsPath)    same for "castFromPath" but if passed argument is a Path instance
                                                    already, it is returned as-is.
-                                    
+
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -452,7 +452,7 @@ function Path_castFromPath(path, isWindowsPath)    same for "castFromPath" but i
 ////////////////////////////////////////////////////////////////////////
 enum ProjectType: StaticLibrary
                   DynamicLibrary
-                  Executable 
+                  Executable
 function ProjectType_isValid(type)
 
 ////////////////////////////////////////////////////////////////////////
@@ -489,7 +489,7 @@ function ProjectType_isValid(type)
 //       A programming project, containing source fileds, include directories, and
 //     dependency subprojects.
 //     Subproject's location is interpreted as relative to this project's location.
-//       "Project manifestation" (or simply "manifestation") is the concept of this 
+//       "Project manifestation" (or simply "manifestation") is the concept of this
 //     projet object manifesting as a series of files on the filesystem which
 //     represent "project files" of a building system or another. Manifestations are
 //     identified by string identifiers (for e.x., Makefile, VS, etc).
@@ -528,7 +528,7 @@ function ProjectType_isValid(type)
 //         - addProjectProperties(projectProperties:CProjectProperties)
 //               adds the given project property instance as applied properties to this project.
 //         - ProjectProperties
-//               returns a wrapped_list with all the 
+//               returns a wrapped_list with all the
 //         - setManifestationConfiguration(manifestation_id:deltasting, config:delta object)
 //               sets the manifestation specific options for the given manifestation.
 //               Any previous configuration added for this manifestation is overwritten.
@@ -561,7 +561,7 @@ function ProjectType_isValid(type)
 //               returns a deltastring with the extension that produced object files of this
 //               project will have.
 //         - DependencyExtension
-//               returns a deltastring with the extension that produced dependency files of 
+//               returns a deltastring with the extension that produced dependency files of
 //               this project will have.
 //     <^> state fields
 //         01. CProject_type
@@ -681,7 +681,7 @@ function ProjectType_isValid(type)
 // A simple holder for ProjectEntry-s.
 // --------------------------------------------------------------
 //     <^> createInstance( )
-//     <^> Mixes in: 
+//     <^> Mixes in:
 //     <^> Public methods
 //         - addProjectEntry(projectEntry)
 //         - getProjectEntry(projectID)
@@ -724,8 +724,8 @@ function SolutionData_make(
 //         - eval(varname:deltastring)
 //               returns a deltastring with the value of the given
 //               variable.
-//         - setConfigurationName(configurationName:deltastring) 
-//         - setProjectName(projectName) 
+//         - setConfigurationName(configurationName:deltastring)
+//         - setProjectName(projectName)
 //         - setOutdir(outdir)
 //     <^> state fields
 //         00. VariableEvaluator_variables
@@ -743,7 +743,7 @@ function SolutionData_make(
 // A wrapper that adds standard functionality to XML loaded objects.
 // --------------------------------------------------------------
 //     <^> createInstance( name, xml_object )
-//     <^> Mixes in: 
+//     <^> Mixes in:
 //     <^> Public methods
 //         - Name
 //               returns the name of this node

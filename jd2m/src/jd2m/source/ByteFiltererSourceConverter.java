@@ -17,7 +17,7 @@ public class ByteFiltererSourceConverter extends AbstractSourceConverter {
         int bytesread;
         while ((bytesread = in.read(buf)) != -1) {
             assert bytesread >= 0;
-            
+
             int fallingSpace = 0;
             int i = 0;
             while (i < bytesread - fallingSpace) {

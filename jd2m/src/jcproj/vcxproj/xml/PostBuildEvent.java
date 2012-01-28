@@ -5,11 +5,11 @@ package jcproj.vcxproj.xml;
  * @author TURBO_X
  */
 public class PostBuildEvent extends BuildEvent {
-    
-    ///////////////////////////////////////////////////////
-    // constructors
-    public PostBuildEvent (final String command) {
-        super(command);
-    }
+
+	///////////////////////////////////////////////////////
+	// constructors
+	public PostBuildEvent (final String command) {
+		super(command);
+	}
 
 }

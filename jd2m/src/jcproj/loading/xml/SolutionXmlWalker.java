@@ -24,20 +24,20 @@ import static jcproj.util.xml.XmlTreeVisitor.MakeChildrenIterator;
  * @author amalia
  */
 public class SolutionXmlWalker {
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitDocument (final Node doc) throws XmlWalkingException {
 		VisitRoot(doc.getFirstChild());
 	}
-	
+
 	///////////////////////////////////////////////////////
 
 	public void VisitRoot (final Node root) throws XmlWalkingException {
 		assert root.getNodeName().equals("VisualStudioSolution");
 
 		boolean visitedGlobal = false;
-		
+
 		for (Node child : MakeChildrenIterator(root))
 			if (child.getNodeType() == Node.ELEMENT_NODE) {
 				final String childnodename = child.getNodeName();
@@ -53,9 +53,9 @@ public class SolutionXmlWalker {
 					throw new XmlWalkingException(root, child);
 			}
 	}
-  
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitGlobal (final Node global) throws XmlWalkingException {
 		assert global.getNodeType() == Node.ELEMENT_NODE;
 		assert global.getNodeName().equals("Global");
@@ -64,7 +64,7 @@ public class SolutionXmlWalker {
 		boolean visitedSolutions			= false;
 		boolean visitedProjects				= false;
 		boolean visitedSolutionProperties	= false;
-		
+
 		for (Node node : MakeChildrenIterator(global))
 			if (node.getNodeName().equals("GlobalSection")) {
 				final String type = node.getAttributes().getNamedItem("type").getNodeValue();
@@ -95,9 +95,9 @@ public class SolutionXmlWalker {
 
 		assert visitedSolutions && visitedProjects;
 	}
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitSolutionProperties (final Node solProps) throws XmlWalkingException {
 		// typical ignorer
 		for (Node pair : MakeChildrenIterator(solProps))
@@ -110,38 +110,38 @@ public class SolutionXmlWalker {
 					throw new XmlWalkingException(solProps, pair);
 			}
 	}
-			
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitSolutionConfigurationPlatforms (final Node solConfPlats) {
 		for (Node pair : MakeChildrenIterator(solConfPlats))
 			if (pair.getNodeType() == Node.ELEMENT_NODE)
 				manager.RegisterSolutionConfiguration(configIdManager.Register(ConfigurationId.Parse(GetPairValue(pair))));
 	}
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitProjectConfigurationPlatforms (final Node projConfPlats) {
 		for (Node pair : MakeChildrenIterator(projConfPlats))
 			if (pair.getNodeType() == Node.ELEMENT_NODE) {
 				final String left = GetPairLeft(pair);
 				final ConfigurationId solconfigid = configIdManager.Get(ConfigurationId.ParseToId(GetPairRight(pair)));
-				
+
 				final String[] lefts = Patterns.Dot().split(left, 0);
 				if (lefts.length == 4) {
 					assert lefts[2].equals("Build");
 					assert lefts[3].equals("0");
-					
+
 					final ProjectGuid	projid			= ProjectGuidFactory.GetSingleton().Get(lefts[0]);
 					final String		projconfigid	= lefts[1];
-					
+
 					manager.RegisterProjectEntryUnder(solconfigid, entries.get(projid).clone(projconfigid, true));
 				}
 			}
 	}
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	public void VisitProject (final Node node) {
 		final NamedNodeMap attrs = node.getAttributes();
 		final ProjectGuid projid = ProjectGuidFactory.GetSingleton().Create(attrs.getNamedItem("id").getNodeValue());
@@ -149,12 +149,12 @@ public class SolutionXmlWalker {
 		final ProjectConfigurationEntry previous = entries.put(projid, entry);
 		assert previous == null;
 	}
-			
+
 	///////////////////////////////////////////////////////
-	
+
 	///////////////////////////////////////////////////////
 	// Accessors
-	
+
 	public ConfigurationManager GetConfigurationManager () {
 		return manager;
 	}
@@ -162,13 +162,13 @@ public class SolutionXmlWalker {
 	///////////////////////////////////////////////////////
 	// state
 	private final ConfigurationManager							manager = new ConfigurationManager();
-	private final Map<ProjectGuid, ProjectConfigurationEntry>	entries = new HashMap<ProjectGuid, ProjectConfigurationEntry>(100);	
+	private final Map<ProjectGuid, ProjectConfigurationEntry>	entries = new HashMap<ProjectGuid, ProjectConfigurationEntry>(100);
 	private final ConfigurationIdManager						configIdManager;
-	
+
 	///////////////////////////////////////////////////////
 	// constructors
 	public SolutionXmlWalker (final ConfigurationIdManager configIdManager) {
 		this.configIdManager = configIdManager;
 	}
-	
+
 } // class SolutionXmlWalker

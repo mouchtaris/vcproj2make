@@ -197,7 +197,7 @@ final class XmlAnalyser {
                 _u_addPropertySheets(   builder, propertySheets,
                                         outputDirectory, type);
             }
-            
+
             //
             // the default propject properties
             final CProperties props = new CProperties();
@@ -344,7 +344,7 @@ final class XmlAnalyser {
             if (vsProjType.equals("4")) result = CProjectType.StaticLibrary;
             else
                 throw new RuntimeException("Unknown VSProjType: " + vsProjType);
-            
+
             return result;
         }
         private static boolean _u_PropertySheetIsIgnorable (final String psheet) {
@@ -578,7 +578,7 @@ final class XmlAnalyser {
         final Map<String, CProject> result = new HashMap<String, CProject>(5);
         for (final Entry<String, CProjectBuilder> entry: builders.entrySet())
             result.put(entry.getKey(), entry.getValue().MakeProject());
-        
+
         return result;
     }
 
@@ -650,7 +650,7 @@ final class XmlAnalyser {
     }
 
     // ---------------------------
-    
+
     private static final Logger LOG = Logger.getLogger(XmlAnalyser.class.getName());
     private XmlAnalyser () {
     }

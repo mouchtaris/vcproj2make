@@ -10,7 +10,7 @@ public class ProjectEntryHolder implements Iterable<ProjectEntry> {
     private final Map<String, ProjectEntry> _entries = new HashMap<String, ProjectEntry>(100);
 
     public void Add (final ProjectEntry entry) {
-        final Object previous = 
+        final Object previous =
                 _entries.put(entry.GetIdentity().StringValue(), entry);
         assert previous == null;
     }

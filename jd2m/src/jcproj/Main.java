@@ -26,12 +26,12 @@ import org.xml.sax.SAXException;
  * @author amalia
  */
 public class Main {
-	
+
 	@SuppressWarnings("UseOfSystemOutOrSystemErr")
 	public static void main (final String[] args) {
 		Logger.getLogger("jcproj").setLevel(Level.INFO);
 		ProjectGuidFactory.SingletonCreate();
-		
+
 		if (args.length == 0)
 			System.out.println("solutionPathname");
 		else {
@@ -78,5 +78,5 @@ public class Main {
 
 	private Main() {
 	}
-	
+
 }

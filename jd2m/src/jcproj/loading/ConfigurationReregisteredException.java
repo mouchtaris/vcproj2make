@@ -17,6 +17,6 @@ public class ConfigurationReregisteredException extends RuntimeException {
 
 	public ConfigurationReregisteredException () {
 	}
-	
-	
+
+
 }

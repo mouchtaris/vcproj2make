@@ -10,39 +10,39 @@ import java.util.List;
  * @author amalia
  */
 public class ClCompile extends Item {
-    
-    ///////////////////////////////////////////////////////
-    
-    public List<String> GetExcludeFromBuildConditions () {
-        return Collections.unmodifiableList(excludeFromBuildConditions);
-    }
-    
-    ///////////////////////////////////////////////////////
-    
-    public void AddExcludeFromBuildCondition (final String condition) {
-        excludeFromBuildConditions.add(condition);
-    }
-    
-    ///////////////////////////////////////////////////////
-    
-    public void AddPrecompiledHeaderCreationCondition (final String condition) {
-        final boolean added = precompiledHeaderCreationConditions.add(condition);
-        assert added;
-    }
-    
-    ///////////////////////////////////////////////////////
-    
-    public ClCompile (final String include) {
-        super(include);
-    }
-    
-    ///////////////////////////////////////////////////////
-    // Private
-    
-    ///////////////////////////////////////////////////////
-    // State
-    
-    private final List<String>  excludeFromBuildConditions          = new LinkedList<String>();
-    private final List<String>  precompiledHeaderCreationConditions = new LinkedList<String>();
-    
+
+	///////////////////////////////////////////////////////
+
+	public List<String> GetExcludeFromBuildConditions () {
+		return Collections.unmodifiableList(excludeFromBuildConditions);
+	}
+
+	///////////////////////////////////////////////////////
+
+	public void AddExcludeFromBuildCondition (final String condition) {
+		excludeFromBuildConditions.add(condition);
+	}
+
+	///////////////////////////////////////////////////////
+
+	public void AddPrecompiledHeaderCreationCondition (final String condition) {
+		final boolean added = precompiledHeaderCreationConditions.add(condition);
+		assert added;
+	}
+
+	///////////////////////////////////////////////////////
+
+	public ClCompile (final String include) {
+		super(include);
+	}
+
+	///////////////////////////////////////////////////////
+	// Private
+
+	///////////////////////////////////////////////////////
+	// State
+
+	private final List<String>	excludeFromBuildConditions			= new LinkedList<String>();
+	private final List<String>	precompiledHeaderCreationConditions = new LinkedList<String>();
+
 } // class ClCompile

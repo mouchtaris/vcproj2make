@@ -10,7 +10,7 @@ public final class VariableEvaluator {
     public static final String ConfigurationName= "ConfigurationName";
     public static final String SolutionDir      = "SolutionDir";
     public static final String ProjectName      = "ProjectName";
-    
+
     private final Map<String, String> _values = new HashMap<String, String>(20);
 
     public VariableEvaluator (final String solutionDirectory) {
@@ -45,7 +45,7 @@ public final class VariableEvaluator {
                 variable.equals("TAO_ROOT");
         return result;
     }
-    
+
     // ----------------------
     // ----- Utilities ------
     public String EvaluateString (final String str)

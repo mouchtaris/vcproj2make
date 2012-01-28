@@ -18,5 +18,5 @@ public class ProjectConfigurationEntryReaddedException extends RuntimeException 
 	public ProjectConfigurationEntryReaddedException () {
 	}
 
-	
+
 }

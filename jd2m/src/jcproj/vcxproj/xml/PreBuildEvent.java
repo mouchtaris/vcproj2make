@@ -5,10 +5,10 @@ package jcproj.vcxproj.xml;
  * @author TURBO_X
  */
 public class PreBuildEvent extends BuildEvent {
-    
-    ///////////////////////////////////////////////////////
-    // constructors
-    public PreBuildEvent (final String command) {
-        super(command);
-    }
+
+	///////////////////////////////////////////////////////
+	// constructors
+	public PreBuildEvent (final String command) {
+		super(command);
+	}
 }

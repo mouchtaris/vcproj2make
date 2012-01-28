@@ -5,21 +5,21 @@ package jcproj.vcxproj.xml;
  * @author TURBO_X
  */
 public class BuildEvent extends ItemDefinition {
-    
-    ///////////////////////////////////////////////////////
-    // state
-    private final String command;
-    
-    ///////////////////////////////////////////////////////
-    // constructors
-    public BuildEvent (final String command) {
-        this.command = command;
-    }
-    
-    ///////////////////////////////////////////////////////
-    //
-    public String GetCommand () {
-        return command;
-    }
-    
+
+	///////////////////////////////////////////////////////
+	// state
+	private final String command;
+
+	///////////////////////////////////////////////////////
+	// constructors
+	public BuildEvent (final String command) {
+		this.command = command;
+	}
+
+	///////////////////////////////////////////////////////
+	//
+	public String GetCommand () {
+		return command;
+	}
+
 }

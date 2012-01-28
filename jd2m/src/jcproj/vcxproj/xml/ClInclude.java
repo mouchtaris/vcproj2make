@@ -6,13 +6,13 @@ package jcproj.vcxproj.xml;
  * @author amalia
  */
 public class ClInclude extends Item {
-    
-    ///////////////////////////////////////////////////////
-    
-    public ClInclude (final String include) {
-        super(include);
-    }
-    
-    ///////////////////////////////////////////////////////
-    
+
+	///////////////////////////////////////////////////////
+
+	public ClInclude (final String include) {
+		super(include);
+	}
+
+	///////////////////////////////////////////////////////
+
 } // class ClInclude

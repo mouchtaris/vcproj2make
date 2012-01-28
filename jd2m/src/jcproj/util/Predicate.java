@@ -6,5 +6,5 @@ package jcproj.util;
  * @author muhtaris
  */
 public interface Predicate<T> {
-    boolean HoldsFor (T something);
+	boolean HoldsFor (T something);
 }

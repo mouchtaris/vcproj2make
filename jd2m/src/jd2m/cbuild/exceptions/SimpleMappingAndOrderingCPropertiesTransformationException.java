@@ -8,7 +8,7 @@ public class SimpleMappingAndOrderingCPropertiesTransformationException
     extends RuntimeException
 {
     private static final long serialVersionUID = 234782l;
-    
+
     public SimpleMappingAndOrderingCPropertiesTransformationException (final Throwable cause) {
         super(cause);
     }

@@ -7,7 +7,7 @@
 
 namespace isi {
 
-	
+
 	class LambdaExpression {
 	public:
 		virtual void operator >> (std::ostream&) const throw() = 0;
