@@ -1,4 +1,4 @@
-package jcproj.loading.xml;
+package jcproj.loading.vc.xml;
 
 import java.util.Objects;
 import java.util.logging.Level;

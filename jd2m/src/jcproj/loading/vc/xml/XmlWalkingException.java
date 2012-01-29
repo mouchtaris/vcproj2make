@@ -1,4 +1,4 @@
-package jcproj.loading.xml;
+package jcproj.loading.vc.xml;
 
 public class XmlWalkingException extends Exception {
 	private static final long serialVersionUID = 28L;

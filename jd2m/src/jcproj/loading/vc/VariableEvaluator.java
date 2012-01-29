@@ -1,4 +1,4 @@
-package jcproj.loading;
+package jcproj.loading.vc;
 
 import java.util.HashMap;
 import java.util.HashSet;

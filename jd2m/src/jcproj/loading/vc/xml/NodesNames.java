@@ -1,4 +1,4 @@
-package jcproj.loading.xml;
+package jcproj.loading.vc.xml;
 
 interface NodesNames {
 	public static final String ItemGroup					= "ItemGroup";

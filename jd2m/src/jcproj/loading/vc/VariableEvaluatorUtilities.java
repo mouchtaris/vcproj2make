@@ -1,4 +1,4 @@
-package jcproj.loading;
+package jcproj.loading.vc;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

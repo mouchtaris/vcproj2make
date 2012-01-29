@@ -1,4 +1,4 @@
-package jcproj.loading;
+package jcproj.loading.vc;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,8 +6,8 @@ import java.io.InputStream;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jcproj.cbuild.ConfigurationIdManager;
-import jcproj.loading.xml.SolutionXmlWalker;
-import jcproj.loading.xml.XmlWalkingException;
+import jcproj.loading.vc.xml.SolutionXmlWalker;
+import jcproj.loading.vc.xml.XmlWalkingException;
 import jcproj.vcxproj.ProjectGuidManager;
 import org.xml.sax.SAXException;
 

@@ -1,6 +1,7 @@
-package jcproj.loading;
+package jcproj.loading.vc;
 
 import java.util.Objects;
+import jcproj.cbuild.ConfigurationId;
 import jcproj.vcxproj.ProjectGuid;
 
 /**
@@ -25,15 +26,15 @@ public final class ProjectConfigurationEntry implements Cloneable {
 
 	///////////////////////////////////////////////////////
 
-	public ProjectGuid	GetProjectId ()			{ return id			; }
-	public String		GetRelativePath ()		{ return relpath	; }
-	public String		GetConfigurationId ()	{ return configid	; }
-	public boolean		IsBuildable ()			{ return buildable	; }
+	public ProjectGuid		GetProjectId ()			{ return id			; }
+	public String			GetRelativePath ()		{ return relpath	; }
+	public ConfigurationId	GetConfigurationId ()	{ return configid	; }
+	public boolean			IsBuildable ()			{ return buildable	; }
 
 	///////////////////////////////////////////////////////
 
-	public void SetConfigurationId (final String configurationId)	{ assert configid == null; configid = configurationId; }
-	public void SetBuildable ()										{ assert !buildable; buildable = true; }
+	public void SetConfigurationId (final ConfigurationId configurationId)	{ assert configid == null; configid = configurationId; }
+	public void SetBuildable ()												{ assert !buildable; buildable = true; }
 
 	///////////////////////////////////////////////////////
 
@@ -52,7 +53,7 @@ public final class ProjectConfigurationEntry implements Cloneable {
 	///////////////////////////////////////////////////////
 
 	@SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
-	public ProjectConfigurationEntry clone (final String configurationId, final boolean buildable) {
+	public ProjectConfigurationEntry clone (final ConfigurationId configurationId, final boolean buildable) {
 		final ProjectConfigurationEntry result = clone();
 		result.buildable = buildable;
 		result.configid = configurationId;
@@ -63,7 +64,7 @@ public final class ProjectConfigurationEntry implements Cloneable {
 
 	@Override
 	public String toString () {
-		return "[" + id.toString() + ":" + configid + ":" + relpath + ":" + buildable + "]";
+		return "ProjectConfigurationEntry[" + id.toString() + ":" + configid + ":" + relpath + ":" + buildable + "]";
 	}
 
 	///////////////////////////////////////////////////////
@@ -101,6 +102,6 @@ public final class ProjectConfigurationEntry implements Cloneable {
 	// State
 	private final ProjectGuid	id;
 	private final String		relpath;
-	private String				configid;
+	private ConfigurationId		configid;
 	private boolean				buildable;
 } // class ProjectConfigurationEntry

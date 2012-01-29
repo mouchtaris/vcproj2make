@@ -1,11 +1,11 @@
-package jcproj.loading.xml;
+package jcproj.loading.vc.xml;
 
 import java.util.HashMap;
 import java.util.Map;
 import jcproj.cbuild.ConfigurationId;
 import jcproj.cbuild.ConfigurationIdManager;
-import jcproj.loading.ConfigurationManager;
-import jcproj.loading.ProjectConfigurationEntry;
+import jcproj.loading.vc.ConfigurationManager;
+import jcproj.loading.vc.ProjectConfigurationEntry;
 import jcproj.util.Patterns;
 import jcproj.util.xml.XmlTreeVisitor;
 import jcproj.vcxproj.ProjectGuid;
