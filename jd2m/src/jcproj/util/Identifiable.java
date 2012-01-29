@@ -1,5 +1,5 @@
 package jcproj.util;
 
-public interface Identifiable {
-	String GetId ();
+public interface Identifiable<T> {
+	T GetId ();
 }

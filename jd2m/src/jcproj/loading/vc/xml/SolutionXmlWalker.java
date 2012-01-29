@@ -1,11 +1,11 @@
 package jcproj.loading.vc.xml;
 
-import java.util.HashMap;
-import java.util.Map;
 import jcproj.cbuild.ConfigurationId;
 import jcproj.cbuild.ConfigurationIdManager;
 import jcproj.loading.vc.solution.ConfigurationManager;
-import jcproj.loading.vc.solution.ProjectConfigurationEntry;
+import jcproj.loading.vc.solution.ProjectEntry;
+import jcproj.loading.vc.solution.ProjectEntryConfiguration;
+import jcproj.loading.vc.solution.ProjectEntryManager;
 import jcproj.util.Patterns;
 import jcproj.util.xml.XmlTreeVisitor;
 import jcproj.vcxproj.ProjectGuid;
@@ -135,7 +135,8 @@ public class SolutionXmlWalker {
 					final ProjectGuid	projid			= projGuidManager.Get(lefts[0]);
 					final String		projconfigid	= lefts[1];
 
-					manager.RegisterProjectEntryUnder(solconfigid, entries.get(projid).clone(projconfigid, true));
+					final ProjectEntry entry = entries.Get(projid);
+					manager.RegisterProjectEntryUnder(solconfigid, entry, new ProjectEntryConfiguration(true, configIdManager.Get(projconfigid)));
 				}
 			}
 	}
@@ -144,10 +145,7 @@ public class SolutionXmlWalker {
 
 	public void VisitProject (final Node node) {
 		final NamedNodeMap attrs = node.getAttributes();
-		final ProjectGuid projid = projGuidManager.Create(attrs.getNamedItem("id").getNodeValue());
-		final ProjectConfigurationEntry entry = new ProjectConfigurationEntry(projid, attrs.getNamedItem("path").getNodeValue());
-		final ProjectConfigurationEntry previous = entries.put(projid, entry);
-		assert previous == null;
+		entries.Register(new ProjectEntry(projGuidManager.Create(attrs.getNamedItem("id").getNodeValue()), attrs.getNamedItem("path").getNodeValue()));
 	}
 
 	///////////////////////////////////////////////////////
@@ -161,10 +159,10 @@ public class SolutionXmlWalker {
 
 	///////////////////////////////////////////////////////
 	// state
-	private final ConfigurationManager							manager = new ConfigurationManager();
-	private final Map<ProjectGuid, ProjectConfigurationEntry>	entries = new HashMap<ProjectGuid, ProjectConfigurationEntry>(100);
-	private final ConfigurationIdManager						configIdManager;
-	private final ProjectGuidManager							projGuidManager;
+	private final ConfigurationManager		manager = new ConfigurationManager();
+	private final ProjectEntryManager		entries = new ProjectEntryManager();
+	private final ConfigurationIdManager	configIdManager;
+	private final ProjectGuidManager		projGuidManager;
 
 	///////////////////////////////////////////////////////
 	// constructors

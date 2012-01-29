@@ -2,6 +2,7 @@ package jcproj.vcxproj;
 
 import java.util.Objects;
 import jcproj.util.Identifiable;
+import jcproj.util.Singleton;
 
 /**
  *
@@ -10,7 +11,7 @@ import jcproj.util.Identifiable;
  * @author amalia
  */
 @SuppressWarnings("FinalClass")
-public final class ProjectGuid implements Identifiable {
+public final class ProjectGuid extends Singleton<ProjectGuid> implements Identifiable<String> {
 
 	///////////////////////////////////////////////////////
 	// Public fields
@@ -34,6 +35,7 @@ public final class ProjectGuid implements Identifiable {
 	///////////////////////////////////////////////////////
 
 	@SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
+	@Override
 	public boolean Equals (final ProjectGuid other) {
 		return other != null
 				&& Objects.equals(A, other.A)
@@ -42,21 +44,9 @@ public final class ProjectGuid implements Identifiable {
 				&& Objects.equals(D, other.D)
 				&& Objects.equals(E, other.E);
 	}
-
-	///////////////////////////////////////////////////////
-
+	
 	@Override
-	public boolean equals (final Object o) {
-		// based on the assumption that only the factory creates instances:
-		// Equals(other) => equals(other)
-		assert !(getClass().equals(o.getClass()) && Equals((ProjectGuid) o)) || super.equals(o);
-		return super.equals(o);
-	}
-
-	///////////////////////////////////////////////////////
-
-	@Override
-	public int hashCode () {
+	protected int HashCode () {
 		int hash = 3;
 		hash = 97 * hash + (int) (A ^ (A >>> 32));
 		hash = 97 * hash + B;
@@ -122,6 +112,7 @@ public final class ProjectGuid implements Identifiable {
 	// private static utils
 
 	private ProjectGuid (final long a, final int b, final int c, final int d, final long e) {
+		super(ProjectGuid.class);
 		A = a;
 		B = b;
 		C = c;

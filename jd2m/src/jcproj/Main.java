@@ -7,14 +7,14 @@ import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import jcproj.cbuild.ConfigurationId;
-import jcproj.loading.vc.solution.ConfigurationManager;
-import jcproj.loading.vc.solution.ProjectConfigurationEntry;
 import jcproj.loading.vc.ProjectLoader;
+import jcproj.loading.vc.solution.ConfigurationManager;
+import jcproj.loading.vc.solution.ProjectEntry;
+import jcproj.loading.vc.solution.ProjectEntryConfiguration;
 import jcproj.loading.vc.solution.SolutionLoader;
 import jcproj.loading.vc.xml.XmlWalkingException;
 import jcproj.vcxproj.ProjectGuidManager;
@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 public class Main {
 
 	@SuppressWarnings("UseOfSystemOutOrSystemErr")
-	public static void main (final String[] args) {
+	public static void main (final String[] args) throws ParserConfigurationException, SAXException, XmlWalkingException, IOException {
 		Logger.getLogger("jcproj").setLevel(Level.INFO);
 		ProjectGuidManager projGuidManager = new ProjectGuidManager();
 
@@ -58,23 +58,23 @@ public class Main {
 
 			final List<Project> projects = new LinkedList<Project>();
 
-			for (final Map.Entry<ConfigurationId, Set<ProjectConfigurationEntry>> entries : confmanager.GetProjectConfigurationEntries().entrySet())
-				for (final ProjectConfigurationEntry entry : entries.getValue())
+			for (final Map.Entry<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> configuration : confmanager.GetConfiguration().entrySet())
+				for (final Map.Entry<ProjectEntry, ProjectEntryConfiguration> entryconfig: configuration.getValue().entrySet())
 					// care only for VC projects
-					if (entry.GetRelativePath().endsWith(".vcxproj"))
+					if (entryconfig.getKey().GetRelativePath().endsWith(".vcxproj"))
 						try {
-							projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entry.GetRelativePath())), projGuidManager));
+							projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entryconfig.getKey().GetRelativePath())), projGuidManager));
 						} catch (final ParserConfigurationException ex) {
-							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+							throw ex;
 						} catch (final SAXException ex) {
-							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+							throw ex;
 						} catch (final XmlWalkingException ex) {
-							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+							throw ex;
 						} catch (final IOException ex) {
-							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+							throw ex;
 						}
 					else
-						Loagger.log(Level.INFO, "Ignoring project cofiguration entry: {0}", entry);
+						Loagger.log(Level.INFO, "Ignoring project cofiguration entry: {0}", entryconfig.getKey());
 
 			System.out.println(projects);
 		}

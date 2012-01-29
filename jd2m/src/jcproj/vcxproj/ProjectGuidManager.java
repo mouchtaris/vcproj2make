@@ -8,7 +8,13 @@ import jcproj.util.InstanceManager;
  * @data Monday 8th of August 2011
  * @author amalia
  */
-public class ProjectGuidManager extends InstanceManager<ProjectGuid> {
+public class ProjectGuidManager extends InstanceManager<String, ProjectGuid> {
+	
+	///////////////////////////////////////////////////////
+	
+	public ProjectGuidManager () {
+		super(100);
+	}
 
 	///////////////////////////////////////////////////////
 

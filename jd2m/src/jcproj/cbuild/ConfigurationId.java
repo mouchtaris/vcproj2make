@@ -3,7 +3,7 @@ package jcproj.cbuild;
 import jcproj.util.Identifiable;
 import jcproj.util.Patterns;
 
-public class ConfigurationId implements Identifiable {
+public class ConfigurationId implements Identifiable<String> {
 	///////////////////////////////////////////////////////
 	// state
 	private final String build;
