@@ -1,4 +1,4 @@
-package jcproj.loading.vc;
+package jcproj.loading.vc.solution;
 
 import java.util.Objects;
 import jcproj.cbuild.ConfigurationId;

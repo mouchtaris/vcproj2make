@@ -1,4 +1,4 @@
-package jcproj.loading.vc;
+package jcproj.loading.vc.solution;
 
 public class ConfigurationNotFoundException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
