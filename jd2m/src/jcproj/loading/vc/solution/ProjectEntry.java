@@ -30,13 +30,13 @@ public final class ProjectEntry extends Singleton<ProjectEntry> implements Ident
 	public String			GetRelativePath ()		{ return relpath	; }
 
 	///////////////////////////////////////////////////////
-	
+
 	@SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 	@Override // Singleton
 	public boolean Equals (final ProjectEntry other) {
 		return id.equals(other.id) && relpath.equals(other.relpath);
 	}
-	
+
 	@Override // Singleton
 	protected int HashCode () {
 		int hash = 7;
@@ -44,9 +44,9 @@ public final class ProjectEntry extends Singleton<ProjectEntry> implements Ident
 		hash = 11 * hash + (this.relpath != null ? this.relpath.hashCode() : 0);
 		return hash;
 	}
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	@Override // Identifiable
 	public ProjectGuid GetId () {
 		return id;

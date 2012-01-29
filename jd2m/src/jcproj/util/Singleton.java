@@ -1,27 +1,27 @@
 package jcproj.util;
 
 public abstract class Singleton<T> {
-	
+
 	///////////////////////////////////////////////////////
 	// state
 	private final Class<? extends T> subclass;
-	
+
 	///////////////////////////////////////////////////////
 	//
 	/**
 	 * Make a direct state-equality check. No null or class equivalence checks
 	 * required.
-	 * 
+	 *
 	 * @param other cannot be null.
-	 * @return 
+	 * @return
 	 */
 	public abstract boolean Equals (final T other);
 	/**
 	 * Do not call {@link #hasCode}. It relies on this method.
-	 * @return 
+	 * @return
 	 */
 	protected abstract int HashCode ();
-	
+
 	///////////////////////////////////////////////////////
 	// Refining Object
 	@Override
@@ -36,11 +36,11 @@ public abstract class Singleton<T> {
 	public int hashCode () {
 		return HashCode();
 	}
-	
+
 	///////////////////////////////////////////////////////
 	// Protected
 	///////////////////////////////////////////////////////
-	
+
 	///////////////////////////////////////////////////////
 	// Constructors
 	protected Singleton (final Class<? extends T> subclass) {

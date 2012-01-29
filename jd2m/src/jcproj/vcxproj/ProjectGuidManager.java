@@ -9,9 +9,9 @@ import jcproj.util.InstanceManager;
  * @author amalia
  */
 public class ProjectGuidManager extends InstanceManager<String, ProjectGuid> {
-	
+
 	///////////////////////////////////////////////////////
-	
+
 	public ProjectGuidManager () {
 		super(100);
 	}

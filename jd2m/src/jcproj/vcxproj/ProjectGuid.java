@@ -44,7 +44,7 @@ public final class ProjectGuid extends Singleton<ProjectGuid> implements Identif
 				&& Objects.equals(D, other.D)
 				&& Objects.equals(E, other.E);
 	}
-	
+
 	@Override
 	protected int HashCode () {
 		int hash = 3;

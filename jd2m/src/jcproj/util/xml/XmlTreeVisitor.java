@@ -1,6 +1,8 @@
 package jcproj.util.xml;
 
+import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedList;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -39,6 +41,32 @@ public class XmlTreeVisitor {
 		assert left.equals(right);
 
 		return left;
+	}
+
+	///////////////////////////////////////////////////////
+
+	public static int IndexOf (final Node node) {
+		int index = 0;
+		for (Node previous = node.getPreviousSibling(); previous != null; previous = previous.getPreviousSibling())
+			if (previous.getNodeType() == Node.ELEMENT_NODE)
+				++index;
+
+		return index;
+	}
+
+	public static String NodePath (final Node node) {
+		final StringBuilder bob = new StringBuilder(1 << 14);
+
+		final Deque<Node> elements = new LinkedList<Node>();
+		for (Node parent = node; parent != null; parent = parent.getParentNode())
+			elements.push(parent);
+
+		bob.append(elements.pop().toString());
+
+		for (final Node element: elements)
+			bob.append(" > ").append(element.toString()).append("[").append(Integer.toString(IndexOf(element))).append("]");
+
+		return bob.append(": ").toString();
 	}
 
 	///////////////////////////////////////////////////////

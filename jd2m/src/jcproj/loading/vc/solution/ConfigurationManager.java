@@ -12,23 +12,23 @@ import jcproj.cbuild.ConfigurationId;
  * @author amalia
  */
 public class ConfigurationManager {
-	
+
 	///////////////////////////////////////////////////////
 	// State
 	private Map<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> configs = new HashMap<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>>(20);
-	private Map<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> unmodifiables = Collections.unmodifiableMap(configs);
-	
+	private Map<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> unmodifiables = new HashMap<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>>(20);
+
 
 	///////////////////////////////////////////////////////
 
 	public void RegisterSolutionConfiguration (final ConfigurationId configid) throws ConfigurationReregisteredException {
-		Loagger.log(Level.INFO, "Registered solution configuration: {0}", configid);
+		Loagger.log(Level.INFO, "Registered: {0}", configid);
 
 		final HashMap<ProjectEntry, ProjectEntryConfiguration> entries = new HashMap<ProjectEntry, ProjectEntryConfiguration>(50);
 		Object previous = configs.put(configid, entries);
 		if (previous != null)
 			throw new ConfigurationReregisteredException(configid.toString());
-		
+
 		previous = unmodifiables.put(configid, Collections.unmodifiableMap(entries));
 		assert previous == null;
 	}
@@ -40,7 +40,7 @@ public class ConfigurationManager {
 				ConfigurationNotFoundException,
 				ProjectConfigurationEntryReaddedException
 	{
-		Loagger.log(Level.INFO, "Registering project configuration entry {0} under {1}", new Object[]{entry, configid});
+		Loagger.log(Level.INFO, "Registering {0} as {1} under {2}", new Object[]{entry, entryconfig, configid});
 
 		final Map<ProjectEntry, ProjectEntryConfiguration> entries = configs.get(configid);
 		if (entries == null)
@@ -56,9 +56,8 @@ public class ConfigurationManager {
 	/**
 	 * @return Map_of{ Solution_{@link ConfigurationId} => Map_of{ {@link ProjectEntry} => {@link ProjectEntryConfiguration} } }
 	 */
-	@SuppressWarnings("ReturnOfCollectionOrArrayField")
 	public Map<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> GetConfiguration () {
-		return unmodifiables;
+		return Collections.unmodifiableMap(unmodifiables);
 	}
 
 	///////////////////////////////////////////////////////

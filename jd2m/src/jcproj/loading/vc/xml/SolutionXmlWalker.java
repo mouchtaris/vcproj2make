@@ -3,6 +3,7 @@ package jcproj.loading.vc.xml;
 import jcproj.cbuild.ConfigurationId;
 import jcproj.cbuild.ConfigurationIdManager;
 import jcproj.loading.vc.solution.ConfigurationManager;
+import jcproj.loading.vc.solution.ProjectConfigurationEntryReaddedException;
 import jcproj.loading.vc.solution.ProjectEntry;
 import jcproj.loading.vc.solution.ProjectEntryConfiguration;
 import jcproj.loading.vc.solution.ProjectEntryManager;
@@ -121,24 +122,28 @@ public class SolutionXmlWalker {
 
 	///////////////////////////////////////////////////////
 
-	public void VisitProjectConfigurationPlatforms (final Node projConfPlats) {
+	public void VisitProjectConfigurationPlatforms (final Node projConfPlats) throws XmlWalkingException {
 		for (Node pair : MakeChildrenIterator(projConfPlats))
-			if (pair.getNodeType() == Node.ELEMENT_NODE) {
-				final String left = GetPairLeft(pair);
-				final ConfigurationId solconfigid = configIdManager.Get(ConfigurationId.ParseToId(GetPairRight(pair)));
+			if (pair.getNodeType() == Node.ELEMENT_NODE)
+				try {
+					final String left = GetPairLeft(pair);
+					final ConfigurationId solconfigid = configIdManager.Get(ConfigurationId.ParseToId(GetPairRight(pair)));
 
-				final String[] lefts = Patterns.Dot().split(left, 0);
-				if (lefts.length == 4) {
-					assert lefts[2].equals("Build");
-					assert lefts[3].equals("0");
+					final String[] lefts = Patterns.Dot().split(left, 0);
+					if (lefts.length == 4) {
+						assert lefts[2].equals("Build");
+						assert lefts[3].equals("0");
 
-					final ProjectGuid	projid			= projGuidManager.Get(lefts[0]);
-					final String		projconfigid	= lefts[1];
+						final ProjectGuid	projid			= projGuidManager.Get(lefts[0]);
+						final String		projconfigid	= lefts[1];
 
-					final ProjectEntry entry = entries.Get(projid);
-					manager.RegisterProjectEntryUnder(solconfigid, entry, new ProjectEntryConfiguration(true, configIdManager.Get(projconfigid)));
+						final ProjectEntry entry = entries.Get(projid);
+						manager.RegisterProjectEntryUnder(solconfigid, entry, new ProjectEntryConfiguration(true, configIdManager.Get(projconfigid)));
+					}
 				}
-			}
+				catch (final RuntimeException ex) {
+					throw new XmlWalkingException(pair, ex);
+				}
 	}
 
 	///////////////////////////////////////////////////////

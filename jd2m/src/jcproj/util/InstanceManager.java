@@ -8,7 +8,7 @@ public class InstanceManager<K, T extends Identifiable<? extends K>> {
 	///////////////////////////////////////////////////////
 	// State
 	private final Map<K, T> instances;
-	
+
 	///////////////////////////////////////////////////////
 	// Constructors
 	public InstanceManager (final int initialCapacity) {
