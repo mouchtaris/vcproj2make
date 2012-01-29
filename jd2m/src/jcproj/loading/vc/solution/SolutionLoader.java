@@ -8,6 +8,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import jcproj.cbuild.ConfigurationIdManager;
 import jcproj.loading.vc.xml.SolutionXmlWalker;
 import jcproj.loading.vc.xml.XmlWalkingException;
+import jcproj.util.Predicate;
 import jcproj.vcxproj.ProjectGuidManager;
 import org.xml.sax.SAXException;
 
@@ -29,7 +30,7 @@ public final class SolutionLoader {
 				XmlWalkingException
 	{
 		final ConfigurationIdManager configIdManager = new ConfigurationIdManager();
-		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager);
+		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager, CreateIgnoreIfNotVcprojEntryPredicate());
 		solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));
 		return solutionXmlWalker.GetConfigurationManager();
 	}
@@ -44,7 +45,7 @@ public final class SolutionLoader {
 				XmlWalkingException
 	{
 		final ConfigurationIdManager configIdManager = new ConfigurationIdManager();
-		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager);
+		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager, CreateIgnoreIfNotVcprojEntryPredicate());
 		solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));
 		return solutionXmlWalker.GetConfigurationManager();
 	}
@@ -54,5 +55,12 @@ public final class SolutionLoader {
 	private SolutionLoader() {
 	}
 
+	private static Predicate<ProjectEntry> CreateIgnoreIfNotVcprojEntryPredicate () {
+		return new Predicate<ProjectEntry>() {
+			public boolean HoldsFor (final ProjectEntry entry) {
+				return !entry.GetRelativePath().endsWith(".vcxproj");
+			}
+		};
+	}
 
 } // class SolutionLoader

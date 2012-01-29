@@ -1,13 +1,15 @@
 package jcproj.loading.vc.xml;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jcproj.cbuild.ConfigurationId;
 import jcproj.cbuild.ConfigurationIdManager;
 import jcproj.loading.vc.solution.ConfigurationManager;
-import jcproj.loading.vc.solution.ProjectConfigurationEntryReaddedException;
 import jcproj.loading.vc.solution.ProjectEntry;
 import jcproj.loading.vc.solution.ProjectEntryConfiguration;
 import jcproj.loading.vc.solution.ProjectEntryManager;
 import jcproj.util.Patterns;
+import jcproj.util.Predicate;
 import jcproj.util.xml.XmlTreeVisitor;
 import jcproj.vcxproj.ProjectGuid;
 import jcproj.vcxproj.ProjectGuidManager;
@@ -127,18 +129,21 @@ public class SolutionXmlWalker {
 			if (pair.getNodeType() == Node.ELEMENT_NODE)
 				try {
 					final String left = GetPairLeft(pair);
-					final ConfigurationId solconfigid = configIdManager.Get(ConfigurationId.ParseToId(GetPairRight(pair)));
-
 					final String[] lefts = Patterns.Dot().split(left, 0);
 					if (lefts.length == 4) {
 						assert lefts[2].equals("Build");
 						assert lefts[3].equals("0");
 
-						final ProjectGuid	projid			= projGuidManager.Get(lefts[0]);
-						final String		projconfigid	= lefts[1];
+						final ProjectGuid	projid	= projGuidManager.Get(lefts[0]);
+						final ProjectEntry	entry	= GetEntry(projid);
 
-						final ProjectEntry entry = entries.Get(projid);
-						manager.RegisterProjectEntryUnder(solconfigid, entry, new ProjectEntryConfiguration(true, configIdManager.Get(projconfigid)));
+						if (isIgnorable.HoldsFor(entry))
+							Loagger.log(Level.INFO, "Ignoring entry {0}", entry);
+						else {
+							final ConfigurationId	solconfigid		= configIdManager.Get(ConfigurationId.ParseToId(GetPairRight(pair)));
+							final ConfigurationId	projconfigid	= configIdManager.Get(lefts[1]);
+							manager.RegisterProjectEntryUnder(solconfigid, entry, new ProjectEntryConfiguration(true, projconfigid));
+						}
 					}
 				}
 				catch (final RuntimeException ex) {
@@ -150,7 +155,7 @@ public class SolutionXmlWalker {
 
 	public void VisitProject (final Node node) {
 		final NamedNodeMap attrs = node.getAttributes();
-		entries.Register(new ProjectEntry(projGuidManager.Create(attrs.getNamedItem("id").getNodeValue()), attrs.getNamedItem("path").getNodeValue()));
+		RegisterEntry(CreateEntry(attrs.getNamedItem("id").getNodeValue(), attrs.getNamedItem("path").getNodeValue()));
 	}
 
 	///////////////////////////////////////////////////////
@@ -168,14 +173,39 @@ public class SolutionXmlWalker {
 	private final ProjectEntryManager		entries = new ProjectEntryManager();
 	private final ConfigurationIdManager	configIdManager;
 	private final ProjectGuidManager		projGuidManager;
+	private final Predicate<ProjectEntry>	isIgnorable;
 
 	///////////////////////////////////////////////////////
 	// constructors
 	public SolutionXmlWalker (
 			final ConfigurationIdManager	configIdManager,
-			final ProjectGuidManager		projGuidManager) {
+			final ProjectGuidManager		projGuidManager,
+			final Predicate<ProjectEntry>	isIgnorable) {
 		this.configIdManager	= configIdManager;
 		this.projGuidManager	= projGuidManager;
+		this.isIgnorable		= isIgnorable;
+	}
+
+	///////////////////////////////////////////////////////
+	// Private
+	///////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////
+	// static utils
+	private static final Logger Loagger = Logger.getLogger(SolutionXmlWalker.class.getCanonicalName());
+
+	///////////////////////////////////////////////////////
+	// Useful tracking of special events
+	private ProjectEntry GetEntry (final ProjectGuid projguid) {
+		return entries.Get(projguid);
+	}
+
+	private void RegisterEntry (final ProjectEntry entry) {
+		entries.Register(entry);
+	}
+
+	private ProjectEntry CreateEntry (final String id, final String relpath) {
+		return new ProjectEntry(projGuidManager.Create(id), relpath);
 	}
 
 } // class SolutionXmlWalker

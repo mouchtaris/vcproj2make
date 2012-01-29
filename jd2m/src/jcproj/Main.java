@@ -60,21 +60,17 @@ public class Main {
 
 			for (final Map.Entry<ConfigurationId, Map<ProjectEntry, ProjectEntryConfiguration>> configuration : confmanager.GetConfiguration().entrySet())
 				for (final Map.Entry<ProjectEntry, ProjectEntryConfiguration> entryconfig: configuration.getValue().entrySet())
-					// care only for VC projects
-					if (entryconfig.getKey().GetRelativePath().endsWith(".vcxproj"))
-						try {
-							projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entryconfig.getKey().GetRelativePath())), projGuidManager));
-						} catch (final ParserConfigurationException ex) {
-							throw ex;
-						} catch (final SAXException ex) {
-							throw ex;
-						} catch (final XmlWalkingException ex) {
-							throw ex;
-						} catch (final IOException ex) {
-							throw ex;
-						}
-					else
-						Loagger.log(Level.INFO, "Ignoring project cofiguration entry: {0}", entryconfig.getKey());
+					try {
+						projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entryconfig.getKey().GetRelativePath())), projGuidManager));
+					} catch (final ParserConfigurationException ex) {
+						throw ex;
+					} catch (final SAXException ex) {
+						throw ex;
+					} catch (final XmlWalkingException ex) {
+						throw ex;
+					} catch (final IOException ex) {
+						throw ex;
+					}
 
 			System.out.println(projects);
 		}
