@@ -1,7 +1,7 @@
 package jcproj.vcxproj;
 
-import java.util.Formatter;
 import java.util.Objects;
+import jcproj.util.Identifiable;
 
 /**
  *
@@ -10,16 +10,25 @@ import java.util.Objects;
  * @author amalia
  */
 @SuppressWarnings("FinalClass")
-public final class ProjectGuid {
+public final class ProjectGuid implements Identifiable {
+
+	///////////////////////////////////////////////////////
+	// Public fields
+
+	public static final byte ID_LENGTH = 38;
 
 	///////////////////////////////////////////////////////
 
 	@Override
 	public String toString () {
-		sb.delete(0, sb.length());
-		f.format("{%08x-%04x-%04x-%04x-%012x}", A, B, C, D, E);
-		f.flush();
-		return sb.toString();
+		return string;
+	}
+
+	///////////////////////////////////////////////////////
+
+	@Override
+	public String GetId () {
+		return id;
 	}
 
 	///////////////////////////////////////////////////////
@@ -58,6 +67,23 @@ public final class ProjectGuid {
 	}
 
 	///////////////////////////////////////////////////////
+	// Static utils
+
+	public static boolean IsValid (final String value) {
+		//		"{F6459465-11D4-4CFD-99B9-5D8BDC5B598C}"
+		boolean b0 = value.length()					== ID_LENGTH;
+		boolean b1 = value.charAt(0)				== '{';
+		boolean b2 = value.charAt(ID_LENGTH - 1)	== '}';
+		boolean b3 = value.charAt(9)				== '-';
+		boolean b4 = value.charAt(14)				== '-';
+		boolean b5 = value.charAt(19)				== '-';
+		boolean b6 = value.charAt(24)				== '-';
+		return b0 && b1 && b2 && b3 && b4 && b5 && b6;
+	}
+
+	public static String NormaliseId (final String id) {
+		return Parse(id).GetId();
+	}
 
 	///////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////
@@ -65,12 +91,16 @@ public final class ProjectGuid {
 
 	///////////////////////////////////////////////////////
 
-	ProjectGuid (long a, int b, int c, int d, long e) {
-		A = a;
-		B = b;
-		C = c;
-		D = d;
-		E = e;
+	static ProjectGuid Parse (final String str) {
+		assert IsValid(str);
+
+		final long	a	= Long		.parseLong(str.substring( 1,  9), 0x10);
+		final int	b	= Integer	.parseInt (str.substring(10, 14), 0x10);
+		final int	c	= Integer	.parseInt (str.substring(15, 19), 0x10);
+		final int	d	= Integer	.parseInt (str.substring(20, 24), 0x10);
+		final long	e	= Long		.parseLong(str.substring(25, 37), 0x10);
+
+		return new ProjectGuid(a, b, c, d, e);
 	}
 
 	///////////////////////////////////////////////////////
@@ -84,9 +114,20 @@ public final class ProjectGuid {
 	private final int	C;
 	private final int	D;
 	private final long	E;
+	// precomputed
+	private final String string;
+	private final String id;
 
 	///////////////////////////////////////////////////////
-	// Static utils
-	private final static StringBuilder	sb	= new StringBuilder(1 << 18); //256KiB
-	private final static Formatter		f	= new Formatter(sb);
+	// private static utils
+
+	private ProjectGuid (final long a, final int b, final int c, final int d, final long e) {
+		A = a;
+		B = b;
+		C = c;
+		D = d;
+		E = e;
+		id = String.format("{%08x-%04x-%04x-%04x-%012x}", A, B, C, D, E);
+		string = "ProjectGuid[" + id + "]";
+	}
 } // class ProjectGuid

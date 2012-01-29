@@ -1,8 +1,9 @@
 package jcproj.cbuild;
 
+import jcproj.util.Identifiable;
 import jcproj.util.Patterns;
 
-public class ConfigurationId {
+public class ConfigurationId implements Identifiable {
 	///////////////////////////////////////////////////////
 	// state
 	private final String build;
@@ -28,6 +29,7 @@ public class ConfigurationId {
 		return platform;
 	}
 
+	@Override
 	public String GetId () {
 		return id;
 	}

@@ -9,7 +9,7 @@ import jcproj.loading.ProjectConfigurationEntry;
 import jcproj.util.Patterns;
 import jcproj.util.xml.XmlTreeVisitor;
 import jcproj.vcxproj.ProjectGuid;
-import jcproj.vcxproj.ProjectGuidFactory;
+import jcproj.vcxproj.ProjectGuidManager;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -132,7 +132,7 @@ public class SolutionXmlWalker {
 					assert lefts[2].equals("Build");
 					assert lefts[3].equals("0");
 
-					final ProjectGuid	projid			= ProjectGuidFactory.GetSingleton().Get(lefts[0]);
+					final ProjectGuid	projid			= projGuidManager.Get(lefts[0]);
 					final String		projconfigid	= lefts[1];
 
 					manager.RegisterProjectEntryUnder(solconfigid, entries.get(projid).clone(projconfigid, true));
@@ -144,7 +144,7 @@ public class SolutionXmlWalker {
 
 	public void VisitProject (final Node node) {
 		final NamedNodeMap attrs = node.getAttributes();
-		final ProjectGuid projid = ProjectGuidFactory.GetSingleton().Create(attrs.getNamedItem("id").getNodeValue());
+		final ProjectGuid projid = projGuidManager.Create(attrs.getNamedItem("id").getNodeValue());
 		final ProjectConfigurationEntry entry = new ProjectConfigurationEntry(projid, attrs.getNamedItem("path").getNodeValue());
 		final ProjectConfigurationEntry previous = entries.put(projid, entry);
 		assert previous == null;
@@ -164,11 +164,15 @@ public class SolutionXmlWalker {
 	private final ConfigurationManager							manager = new ConfigurationManager();
 	private final Map<ProjectGuid, ProjectConfigurationEntry>	entries = new HashMap<ProjectGuid, ProjectConfigurationEntry>(100);
 	private final ConfigurationIdManager						configIdManager;
+	private final ProjectGuidManager							projGuidManager;
 
 	///////////////////////////////////////////////////////
 	// constructors
-	public SolutionXmlWalker (final ConfigurationIdManager configIdManager) {
-		this.configIdManager = configIdManager;
+	public SolutionXmlWalker (
+			final ConfigurationIdManager	configIdManager,
+			final ProjectGuidManager		projGuidManager) {
+		this.configIdManager	= configIdManager;
+		this.projGuidManager	= projGuidManager;
 	}
 
 } // class SolutionXmlWalker

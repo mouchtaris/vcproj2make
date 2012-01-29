@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jcproj.vcxproj.ProjectGuid;
-import jcproj.vcxproj.ProjectGuidFactory;
+import jcproj.vcxproj.ProjectGuidManager;
 import jcproj.vcxproj.xml.ClCompile;
 import jcproj.vcxproj.xml.ClCompileDefinition;
 import jcproj.vcxproj.xml.ClInclude;
@@ -205,7 +205,7 @@ public class ProjectXmlWalker {
 				assert relpath != null;
 				final String projidstr = GetChildSingleSubelementValue(node, NodesNames.Project);
 				assert projidstr != null;
-				final ProjectGuid projid = ProjectGuidFactory.GetSingleton().Get(projidstr);
+				final ProjectGuid projid = projGuidManager.Get(projidstr);
 
 				Loagger.log(Level.INFO, "Adding project reference {0} {1}", new Object[]{relpath,projid});
 				project.AddProjectReference(projid, relpath);
@@ -323,13 +323,18 @@ public class ProjectXmlWalker {
 	///////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////
+	// constructors
+	public ProjectXmlWalker (final ProjectGuidManager projGuidManager) {
+		this.projGuidManager = projGuidManager;
+	}
 
 	///////////////////////////////////////////////////////
 	// Private
 
 	///////////////////////////////////////////////////////
 	// State
-	private final Project		project =	new Project();
+	private final Project				project =	new Project();
+	private final ProjectGuidManager	projGuidManager;
 	//
 	private final static Logger Loagger =	Logger.getLogger(ProjectXmlWalker.class.getName());
 

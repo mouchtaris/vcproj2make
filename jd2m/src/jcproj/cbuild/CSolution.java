@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import jcproj.vcxproj.ProjectGuid;
-import jcproj.vcxproj.ProjectGuidFactory;
 import jd2m.util.Name;
 
 @SuppressWarnings("FinalClass")
@@ -33,9 +32,6 @@ public final class CSolution {
 	public CProject GetProject (final ProjectGuid projId) {
 		final CProject result = _projects.get(projId);
 		return result;
-	}
-	public CProject GetProject (final String projid) {
-		return GetProject(ProjectGuidFactory.GetSingleton().Get(projid));
 	}
 
 	public Iterable<CProject> GetCProjectIterable () {

@@ -6,6 +6,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import jcproj.loading.xml.ProjectXmlWalker;
 import jcproj.loading.xml.XmlWalkingException;
+import jcproj.vcxproj.ProjectGuidManager;
 import jcproj.vcxproj.xml.Project;
 import org.xml.sax.SAXException;
 
@@ -20,12 +21,12 @@ public final class ProjectLoader {
 
 		///////////////////////////////////////////////////////
 
-	public static Project LoadProject (final InputStream proj)
+	public static Project LoadProject (final InputStream proj, final ProjectGuidManager projGuidManager)
 			throws	ParserConfigurationException,
 					SAXException,
 					IOException,
 					XmlWalkingException {
-		final ProjectXmlWalker xmlwalker = new ProjectXmlWalker();
+		final ProjectXmlWalker xmlwalker = new ProjectXmlWalker(projGuidManager);
 		xmlwalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(proj));
 		return xmlwalker.GetProject();
 	}

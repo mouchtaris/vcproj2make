@@ -8,6 +8,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import jcproj.cbuild.ConfigurationIdManager;
 import jcproj.loading.xml.SolutionXmlWalker;
 import jcproj.loading.xml.XmlWalkingException;
+import jcproj.vcxproj.ProjectGuidManager;
 import org.xml.sax.SAXException;
 
 /**
@@ -20,7 +21,7 @@ public final class SolutionLoader {
 
 	///////////////////////////////////////////////////////
 
-	public static ConfigurationManager LoadSolution (final InputStream solution)
+	public static ConfigurationManager LoadSolution (final InputStream solution, final ProjectGuidManager projGuidManager)
 			throws
 				ParserConfigurationException,
 				SAXException,
@@ -28,14 +29,14 @@ public final class SolutionLoader {
 				XmlWalkingException
 	{
 		final ConfigurationIdManager configIdManager = new ConfigurationIdManager();
-		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager);
+		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager);
 		solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));
 		return solutionXmlWalker.GetConfigurationManager();
 	}
 
 	///////////////////////////////////////////////////////
 
-	public static ConfigurationManager LoadSolution (final File solution)
+	public static ConfigurationManager LoadSolution (final File solution, final ProjectGuidManager projGuidManager)
 			throws
 				ParserConfigurationException,
 				SAXException,
@@ -43,7 +44,7 @@ public final class SolutionLoader {
 				XmlWalkingException
 	{
 		final ConfigurationIdManager configIdManager = new ConfigurationIdManager();
-		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager);
+		final SolutionXmlWalker solutionXmlWalker = new SolutionXmlWalker(configIdManager, projGuidManager);
 		solutionXmlWalker.VisitDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(solution));
 		return solutionXmlWalker.GetConfigurationManager();
 	}

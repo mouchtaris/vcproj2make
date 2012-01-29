@@ -17,7 +17,7 @@ import jcproj.loading.ProjectConfigurationEntry;
 import jcproj.loading.ProjectLoader;
 import jcproj.loading.SolutionLoader;
 import jcproj.loading.xml.XmlWalkingException;
-import jcproj.vcxproj.ProjectGuidFactory;
+import jcproj.vcxproj.ProjectGuidManager;
 import jcproj.vcxproj.xml.Project;
 import org.xml.sax.SAXException;
 
@@ -30,7 +30,7 @@ public class Main {
 	@SuppressWarnings("UseOfSystemOutOrSystemErr")
 	public static void main (final String[] args) {
 		Logger.getLogger("jcproj").setLevel(Level.INFO);
-		ProjectGuidFactory.SingletonCreate();
+		ProjectGuidManager projGuidManager = new ProjectGuidManager();
 
 		if (args.length == 0)
 			System.out.println("solutionPathname");
@@ -41,7 +41,7 @@ public class Main {
 
 			final ConfigurationManager confmanager;
 			try {
-				confmanager = SolutionLoader.LoadSolution(Files.newInputStream(solutionPath));
+				confmanager = SolutionLoader.LoadSolution(Files.newInputStream(solutionPath), projGuidManager);
 			} catch (ParserConfigurationException ex) {
 				Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
 				return;
@@ -60,22 +60,27 @@ public class Main {
 
 			for (final Map.Entry<ConfigurationId, Set<ProjectConfigurationEntry>> entries : confmanager.GetProjectConfigurationEntries().entrySet())
 				for (final ProjectConfigurationEntry entry : entries.getValue())
-					try {
-						projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entry.GetRelativePath()))));
-					} catch (final ParserConfigurationException ex) {
-						Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-					} catch (final SAXException ex) {
-						Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-					} catch (final XmlWalkingException ex) {
-						Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-					} catch (final IOException ex) {
-						Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-					}
+					// care only for VC projects
+					if (entry.GetRelativePath().endsWith(".vcxproj"))
+						try {
+							projects.add(ProjectLoader.LoadProject(Files.newInputStream(solutionBasedir.resolve(entry.GetRelativePath())), projGuidManager));
+						} catch (final ParserConfigurationException ex) {
+							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+						} catch (final SAXException ex) {
+							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+						} catch (final XmlWalkingException ex) {
+							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+						} catch (final IOException ex) {
+							Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+						}
+					else
+						Loagger.log(Level.INFO, "Ignoring project cofiguration entry: {0}", entry);
 
 			System.out.println(projects);
 		}
 	}
 
+	private static final Logger Loagger = Logger.getLogger(Main.class.getCanonicalName());
 	private Main() {
 	}
 
