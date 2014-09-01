@@ -1,6 +1,0 @@
-<tag testattr="parent">
-	<emptytag />
-	<emptytagid id="something" />
-	<tagnoid> what is this? </tagnoid>
-	<nns:nnstag nnstagid="nnstag attr value" />
-</tag>

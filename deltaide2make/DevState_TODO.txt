@@ -1,5 +1,0 @@
-- SolutionLoader/Trimmer:
-    * Trim away .ActiveCnf entries from configuration map.
-
-- Makefile Generator
-	* Change output name of makefiles according to solution configuration
