@@ -11,18 +11,17 @@ data structures as input, any kind of build-system generator can be used. In thi
 project, a makefile generator is provided.
 
 ### cproj
-All packages under cproj.\* are related with loading VS project files and translating
+All packages under cproj.\* are related to loading VS project files and translating
 them to the generic CProj format.
 
 ### jd2m
-Packages under jd2m.\* are specific to the [delta language VS project files](http://www.ics.forth.gr/hci/files/plang/Delta/Delta.html#si_download).
-The are specific to the Delta Language project and not of any use to the general
+Packages under jd2m.\* are specific to the [delta language VS project files](http://www.ics.forth.gr/hci/files/plang/Delta/Delta.html#si_download) and not of any use to the general
 VS-to-make translation process. Nevertheless, they provide good reference and testing
 for the actual project core.
 
 In addition, there may still be some generic-purpose functionality left over
 in there, as the factoring-out of core-functionality was not carried out
-thoroughly.
+throughout.
 
 ## Status
 This project is heavily outdated and un-maintained but it has very good potential
@@ -39,12 +38,11 @@ This project should be functional for VS2010 project and solution files and late
 Last time it was under development, it had been severely tested with translating
 [this project files](http://www.ics.forth.gr/hci/files/plang/Delta/Delta.html#si_download)
 into makefiles, and the result was successful. The Delta Language build specifications
-are (were at the time of testing) quite complicated, and therefore it is considered
+are (were at the time of testing) quite complicated (preprocessor definitions, use of visual studio project-property-"script" files, etc), and therefore it is considered
 that this project works well for the mainstream cases.
 
-This project has not been testing again and there are no instructions about how to
-build and how to translate VS solutions. If there is public interest, there may
-be instructions and tutorials according to demand.
+This project has not been tested again and there are currently no instructions about how to
+build and how to translate VS solutions. There may be one day, or appear suddenly if there is public interest.
 
 In the mean-time, there is a sample translation process as a test/example
 in `cproj.Main`.
